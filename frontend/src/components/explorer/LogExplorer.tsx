@@ -52,7 +52,23 @@ const LogExplorer = () => {
 
 
   useEffect(() => {
-    axios.get('http://localhost:8080/v1/logs')
+    axios.post('http://localhost:8080/v1/logs/search', {
+      project_id: "123",
+      service: "auth-service",
+      level: ["ERROR", "WARNING"],
+      message_contains: "failed",
+      timestamp_range: {
+        from: "2025-02-01T00:00:00Z",
+        to: "2025-02-01T23:59:59Z"
+      },
+      metadata: {
+        user_ip: "192.168.1.1"
+      },
+      sort: "timestamp",
+      order: "desc",
+      page: 1,
+      limit: 50
+     })
       .then((response) => {
         setLogResult(response.data);
         console.log('responseData', response.data);

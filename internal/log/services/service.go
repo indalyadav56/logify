@@ -117,7 +117,7 @@ func (s *logService) Search(search string) (interface{}, error) {
 
 	searchRes, err := es.Search(
 		es.Search.WithContext(context.Background()),
-		es.Search.WithIndex("my_logs*"),
+		es.Search.WithIndex("project-1-logify-*"),
 		es.Search.WithBody(bytes.NewReader(jsonQuery)),
 	)
 	if err != nil {
@@ -132,12 +132,10 @@ func (s *logService) Search(search string) (interface{}, error) {
 	}
 
 	logs := []map[string]interface{}{}
-	// Print search results
 	hits := result["hits"].(map[string]interface{})["hits"].([]interface{})
 	for _, hit := range hits {
 		source := hit.(map[string]interface{})["_source"].(map[string]interface{})
 		logs = append(logs, source)
-		fmt.Printf("Found document: %v\n", source)
 	}
 
 	return logs, nil
