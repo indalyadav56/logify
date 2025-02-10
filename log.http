@@ -1,0 +1,37 @@
+POST http://localhost:8080/v1/logs/search HTTP/1.1
+Content-Type: application/json
+
+{
+  "project_id": "123",
+  "service": "auth-service",
+  "level": ["ERROR", "WARNING"],
+  "message_contains": "failed",
+  "timestamp_range": {
+    "from": "2025-02-01T00:00:00Z",
+    "to": "2025-02-01T23:59:59Z"
+  },
+  "metadata": {
+    "user_ip": "192.168.1.1"
+  },
+  "sort": "timestamp",
+  "order": "desc",
+  "page": 1,
+  "limit": 50
+}
+
+
+### publish log
+POST http://localhost:8080/v1/logs
+Content-Type: application/json
+
+{
+  "level": "info",
+  "message": "User login success test",
+  "service": "user_service",
+  "project_id":"test",
+  "metadata": {
+    "hello": "test"
+  }
+}
+
+

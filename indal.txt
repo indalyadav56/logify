@@ -1,0 +1,59 @@
+log start time journey visulaize of the user in 3d
+
+or graphical view
+
+
+
+
+
+Log Dashboard
+
+Log Analyser dashboard with features like import .log files 
+with advance filtering
+
+install demon on ubuntu/ec2 server and stream all the logs to 
+the log analyser dashboard tool (find other better approach if any)
+
+features add such as s3 bucket import .logs files or zip folder
+
+
+create library to push/stream in logging dashboard
+
+
+
+
+
+
+
+log search api integration 
+
+{
+  "logs": [
+    {
+      "project_id": "123",
+      "service": "auth-service",
+      "level": "ERROR",
+      "message": "User login failed",
+      "timestamp": "2025-02-01T12:34:56Z",
+      "metadata": {
+        "user_ip": "192.168.1.1",
+        "trace_id": "abcd-efgh-ijkl"
+      }
+    }
+  ],
+  "pagination": {
+    "current_page": 1,
+    "total_pages": 10,
+    "total_logs": 500
+  }
+}
+
+
+encryption integration 
+auth integration
+an agent to pull data of cpu, netork, ram, processor, disk usage of a server
+
+
+share logs within teams
+
+or user journey visulaize( of the user in 3d)

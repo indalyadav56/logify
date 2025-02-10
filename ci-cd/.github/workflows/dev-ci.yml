@@ -1,0 +1,72 @@
+# name: Build, Push to ECR, and Update API Gateway Docker Compose
+
+# on:
+#   push:
+#     branches: dev
+#   pull_request:
+#     branches: dev
+
+# jobs:
+#   build-and-push:
+#     runs-on: ubuntu-latest
+    
+#     steps:
+#     - name: Checkout code
+#       uses: actions/checkout@v3
+#       with:
+#         submodules: 'recursive'
+#         token: ${{ secrets.GIT_TOKEN }}
+
+#     - name: Configure AWS credentials
+#       uses: aws-actions/configure-aws-credentials@v1
+#       with:
+#         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY }}
+#         aws-secret-access-key: ${{ secrets.AWS_SECRET_KEY }}
+#         aws-region: ${{ secrets.AWS_REGION }}
+
+#     - name: Login to Amazon ECR
+#       id: login-ecr
+#       uses: aws-actions/amazon-ecr-login@v1
+
+#     - name: Extract commit hash
+#       id: extract_commit_hash
+#       run: echo "COMMIT_HASH=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+
+#     - name: Build and tag Docker image
+#       run: |
+#         docker build -t ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/bank-api:$COMMIT_HASH .
+
+#     - name: Push Docker image to ECR
+#       run: |
+#         docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/bank-api:$COMMIT_HASH
+          
+#     - name: Output commit hash
+#       run: 
+#         echo "::set-output name=commit_hash::${COMMIT_HASH}"
+    
+#     - name: Checkout API Gateway repository
+#       uses: actions/checkout@v3
+#       with:
+#         repository: Grapesberry-Technologies-Pvt-Ltd/paydoh-api-gateway
+#         token: ${{ secrets.GIT_TOKEN }}
+#         path: paydoh-api-gateway
+#         ref: dev
+    
+#     - name: Debug - List files in API Gateway repo
+#       run: |
+#         ls -R
+#       working-directory: ./paydoh-api-gateway
+
+#     - name: Update Docker Compose file
+#       run: |
+#         sed -i -E "s|(image: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/bank-api):.*|\1:${{ env.COMMIT_HASH }}|" docker-compose.yml
+#       working-directory: ./paydoh-api-gateway
+    
+#     - name: Commit and push changes to API Gateway repo
+#       run: |
+#         git config --local user.email ${{ secrets.GIT_EMAIL }}
+#         git config --local user.name  ${{ secrets.GIT_USERNAME }}
+#         git add .
+#         git commit -m "Update bank-api image to ${COMMIT_HASH}" || echo "No changes to commit"
+#         git push
+#       working-directory: ./paydoh-api-gateway

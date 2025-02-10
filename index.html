@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Server Metrics Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-800">Server Metrics Dashboard</h1>
+            <div class="flex gap-4 mt-2 text-sm text-gray-600">
+                <p>Server ID: <span class="font-semibold">server-123</span></p>
+                <p>Hostname: <span class="font-semibold">web-server-1</span></p>
+                <p>IP: <span class="font-semibold">192.168.1.10</span></p>
+            </div>
+        </div>
+
+        <!-- Metrics Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <div class="bg-white rounded-lg shadow p-6">
+                <h3 class="text-gray-500 text-sm">CPU Usage</h3>
+                <div class="flex items-center mt-2">
+                    <span class="text-2xl font-bold text-gray-800">45.5%</span>
+                    <div class="w-full bg-gray-200 rounded-full h-2.5 ml-4">
+                        <div class="bg-blue-600 h-2.5 rounded-full" style="width: 45.5%"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6">
+                <h3 class="text-gray-500 text-sm">Memory Usage</h3>
+                <div class="flex items-center mt-2">
+                    <span class="text-2xl font-bold text-gray-800">73.2%</span>
+                    <div class="w-full bg-gray-200 rounded-full h-2.5 ml-4">
+                        <div class="bg-purple-600 h-2.5 rounded-full" style="width: 73.2%"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6">
+                <h3 class="text-gray-500 text-sm">Disk Usage</h3>
+                <div class="flex items-center mt-2">
+                    <span class="text-2xl font-bold text-gray-800">52.4%</span>
+                    <div class="w-full bg-gray-200 rounded-full h-2.5 ml-4">
+                        <div class="bg-green-600 h-2.5 rounded-full" style="width: 52.4%"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6">
+                <h3 class="text-gray-500 text-sm">Network Traffic</h3>
+                <div class="space-y-2">
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-500">In:</span>
+                        <span class="font-medium">123.4 MB</span>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-500">Out:</span>
+                        <span class="font-medium">987.6 MB</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Processes and Logs -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Processes -->
+            <div class="bg-white rounded-lg shadow">
+                <div class="p-4 border-b">
+                    <h2 class="text-lg font-semibold text-gray-800">Active Processes</h2>
+                </div>
+                <div class="p-4">
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="font-medium">nginx</p>
+                                <div class="flex gap-4 text-sm text-gray-500">
+                                    <span>CPU: 3.2%</span>
+                                    <span>Memory: 50.1 MB</span>
+                                </div>
+                            </div>
+                            <div class="h-2.5 w-24 bg-gray-200 rounded-full">
+                                <div class="bg-blue-600 h-2.5 rounded-full" style="width: 30%"></div>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="font-medium">postgres</p>
+                                <div class="flex gap-4 text-sm text-gray-500">
+                                    <span>CPU: 8.4%</span>
+                                    <span>Memory: 120.3 MB</span>
+                                </div>
+                            </div>
+                            <div class="h-2.5 w-24 bg-gray-200 rounded-full">
+                                <div class="bg-blue-600 h-2.5 rounded-full" style="width: 70%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Logs -->
+            <div class="bg-white rounded-lg shadow">
+                <div class="p-4 border-b">
+                    <h2 class="text-lg font-semibold text-gray-800">Recent Logs</h2>
+                </div>
+                <div class="p-4">
+                    <div class="space-y-4">
+                        <div class="flex items-start gap-3">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">INFO</span>
+                            <div>
+                                <p class="text-sm">Server started successfully</p>
+                                <p class="text-xs text-gray-500">2025-02-09 12:00:00</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">ERROR</span>
+                            <div>
+                                <p class="text-sm">Failed to connect to database</p>
+                                <p class="text-xs text-gray-500">2025-02-09 12:00:05</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
