@@ -7,6 +7,7 @@ import (
 	"common/pkg/validator"
 	"logify/config"
 
+	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/gin-gonic/gin"
 
 	userHandlers "logify/internal/user/handlers"
@@ -36,6 +37,7 @@ type Dependencies struct {
 	Logger    logger.Logger
 	JWT       jwt.JWT
 	Validator validator.Validator
+	EsClient  *elasticsearch.Client
 
 	AuthHandler authHandlers.AuthHandler
 	AuthService authServices.AuthService

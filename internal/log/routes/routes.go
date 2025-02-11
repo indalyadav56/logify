@@ -9,11 +9,9 @@ import (
 func LogRoutes(app *gin.Engine, h handlers.LogHandler) {
 	logV1 := app.Group("/v1/logs")
 	{
-
 		logV1.POST("", h.Create)
-		logV1.PATCH("", h.Update)
-		logV1.DELETE("", h.Delete)
-
 		logV1.POST("/search", h.LogSearch)
+		logV1.GET("/services", h.GetAllServices)
+		logV1.GET("/export", h.GetAllServices)
 	}
 }

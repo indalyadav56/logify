@@ -11,9 +11,6 @@ type ProjectService interface {
 	GetByID(id string) (*models.Project, error)
 	Update(id string, project *models.Project) (*models.Project, error)
 	Delete(id string) error
-	// GetAll() ([]*models.Project, error)
-	// Search(query string) ([]*models.Project, error)
-
 }
 
 type projectService struct {
@@ -57,13 +54,3 @@ func (s *projectService) Update(id string, project *models.Project) (*models.Pro
 func (s *projectService) Delete(id string) error {
 	return s.projectRepo.Delete(id)
 }
-
-// // GetAll retrieves all project records
-// func (s *projectService) GetAll() ([]*models.Project, error) {
-// 	return s.projectRepo.FindAll()
-// }
-
-// // Search allows searching for project entities based on a query
-// func (s *projectService) Search(query string) ([]*models.Project, error) {
-// 	return s.projectRepo.Search(query)
-// }

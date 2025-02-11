@@ -56,4 +56,13 @@ an agent to pull data of cpu, netork, ram, processor, disk usage of a server
 
 share logs within teams
 
-or user journey visulaize( of the user in 3d)
+or user journey visulaize( of the user in 3d) 
+user journey should be with time user has visited 4 services (auth, payment, user, notification) it should show the journey logs as per it.
+
+
+
+user coming from web, mobile, as per user agent header
+
+
+
+custom func invoke on level (webhook functionality)

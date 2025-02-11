@@ -14,51 +14,31 @@ import (
 	"github.com/ThreeDotsLabs/watermill"
 	"github.com/ThreeDotsLabs/watermill-kafka/v3/pkg/kafka"
 	"github.com/ThreeDotsLabs/watermill/message"
-	"github.com/elastic/go-elasticsearch/v7"
+	"github.com/elastic/go-elasticsearch/v8"
 )
 
 type LogService interface {
 	PublishLog(log string) error
 	Search(query string) (interface{}, error)
+	GetAllServices() (interface{}, error)
 	LogConsumer() error
 }
 
 type logService struct {
-	logRepo repository.LogRepository
-	log     logger.Logger
-	// esClient *elasticsearch.Client
+	logRepo  repository.LogRepository
+	log      logger.Logger
+	esClient *elasticsearch.Client
 }
 
-func NewLogService(repo repository.LogRepository, log logger.Logger) *logService {
+func NewLogService(repo repository.LogRepository, log logger.Logger, esClient *elasticsearch.Client) *logService {
 	return &logService{
-		logRepo: repo,
-		log:     log,
-		// esClient: esClient,
+		logRepo:  repo,
+		log:      log,
+		esClient: esClient,
 	}
 }
 
 func (s *logService) PublishLog(log string) error {
-	// config := sarama.NewConfig()
-	// config.Producer.RequiredAcks = sarama.WaitForAll
-	// config.Producer.Return.Successes = true
-
-	// producer, err := sarama.NewSyncProducer([]string{"localhost:9092"}, config)
-	// if err != nil {
-	// 	fmt.Println(err)
-	// }
-	// defer producer.Close()
-
-	// msg := &sarama.ProducerMessage{
-	// 	Topic: "logify",
-	// 	Value: sarama.StringEncoder(log),
-	// }
-
-	// _, _, err = producer.SendMessage(msg)
-	// if err != nil {
-	// 	fmt.Println(err)
-	// }
-
-	// Create Kafka publisher
 	publisher, err := kafka.NewPublisher(
 		kafka.PublisherConfig{
 			Brokers:   []string{"localhost:9092"},
@@ -77,7 +57,7 @@ func (s *logService) PublishLog(log string) error {
 
 	// Publish message
 	if err := publisher.Publish(topic, msg); err != nil {
-		fmt.Println("error publishing message: %v", err)
+		fmt.Printf("error publishing message: %v", err)
 	} else {
 		fmt.Printf("Published log: %s\n", log)
 	}
@@ -90,45 +70,36 @@ func (s *logService) Search(search string) (interface{}, error) {
 		"query": map[string]interface{}{
 			"bool": map[string]interface{}{
 				"must": []map[string]interface{}{
-					{
-						"match": map[string]interface{}{
-							"log": "info",
-						},
-					},
+					// {
+					// 	"match": map[string]interface{}{
+					// 		"log": "info",
+					// 	},
+					// },
 				},
 			},
 		},
 	}
 
-	// Initialize Elasticsearch client
-	cfg := elasticsearch.Config{
-		Addresses: []string{"http://localhost:9200"},
-	}
-
-	es, err := elasticsearch.NewClient(cfg)
-	if err != nil {
-		fmt.Println("Error creating client: %s", err)
-	}
-
 	jsonQuery, err := json.Marshal(query)
 	if err != nil {
-		fmt.Println("Error marshaling query: %s", err)
+		log.Fatalf("Error marshaling query: %s", err)
 	}
 
-	searchRes, err := es.Search(
-		es.Search.WithContext(context.Background()),
-		es.Search.WithIndex("project-1-logify-*"),
-		es.Search.WithBody(bytes.NewReader(jsonQuery)),
+	searchRes, err := s.esClient.Search(
+		s.esClient.Search.WithContext(context.Background()),
+		s.esClient.Search.WithIndex("indal"),
+		// s.esClient.Search.WithIndex("project-1-logify-*"),
+		s.esClient.Search.WithBody(bytes.NewReader(jsonQuery)),
 	)
 	if err != nil {
-		fmt.Println("Error searching documents: %s", err)
+		log.Fatalf("Error searching documents: %s", err)
 	}
 	defer searchRes.Body.Close()
 
 	// Parse search results
 	var result map[string]interface{}
 	if err := json.NewDecoder(searchRes.Body).Decode(&result); err != nil {
-		fmt.Println("Error parsing search response: %s", err)
+		log.Fatalf("Error parsing search response: %s", err)
 	}
 
 	logs := []map[string]interface{}{}
@@ -140,6 +111,48 @@ func (s *logService) Search(search string) (interface{}, error) {
 
 	return logs, nil
 
+}
+
+func (s *logService) GetAllServices() (interface{}, error) {
+	esQuery := map[string]interface{}{
+		"size": 0,
+		"aggs": map[string]interface{}{
+			"unique_services": map[string]interface{}{
+				"terms": map[string]interface{}{
+					"field": "service.keyword",
+					"size":  1000,
+				},
+			},
+		},
+	}
+
+	jsonQuery, err := json.Marshal(esQuery)
+	if err != nil {
+		log.Fatalf("Error marshaling query: %s", err)
+	}
+
+	searchRes, err := s.esClient.Search(
+		s.esClient.Search.WithContext(context.Background()),
+		s.esClient.Search.WithIndex("indal"),
+		s.esClient.Search.WithBody(bytes.NewReader(jsonQuery)),
+	)
+	if err != nil {
+		log.Fatalf("Error searching documents: %s", err)
+	}
+	defer searchRes.Body.Close()
+
+	// Parse search results
+	var result map[string]interface{}
+	if err := json.NewDecoder(searchRes.Body).Decode(&result); err != nil {
+		log.Fatalf("Error parsing search response: %s", err)
+	}
+
+	services := []string{}
+	for _, service := range result["aggregations"].(map[string]interface{})["unique_services"].(map[string]interface{})["buckets"].([]interface{}) {
+		services = append(services, service.(map[string]interface{})["key"].(string))
+	}
+
+	return services, nil
 }
 
 func (s *logService) LogConsumer() error {
@@ -185,6 +198,12 @@ func (s *logService) LogConsumer() error {
 			// Insert document
 			index := fmt.Sprintf("%s-logify-%s", "project-1", time.Now().Format("2006-01-02"))
 			_, err = es.Index(index, bytes.NewReader(data))
+			if err != nil {
+				log.Fatalf("Error inserting document: %v", err)
+			}
+
+			// testing insert
+			_, err = es.Index("indal", bytes.NewReader(msg.Payload))
 			if err != nil {
 				log.Fatalf("Error inserting document: %v", err)
 			}

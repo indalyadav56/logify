@@ -1,3 +1,8 @@
+GET http://localhost:8080/v1/logs/services
+Content-Type: application/json
+
+
+### search logs 
 POST http://localhost:8080/v1/logs/search HTTP/1.1
 Content-Type: application/json
 

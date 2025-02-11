@@ -12,9 +12,8 @@ import (
 
 type LogHandler interface {
 	Create(c *gin.Context)
-	Update(c *gin.Context)
-	Delete(c *gin.Context)
 	LogSearch(c *gin.Context)
+	GetAllServices(c *gin.Context)
 }
 
 type logHandler struct {
@@ -58,29 +57,19 @@ func (h *logHandler) Create(c *gin.Context) {
 	c.JSON(http.StatusAccepted, gin.H{"message": "log created successfully"})
 }
 
-// @Summary Update log details
-// @Description Update details of an existing log entry
-// @Tags log
-// @Accept json
-// @Produce json
-// @Param id path int true "log ID"
-// @Router /v1/logs/{id} [patch]
-func (h *logHandler) Update(c *gin.Context) {
-	// Implementation for Update
-}
-
-// @Summary Delete log
-// @Description Delete an existing log entry
-// @Tags log
-// @Accept json
-// @Produce json
-// @Router /v1/logs/{id} [delete]
-func (h *logHandler) Delete(c *gin.Context) {
-	// Implementation for Delete
-}
-
 func (h *logHandler) LogSearch(c *gin.Context) {
 	result, err := h.service.Search("query")
+	if err != nil {
+		h.log.Error("failed to filter logs", err)
+		c.JSON(500, gin.H{"message": "failed to filter logs"})
+		return
+	}
+
+	c.JSON(200, gin.H{"message": "Get log", "logs": result})
+}
+
+func (h *logHandler) GetAllServices(c *gin.Context) {
+	result, err := h.service.GetAllServices()
 	if err != nil {
 		h.log.Error("failed to filter logs", err)
 		c.JSON(500, gin.H{"message": "failed to filter logs"})

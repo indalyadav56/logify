@@ -1,6 +1,7 @@
 package app
 
 import (
+	"bytes"
 	database "common/pkg/db"
 	"common/pkg/jwt"
 	"common/pkg/logger"
@@ -13,6 +14,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 
@@ -104,6 +106,32 @@ func (a *App) initDependencies() error {
 
 	a.deps.Server = gin.Default()
 
+	// Initialize Elasticsearch client
+	cfg := elasticsearch.Config{
+		Addresses: []string{"http://localhost:9200"},
+	}
+
+	a.deps.EsClient, err = elasticsearch.NewClient(cfg)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// testing
+
+	// Insert document
+	index := fmt.Sprintf("indal")
+	_, err = a.deps.EsClient.Index(index, bytes.NewReader([]byte(`{"service":"user_service","level":"info","message":"User logged in","metadata":{"user_id":"123"},"timestamp":"2025-02-08T11:32:57.869754Z"}`)))
+	if err != nil {
+		log.Fatalf("Error inserting document: %v", err)
+	}
+
+	_, err = a.deps.EsClient.Index(index, bytes.NewReader([]byte(`{"service":"auth_service","level":"info","message":"User logged in","metadata":{"user_id":"123"},"timestamp":"2025-02-08T11:32:57.869754Z"}`)))
+	if err != nil {
+		log.Fatalf("Error inserting document: %v", err)
+	}
+
+	// initialize kafka
+
 	a.initRepositories()
 
 	a.initServices()
@@ -131,7 +159,7 @@ func (a *App) initRepositories() {
 func (a *App) initServices() {
 	a.deps.UserService = userServices.NewUserService(a.deps.UserRepository, a.deps.Logger)
 	a.deps.AuthService = authServices.NewAuthService(a.deps.Logger, a.deps.JWT, a.deps.UserService)
-	a.deps.LogService = logServices.NewLogService(a.deps.LogRepository, a.deps.Logger)
+	a.deps.LogService = logServices.NewLogService(a.deps.LogRepository, a.deps.Logger, a.deps.EsClient)
 	a.deps.ProjectService = projectServices.NewProjectService(a.deps.ProjectRepository, a.deps.Logger)
 	a.deps.NotificationService = notificationServices.NewNotificationService(a.deps.NotificationRepository, a.deps.Logger)
 }
