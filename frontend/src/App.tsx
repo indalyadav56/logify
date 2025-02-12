@@ -2,6 +2,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ProjectProvider } from "@/context/ProjectContext";
 import LogExplorer from "@/pages/explorer/LogExplorer";
+import UserJourney from "./pages/journey/UserJourney";
 
 function App() {
   return (
@@ -10,6 +11,7 @@ function App() {
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<LogExplorer />} />
+            <Route path="/journey" element={<UserJourney />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </BrowserRouter>

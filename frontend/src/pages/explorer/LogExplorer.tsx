@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -23,6 +23,18 @@ import {
   Download,
   RefreshCcw,
   ChevronDown,
+  Play,
+  Pause,
+  Group,
+  Keyboard,
+  SplitSquareVertical,
+  Maximize2,
+  LineChart,
+  PieChart,
+  Table2,
+  Share2,
+  BookmarkPlus,
+  Trash2,
 } from "lucide-react";
 import { useLogData } from "@/hooks/useLogData";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -32,6 +44,9 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
+  DropdownMenuGroup,
 } from "@/components/ui/dropdown-menu";
 import {
   BarChart,
@@ -41,8 +56,25 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  LineChart as RechartsLineChart,
+  Line,
+  PieChart as RechartsPieChart,
+  Pie,
+  Cell,
 } from "recharts";
 import { addHours, format, parseISO, subHours } from "date-fns";
+import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { toast } from "sonner";
 
 interface Log {
   service: string;
@@ -72,6 +104,16 @@ export default function LogExplorer() {
   });
   const [activeTab, setActiveTab] = useState("logs");
   const [selectedMetadataFields, setSelectedMetadataFields] = useState<string[]>([]);
+  const [isLiveTail, setIsLiveTail] = useState(false);
+  const [groupBy, setGroupBy] = useState<string | null>(null);
+  const [savedFilters, setSavedFilters] = useState<Array<{
+    name: string;
+    filters: any;
+  }>>([]);
+  const [chartType, setChartType] = useState<"bar" | "line" | "pie">("bar");
+  const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false);
+  const [viewMode, setViewMode] = useState<"split" | "full">("split");
+  const [selectedLogIds, setSelectedLogIds] = useState<string[]>([]);
 
   // Get unique metadata fields from all logs
   const metadataFields = useMemo(() => {
@@ -127,6 +169,74 @@ export default function LogExplorer() {
 
     return { levelStats, serviceStats };
   }, [filteredLogs]);
+
+  // Group logs by specified field
+  const groupedLogs = useMemo(() => {
+    if (!groupBy) return null;
+
+    return filteredLogs.reduce((acc, log) => {
+      const key = groupBy === "service" ? log.service : 
+                 groupBy === "level" ? log.level :
+                 log.metadata[groupBy] || "undefined";
+      
+      if (!acc[key]) {
+        acc[key] = [];
+      }
+      acc[key].push(log);
+      return acc;
+    }, {} as Record<string, typeof filteredLogs>);
+  }, [filteredLogs, groupBy]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey) {
+        switch (e.key) {
+          case "k":
+            e.preventDefault();
+            setShowKeyboardShortcuts(true);
+            break;
+          case "f":
+            e.preventDefault();
+            document.querySelector<HTMLInputElement>('input[placeholder="Search logs..."]')?.focus();
+            break;
+          case "l":
+            e.preventDefault();
+            setIsLiveTail(prev => !prev);
+            break;
+          case "s":
+            e.preventDefault();
+            handleSaveCurrentFilter();
+            break;
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyPress);
+    return () => window.removeEventListener("keydown", handleKeyPress);
+  }, []);
+
+  // Live tail functionality
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isLiveTail) {
+      interval = setInterval(() => {
+        // Simulate new logs in development
+        const newLog = {
+          service: "live_tail_service",
+          level: ["info", "warn", "error"][Math.floor(Math.random() * 3)],
+          message: "New live log entry " + new Date().toISOString(),
+          metadata: {
+            timestamp: new Date().toISOString(),
+            random_value: Math.random(),
+          },
+          timestamp: new Date().toISOString(),
+        };
+        setLogs(prev => [newLog, ...prev].slice(0, 1000)); // Keep last 1000 logs
+      }, 2000);
+    }
+    return () => clearInterval(interval);
+  }, [isLiveTail]);
 
   const getLevelColor = (level: string) => {
     switch (level.toLowerCase()) {
@@ -186,9 +296,42 @@ export default function LogExplorer() {
     document.body.removeChild(link);
   };
 
+  const handleSaveCurrentFilter = () => {
+    const filterName = prompt("Enter a name for this filter:");
+    if (filterName) {
+      setSavedFilters(prev => [...prev, {
+        name: filterName,
+        filters: {
+          searchTerm,
+          selectedLevel,
+          selectedService,
+          timeRange,
+          selectedMetadataFields,
+        }
+      }]);
+      toast.success("Filter saved successfully!");
+    }
+  };
+
+  const applyFilter = (filter: any) => {
+    setSearchTerm(filter.filters.searchTerm);
+    setSelectedLevel(filter.filters.selectedLevel);
+    setSelectedService(filter.filters.selectedService);
+    setTimeRange(filter.filters.timeRange);
+    setSelectedMetadataFields(filter.filters.selectedMetadataFields);
+    toast.success("Filter applied successfully!");
+  };
+
+  const shareSelectedLogs = () => {
+    const selectedLogs = filteredLogs.filter((_, index) => selectedLogIds.includes(index.toString()));
+    const shareUrl = `${window.location.origin}/share?logs=${encodeURIComponent(JSON.stringify(selectedLogs))}`;
+    navigator.clipboard.writeText(shareUrl);
+    toast.success("Share URL copied to clipboard!");
+  };
+
   return (
     <div className="flex flex-col h-screen gap-4 p-4">
-      {/* Header with controls */}
+      {/* Header with enhanced controls */}
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-2 flex-1">
           <div className="relative flex-1">
@@ -231,6 +374,29 @@ export default function LogExplorer() {
               }
             }}
           />
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline">
+                Group By <ChevronDown className="ml-2 h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem onClick={() => setGroupBy(null)}>
+                No Grouping
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setGroupBy("service")}>
+                Service
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setGroupBy("level")}>
+                Log Level
+              </DropdownMenuItem>
+              {metadataFields.map(field => (
+                <DropdownMenuItem key={field} onClick={() => setGroupBy(field)}>
+                  {field}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
         <div className="flex items-center gap-2">
           <DropdownMenu>
@@ -256,16 +422,92 @@ export default function LogExplorer() {
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
-          <Button variant="outline" size="icon" onClick={exportLogs}>
-            <Download className="h-4 w-4" />
+          <Button
+            variant={isLiveTail ? "default" : "outline"}
+            size="icon"
+            onClick={() => setIsLiveTail(!isLiveTail)}
+            title="Live Tail (Ctrl+L)"
+          >
+            {isLiveTail ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
           </Button>
-          <Button variant="outline" size="icon">
-            <RefreshCcw className="h-4 w-4" />
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => setViewMode(prev => prev === "split" ? "full" : "split")}
+          >
+            {viewMode === "split" ? (
+              <Maximize2 className="h-4 w-4" />
+            ) : (
+              <SplitSquareVertical className="h-4 w-4" />
+            )}
           </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="icon">
+                <BarChart2 className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuLabel>Chart Type</DropdownMenuLabel>
+              <DropdownMenuItem onClick={() => setChartType("bar")}>
+                Bar Chart
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setChartType("line")}>
+                Line Chart
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setChartType("pie")}>
+                Pie Chart
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => setShowKeyboardShortcuts(true)}
+          >
+            <Keyboard className="h-4 w-4" />
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline">
+                More <ChevronDown className="ml-2 h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuGroup>
+                <DropdownMenuItem onClick={handleSaveCurrentFilter}>
+                  <BookmarkPlus className="mr-2 h-4 w-4" />
+                  Save Current Filter
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={shareSelectedLogs}>
+                  <Share2 className="mr-2 h-4 w-4" />
+                  Share Selected Logs
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={exportLogs}>
+                  <Download className="mr-2 h-4 w-4" />
+                  Export Logs
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel>Saved Filters</DropdownMenuLabel>
+              {savedFilters.map((filter, index) => (
+                <DropdownMenuItem key={index} onClick={() => applyFilter(filter)}>
+                  {filter.name}
+                  <Trash2
+                    className="ml-2 h-4 w-4 text-destructive"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSavedFilters(prev => prev.filter((_, i) => i !== index));
+                    }}
+                  />
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
-      {/* Main content */}
+      {/* Main content with enhanced features */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1">
         <TabsList>
           <TabsTrigger value="logs">Logs</TabsTrigger>
@@ -358,18 +600,50 @@ export default function LogExplorer() {
 
         <TabsContent value="analytics" className="mt-0">
           <div className="grid grid-cols-2 gap-4">
-            {/* Log Levels Chart */}
+            {/* Enhanced visualization options */}
             <Card className="p-4">
-              <h3 className="text-lg font-semibold mb-4">Log Levels Distribution</h3>
+              <h3 className="text-lg font-semibold mb-4">Log Distribution</h3>
               <div className="h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={statistics.levelStats}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <Tooltip />
-                    <Bar dataKey="count" fill="#3b82f6" />
-                  </BarChart>
+                  {chartType === "bar" && (
+                    <BarChart data={statistics.levelStats}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" />
+                      <YAxis />
+                      <Tooltip />
+                      <Bar dataKey="count" fill="#3b82f6" />
+                    </BarChart>
+                  )}
+                  {chartType === "line" && (
+                    <RechartsLineChart data={statistics.levelStats}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" />
+                      <YAxis />
+                      <Tooltip />
+                      <Line type="monotone" dataKey="count" stroke="#3b82f6" />
+                    </RechartsLineChart>
+                  )}
+                  {chartType === "pie" && (
+                    <RechartsPieChart>
+                      <Pie
+                        data={statistics.levelStats}
+                        dataKey="count"
+                        nameKey="name"
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={100}
+                        fill="#3b82f6"
+                      >
+                        {statistics.levelStats.map((entry, index) => (
+                          <Cell
+                            key={`cell-${index}`}
+                            fill={["#3b82f6", "#ef4444", "#f59e0b"][index % 3]}
+                          />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                    </RechartsPieChart>
+                  )}
                 </ResponsiveContainer>
               </div>
             </Card>
@@ -421,6 +695,36 @@ export default function LogExplorer() {
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Keyboard Shortcuts Dialog */}
+      <Dialog open={showKeyboardShortcuts} onOpenChange={setShowKeyboardShortcuts}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Keyboard Shortcuts</DialogTitle>
+            <DialogDescription>
+              Use these shortcuts to quickly navigate and control the log explorer
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="flex justify-between">
+              <span>Search</span>
+              <kbd className="px-2 py-1 bg-muted rounded">Ctrl/⌘ + F</kbd>
+            </div>
+            <div className="flex justify-between">
+              <span>Live Tail</span>
+              <kbd className="px-2 py-1 bg-muted rounded">Ctrl/⌘ + L</kbd>
+            </div>
+            <div className="flex justify-between">
+              <span>Save Filter</span>
+              <kbd className="px-2 py-1 bg-muted rounded">Ctrl/⌘ + S</kbd>
+            </div>
+            <div className="flex justify-between">
+              <span>Show Shortcuts</span>
+              <kbd className="px-2 py-1 bg-muted rounded">Ctrl/⌘ + K</kbd>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
