@@ -26,7 +26,6 @@ import {
   Webhook,
   Filter,
   Plus,
-  Clock,
   RefreshCw,
   Archive,
   Trash2,

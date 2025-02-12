@@ -5,6 +5,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 CREATE TABLE if not exists users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    tanet_id UUID DEFAULT gen_random_uuid(),
     first_name VARCHAR(100),
     middle_name VARCHAR(100),
     last_name VARCHAR(100),
@@ -15,6 +16,7 @@ CREATE TABLE if not exists users (
 );
 
 CREATE INDEX if not exists idx_users_email ON users(email);
+CREATE INDEX if not exists idx_users_tanet_id ON users(tanet_id);
 -- +goose StatementEnd
 
 -- +goose Down

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useProject } from '@/context/ProjectContext';
-import { Project, Environment } from '@/types/project';
+import { Environment } from '@/types/project';
 import {
   Card,
   CardContent,

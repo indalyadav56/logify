@@ -5,9 +5,10 @@ import (
 
 	"common/pkg/logger"
 	"common/pkg/validator"
-	"github.com/gin-gonic/gin"
 	"logify/internal/auth/dto"
 	"logify/internal/auth/services"
+
+	"github.com/gin-gonic/gin"
 )
 
 type AuthHandler interface {
@@ -68,6 +69,7 @@ func (h *authHandler) Login(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, err.Error())
 		return
 	}
+
 	resp, err := h.service.Login(c.Request.Context(), &req)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, err.Error())
