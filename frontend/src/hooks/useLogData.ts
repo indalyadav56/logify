@@ -12,7 +12,6 @@ export const useLogData = () => {
   const [logs, setLogs] = useState<Log[]>([]);
 
   useEffect(() => {
-    // Sample log data
     const sampleLogs: Log[] = [
       {
         service: "user_service",

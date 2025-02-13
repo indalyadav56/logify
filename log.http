@@ -30,12 +30,26 @@ POST http://localhost:8080/v1/logs
 Content-Type: application/json
 
 {
-  "level": "info",
+  "level": "warning",
   "message": "User login success test",
   "service": "user_service",
   "project_id":"test",
+  "tenant_id":"test",
   "metadata": {
-    "hello": "test"
+    "action": "INTERCEPTOR",
+    "file": "/Users/indal/Desktop/Workspace/paydoh/deployment/bank-api/paydoh-commons/services/logger_service.go",
+    "func_name": "bitbucket.org/paydoh/paydoh-commons/services.(*LoggerService).LogInfo",
+    "level": "info",
+    "line": 246,
+    "msg": "Decrypted response body: {\"Response\":{\"ResponseCode\":\"0\",\"ResponseMessage\":\"SUCCESS\",\"TransID\":\"GITXN201135404\",\"LongCodeMobileNo\":\"9876543210\",\"VMN\":\"9876543210\"}}",
+    "request_body": "{\"encryptReq\":\"bt3IwUo9hu+T9M/BXPKe13Ze1ueapHo71via0NveWpVWkmnDHE17BVCiwRUZm5QSGJTOwkR2cNvqpcXpbf01d+M5c3WnEypjehjM9vk3UTJJ8cIIIDLA6SRorOUXxXXz\"}",
+    "request_host": "localhost:3001",
+    "request_id": "9ee6fe9b-6f99-477d-b163-8da0640669e4",
+    "request_uri": "/fintech/upi/mobile-mapping",
+    "response_body": "{\"encryptRes\":\"UWh0gZ8io4SJ7tKTUysdneEXfboxZ7IwkDa/FSqdtcaaUsDEzGYsYaKJgFi2Cwa7lj9dc6mhS9fnV1P7vDAM1zjiiMFXFFCzmf3NRflxe5A4o9p2NRGPCWPpxb7A1mqn3UmKvNV9AcXX4ctJBLOVW1mTW+V3OylgX2u7+senye8KfvZ4P63fmnL0bjOtbqcn\"}",
+    "response_status_code": 200,
+    "time": "2025-02-11T15:11:57+05:30",
+    "user_id": "77e7924e-ced8-4"
   }
 }
 

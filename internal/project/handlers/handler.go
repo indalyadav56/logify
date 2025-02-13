@@ -46,6 +46,7 @@ func (h *projectHandler) Create(c *gin.Context) {
 		Environment: "dev",
 		ApiKey:      "test123",
 	}
+
 	result, err := h.service.Create(project)
 	if err != nil {
 		h.log.Error("failed to create project", err)

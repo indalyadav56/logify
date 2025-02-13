@@ -84,17 +84,6 @@ services:
     networks:
       - logging-network
 
-  fluent-bit:
-    image: fluent/fluent-bit:latest
-    container_name: fluent-bit
-    volumes:
-      - ./fluent-bit.conf:/fluent-bit/etc/fluent-bit.conf
-      - ./logs:/var/log:ro
-    ports:
-      - "24224:24224"
-    networks:
-      - logging-network
-  
   elasticsearch:
     image: elasticsearch:7.14.2
     container_name: elasticsearch
@@ -104,7 +93,7 @@ services:
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
       - discovery.type=single-node
     volumes:
-      - elasticsearch_data:/var/lib/elasticsearch
+      - elasticsearch_data:/usr/share/elasticsearch/data
     networks:
       - logging-network
   

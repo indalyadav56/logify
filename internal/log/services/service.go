@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"common/pkg/logger"
+	"logify/internal/log/dto"
 	"logify/internal/log/repository"
 
 	"github.com/ThreeDotsLabs/watermill"
@@ -50,13 +51,9 @@ func (s *logService) PublishLog(log string) error {
 		fmt.Println(err)
 	}
 
-	// Topic to publish logs
-	topic := "logify"
-
 	msg := message.NewMessage(watermill.NewUUID(), []byte(log))
 
-	// Publish message
-	if err := publisher.Publish(topic, msg); err != nil {
+	if err := publisher.Publish("logify", msg); err != nil {
 		fmt.Printf("error publishing message: %v", err)
 	} else {
 		fmt.Printf("Published log: %s\n", log)
@@ -85,10 +82,11 @@ func (s *logService) Search(search string) (interface{}, error) {
 		log.Fatalf("Error marshaling query: %s", err)
 	}
 
+	// tenant-tenant-id-project-projectid
+
 	searchRes, err := s.esClient.Search(
 		s.esClient.Search.WithContext(context.Background()),
-		s.esClient.Search.WithIndex("indal"),
-		// s.esClient.Search.WithIndex("project-1-logify-*"),
+		s.esClient.Search.WithIndex("tenant-test-project-test-date-*"),
 		s.esClient.Search.WithBody(bytes.NewReader(jsonQuery)),
 	)
 	if err != nil {
@@ -120,7 +118,6 @@ func (s *logService) GetAllServices() (interface{}, error) {
 			"unique_services": map[string]interface{}{
 				"terms": map[string]interface{}{
 					"field": "service.keyword",
-					"size":  1000,
 				},
 			},
 		},
@@ -168,7 +165,6 @@ func (s *logService) LogConsumer() error {
 		log.Fatal(err)
 	}
 
-	// Subscribe to the "logs" topic
 	messages, err := subscriber.Subscribe(context.Background(), "logify")
 	if err != nil {
 		log.Fatal(err)
@@ -179,31 +175,15 @@ func (s *logService) LogConsumer() error {
 		log.Fatalf("Error creating Elasticsearch client: %v", err)
 	}
 
-	// Process messages
 	go func() {
 		for msg := range messages {
-			type LogEntry struct {
-				Timestamp time.Time `json:"@timestamp"`
-				Log       string    `json:"log"`
+			var logDto dto.Log
+			if err := json.Unmarshal(msg.Payload, &logDto); err != nil {
+				log.Printf("Error unmarshaling message: %v", err)
 			}
 
-			data, err := json.Marshal(LogEntry{
-				Timestamp: time.Now(),
-				Log:       string(msg.Payload),
-			})
-			if err != nil {
-				log.Fatalf("Error marshaling log entry: %v", err)
-			}
-
-			// Insert document
-			index := fmt.Sprintf("%s-logify-%s", "project-1", time.Now().Format("2006-01-02"))
-			_, err = es.Index(index, bytes.NewReader(data))
-			if err != nil {
-				log.Fatalf("Error inserting document: %v", err)
-			}
-
-			// testing insert
-			_, err = es.Index("indal", bytes.NewReader(msg.Payload))
+			index := fmt.Sprintf("tenant-%s-project-%s-date-%s", logDto.TenantID, logDto.ProjectID, time.Now().Format("2006-01-02"))
+			_, err = es.Index(index, bytes.NewReader(msg.Payload))
 			if err != nil {
 				log.Fatalf("Error inserting document: %v", err)
 			}

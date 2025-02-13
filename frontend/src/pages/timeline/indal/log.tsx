@@ -507,51 +507,6 @@ export default function LogExplorer() {
     }
   };
 
-  const getLevelIcon = (level: string) => {
-    switch (level.toLowerCase()) {
-      case "error":
-        return <AlertCircle className="w-4 h-4 text-red-500" />;
-      case "warn":
-        return <AlertCircle className="w-4 h-4 text-yellow-500" />;
-      case "info":
-        return <Info className="w-4 h-4 text-blue-500" />;
-      default:
-        return <Info className="w-4 h-4 text-gray-500" />;
-    }
-  };
-
-  const exportLogs = () => {
-    const exportData = filteredLogs.map((log) => ({
-      ...log,
-      metadata: JSON.stringify(log.metadata),
-    }));
-    const csvContent =
-      "data:text/csv;charset=utf-8," +
-      [
-        ["Timestamp", "Service", "Level", "Message", "Metadata"].join(","),
-        ...exportData.map((log) =>
-          [
-            log.timestamp,
-            log.service,
-            log.level,
-            `"${log.message.replace(/"/g, '""')}"`,
-            `"${log.metadata.replace(/"/g, '""')}"`,
-          ].join(",")
-        ),
-      ].join("\n");
-
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute(
-      "download",
-      `logs_export_${format(new Date(), "yyyy-MM-dd_HH-mm")}.csv`
-    );
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
   const handleSaveCurrentFilter = () => {
     const filterName = prompt("Enter a name for this filter:");
     if (filterName) {
@@ -567,22 +522,6 @@ export default function LogExplorer() {
       }]);
       toast.success("Filter saved successfully!");
     }
-  };
-
-  const applyFilter = (filter: any) => {
-    setSearchTerm(filter.filters.searchTerm);
-    setSelectedLevel(filter.filters.selectedLevel);
-    setSelectedService(filter.filters.selectedService);
-    setTimeRange(filter.filters.timeRange);
-    setSelectedMetadataFields(filter.filters.selectedMetadataFields);
-    toast.success("Filter applied successfully!");
-  };
-
-  const shareSelectedLogs = () => {
-    const selectedLogs = filteredLogs.filter((_, index) => selectedLogIds.includes(index.toString()));
-    const shareUrl = `${window.location.origin}/share?logs=${encodeURIComponent(JSON.stringify(selectedLogs))}`;
-    navigator.clipboard.writeText(shareUrl);
-    toast.success("Share URL copied to clipboard!");
   };
 
   return (

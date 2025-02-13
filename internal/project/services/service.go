@@ -1,9 +1,13 @@
 package services
 
 import (
+	customJWT "common/pkg/jwt"
 	"common/pkg/logger"
+	"fmt"
 	"logify/internal/project/models"
 	"logify/internal/project/repository"
+
+	"github.com/golang-jwt/jwt/v5"
 )
 
 type ProjectService interface {
@@ -16,18 +20,47 @@ type ProjectService interface {
 type projectService struct {
 	projectRepo repository.ProjectRepository
 	log         logger.Logger
+	jwt         customJWT.JWT
 }
 
-func NewProjectService(repo repository.ProjectRepository, log logger.Logger) *projectService {
+func NewProjectService(repo repository.ProjectRepository, log logger.Logger, jwt customJWT.JWT) *projectService {
 	return &projectService{
 		projectRepo: repo,
 		log:         log,
+		jwt:         jwt,
 	}
 }
 
 // Create creates a new project
 func (s *projectService) Create(project *models.Project) (*models.Project, error) {
-	return s.projectRepo.Insert(project)
+	// create api
+	type CustomClaims struct {
+		UserID               int    `json:"user_id"`
+		Email                string `json:"email"`
+		jwt.RegisteredClaims        // Embed registered claims (optional)
+	}
+
+	// Create a new token
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, CustomClaims{
+		UserID: 123,
+		Email:  "user@example.com",
+		// Omit the `exp` field to create a token without expiration
+	})
+
+	// Sign the token with a secret key
+	secretKey := []byte("your-256-bit-secret")
+	signedToken, err := token.SignedString(secretKey)
+	if err != nil {
+		fmt.Println("Failed to sign token:", err)
+	}
+
+	fmt.Println("JWT Token:", signedToken)
+
+	project, err = s.projectRepo.Insert(project)
+	if err != nil {
+		return nil, err
+	}
+	return project, nil
 }
 
 // GetByID retrieves a project by its ID

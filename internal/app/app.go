@@ -1,7 +1,6 @@
 package app
 
 import (
-	"bytes"
 	database "common/pkg/db"
 	"common/pkg/jwt"
 	"common/pkg/logger"
@@ -16,6 +15,7 @@ import (
 
 	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/gin-contrib/cors"
+	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"
 
 	userHandlers "logify/internal/user/handlers"
@@ -116,22 +116,6 @@ func (a *App) initDependencies() error {
 		log.Fatal(err)
 	}
 
-	// testing
-
-	// Insert document
-	index := fmt.Sprintf("indal")
-	_, err = a.deps.EsClient.Index(index, bytes.NewReader([]byte(`{"service":"user_service","level":"info","message":"User logged in","metadata":{"user_id":"123"},"timestamp":"2025-02-08T11:32:57.869754Z"}`)))
-	if err != nil {
-		log.Fatalf("Error inserting document: %v", err)
-	}
-
-	_, err = a.deps.EsClient.Index(index, bytes.NewReader([]byte(`{"service":"auth_service","level":"info","message":"User logged in","metadata":{"user_id":"123"},"timestamp":"2025-02-08T11:32:57.869754Z"}`)))
-	if err != nil {
-		log.Fatalf("Error inserting document: %v", err)
-	}
-
-	// initialize kafka
-
 	a.initRepositories()
 
 	a.initServices()
@@ -160,7 +144,7 @@ func (a *App) initServices() {
 	a.deps.UserService = userServices.NewUserService(a.deps.UserRepository, a.deps.Logger)
 	a.deps.AuthService = authServices.NewAuthService(a.deps.Logger, a.deps.JWT, a.deps.UserService)
 	a.deps.LogService = logServices.NewLogService(a.deps.LogRepository, a.deps.Logger, a.deps.EsClient)
-	a.deps.ProjectService = projectServices.NewProjectService(a.deps.ProjectRepository, a.deps.Logger)
+	a.deps.ProjectService = projectServices.NewProjectService(a.deps.ProjectRepository, a.deps.Logger, a.deps.JWT)
 	a.deps.NotificationService = notificationServices.NewNotificationService(a.deps.NotificationRepository, a.deps.Logger)
 }
 
@@ -174,6 +158,7 @@ func (a *App) initHandlers() {
 
 func (a *App) registerRoutes() {
 	a.deps.Server.Use(cors.Default())
+	a.deps.Server.Use(gzip.Gzip(gzip.DefaultCompression))
 
 	userRoutes.UserRoutes(a.deps.Server, a.deps.UserHandler)
 	authRoutes.AuthRoutes(a.deps.Server, a.deps.AuthHandler)
@@ -189,6 +174,7 @@ func (a *App) registerRoutes() {
 	a.deps.Server.GET("/", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "index.html", gin.H{})
 	})
+
 }
 
 func (a *App) Shutdown() error {

@@ -5,7 +5,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 CREATE TABLE if not exists users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tanet_id UUID DEFAULT gen_random_uuid(),
+    tenant_id UUID DEFAULT gen_random_uuid(),
     first_name VARCHAR(100),
     middle_name VARCHAR(100),
     last_name VARCHAR(100),

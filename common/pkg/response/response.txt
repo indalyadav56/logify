@@ -1,0 +1,135 @@
+package response
+
+import (
+	"net/http"
+	"time"
+)
+
+// APIResponse represents the standard response structure for the API.
+type APIResponse struct {
+	Data       interface{} `json:"data,omitempty"`
+	Message    string      `json:"message,omitempty"`
+	StatusCode int         `json:"status_code,omitempty"`
+	Errors     interface{} `json:"errors,omitempty"`
+	Meta       *Metadata   `json:"meta,omitempty"`
+	Pagination *Pagination `json:"pagination,omitempty"`
+}
+
+// Metadata contains additional information about the response.
+type Metadata struct {
+	Timestamp  time.Time `json:"timestamp"`
+	APIVersion string    `json:"api_version,omitempty"`
+	RequestID  string    `json:"request_id,omitempty"`
+}
+
+// Pagination contains pagination details for list responses.
+type Pagination struct {
+	Total       int `json:"total"`
+	PerPage     int `json:"per_page"`
+	CurrentPage int `json:"current_page"`
+	TotalPages  int `json:"total_pages"`
+}
+
+// Success returns a successful API response.
+func Success(message string, data interface{}, pagination *Pagination) APIResponse {
+	return APIResponse{
+		Data:       data,
+		Message:    message,
+		StatusCode: http.StatusOK,
+		Meta: &Metadata{
+			Timestamp: time.Now(),
+		},
+		Pagination: pagination,
+	}
+}
+
+// Error returns an error API response.
+func Error(statusCode int, message string, err interface{}) APIResponse {
+	return APIResponse{
+		StatusCode: statusCode,
+		Message:    message,
+		Errors:     err,
+		Meta: &Metadata{
+			Timestamp: time.Now(),
+		},
+	}
+}
+
+// BadRequest returns a 400 Bad Request response.
+func BadRequest(message string) APIResponse {
+	return Error(http.StatusBadRequest, message, nil)
+}
+
+// NotFound returns a 404 Not Found response.
+func NotFound(message string) APIResponse {
+	return Error(http.StatusNotFound, message, nil)
+}
+
+// Unauthorized returns a 401 Unauthorized response.
+func Unauthorized(message string) APIResponse {
+	return Error(http.StatusUnauthorized, message, nil)
+}
+
+// Forbidden returns a 403 Forbidden response.
+func Forbidden(message string) APIResponse {
+	return Error(http.StatusForbidden, message, nil)
+}
+
+// Created returns a 201 Created response.
+func Created(message string, data interface{}) APIResponse {
+	return APIResponse{
+		Data:       data,
+		Message:    message,
+		StatusCode: http.StatusCreated,
+		Meta: &Metadata{
+			Timestamp: time.Now(),
+		},
+	}
+}
+
+// NoContent returns a 204 No Content response.
+func NoContent() APIResponse {
+	return APIResponse{
+		StatusCode: http.StatusNoContent,
+		Meta: &Metadata{
+			Timestamp: time.Now(),
+		},
+	}
+}
+
+// InternalServerError returns a 500 Internal Server Error response.
+func InternalServerError(message string) APIResponse {
+	return Error(http.StatusInternalServerError, message, nil)
+}
+
+// RateLimited returns a 429 Too Many Requests response.
+func RateLimited(message string, retryAfter int) APIResponse {
+	resp := Error(http.StatusTooManyRequests, message, nil)
+	resp.Meta = &Metadata{
+		Timestamp: time.Now(),
+	}
+	// Optionally, you can set a custom header for retry-after.
+	// This would require modifying the http.ResponseWriter in your handler.
+	return resp
+}
+
+// WithMetadata adds metadata to the response.
+func (r APIResponse) WithMetadata(apiVersion, requestID string) APIResponse {
+	r.Meta = &Metadata{
+		Timestamp:  time.Now(),
+		APIVersion: apiVersion,
+		RequestID:  requestID,
+	}
+	return r
+}
+
+// WithPagination adds pagination details to the response.
+func (r APIResponse) WithPagination(total, perPage, currentPage int) APIResponse {
+	r.Pagination = &Pagination{
+		Total:       total,
+		PerPage:     perPage,
+		CurrentPage: currentPage,
+		TotalPages:  (total + perPage - 1) / perPage,
+	}
+	return r
+}

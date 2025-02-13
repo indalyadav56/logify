@@ -8,9 +8,9 @@ require (
 	common v1.0.0
 	github.com/ThreeDotsLabs/watermill v1.4.4
 	github.com/ThreeDotsLabs/watermill-kafka/v3 v3.0.6
-	github.com/elastic/go-elasticsearch/v7 v7.17.10
 	github.com/elastic/go-elasticsearch/v8 v8.17.0
 	github.com/gin-contrib/cors v1.7.3
+	github.com/gin-contrib/gzip v0.0.6
 	github.com/gin-gonic/gin v1.10.0
 	github.com/go-playground/validator/v10 v10.23.0
 	github.com/golang-jwt/jwt/v5 v5.2.1

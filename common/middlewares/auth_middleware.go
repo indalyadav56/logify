@@ -3,7 +3,7 @@ package middlewares
 import (
 	"common/pkg/jwt"
 	"common/pkg/logger"
-	"common/pkg/utils/response"
+	"common/pkg/response"
 	"fmt"
 	"net/http"
 	"strings"
@@ -19,7 +19,7 @@ func AuthMiddleware(logger logger.Logger, jwt jwt.JWT) gin.HandlerFunc {
 		if err != nil {
 			logger.Error(fmt.Sprintf("Authorization error: %s | IP: %s", err.Error(), c.ClientIP()))
 			resp := response.Unauthorized(fmt.Sprintf("Authorization error:-%s", err.Error()))
-			c.JSON(resp.Status, resp)
+			c.JSON(http.StatusBadGateway, resp)
 			c.Abort()
 			return
 		}
@@ -28,7 +28,7 @@ func AuthMiddleware(logger logger.Logger, jwt jwt.JWT) gin.HandlerFunc {
 		if err != nil {
 			logger.Error(fmt.Sprintf("Invalid token: %v | IP: %s", err, c.ClientIP()))
 			resp := response.Error(http.StatusBadRequest, "Invalid token", err.Error())
-			c.JSON(resp.Status, resp)
+			c.JSON(http.StatusBadGateway, resp)
 			c.Abort()
 			return
 		}
@@ -37,7 +37,7 @@ func AuthMiddleware(logger logger.Logger, jwt jwt.JWT) gin.HandlerFunc {
 		if err != nil {
 			logger.Error(fmt.Sprintf("Invalid token: %v | IP: %s", err, c.ClientIP()))
 			resp := response.Error(http.StatusBadRequest, "Invalid token", err.Error())
-			c.JSON(resp.Status, resp)
+			c.JSON(http.StatusBadGateway, resp)
 			c.Abort()
 			return
 		}
@@ -45,7 +45,7 @@ func AuthMiddleware(logger logger.Logger, jwt jwt.JWT) gin.HandlerFunc {
 		userId, ok := tokenData["user_id"].(string)
 		if !ok {
 			resp := response.Error(http.StatusBadRequest, "user id does not available in token", nil)
-			c.JSON(resp.Status, resp)
+			c.JSON(http.StatusBadGateway, resp)
 			c.Abort()
 			return
 		}

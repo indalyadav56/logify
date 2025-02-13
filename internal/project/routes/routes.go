@@ -9,7 +9,6 @@ import (
 func ProjectRoutes(app *gin.Engine, h handlers.ProjectHandler) {
 	projectV1 := app.Group("/v1/projects")
 	{
-
 		projectV1.GET("", h.Get)
 		projectV1.POST("", h.Create)
 		projectV1.PATCH("", h.Update)

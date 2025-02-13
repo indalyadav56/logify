@@ -1,0 +1,8 @@
+with-expecter: true
+packages:
+  bankapi/indal/repository:
+    config:
+      all: true
+      dir: "mocks"
+      outpkg: "mocks"
+      

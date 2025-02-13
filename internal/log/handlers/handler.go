@@ -11,7 +11,7 @@ import (
 )
 
 type LogHandler interface {
-	Create(c *gin.Context)
+	PublishLog(c *gin.Context)
 	LogSearch(c *gin.Context)
 	GetAllServices(c *gin.Context)
 }
@@ -36,14 +36,15 @@ func NewLogHandler(service services.LogService, log logger.Logger, validator val
 // @Accept json
 // @Produce json
 // @Router /v1/logs [post]
-func (h *logHandler) Create(c *gin.Context) {
+func (h *logHandler) PublishLog(c *gin.Context) {
 	rawData, err := c.GetRawData()
 	if err != nil {
 		h.log.Error("failed to get raw data", err)
 		c.JSON(500, gin.H{"message": "failed to get raw data"})
 		return
 	}
-	fmt.Println("rawData", string(rawData))
+
+	fmt.Println("rawData:::=>", string(rawData))
 	// if err := h.validator.Validate(rawData); err != nil {
 	// 	h.log.Error("failed to validate raw data", err)
 	// 	c.JSON(400, gin.H{"message": "failed to validate raw data"})
@@ -54,6 +55,7 @@ func (h *logHandler) Create(c *gin.Context) {
 		c.JSON(500, gin.H{"message": "failed to publish log"})
 		return
 	}
+
 	c.JSON(http.StatusAccepted, gin.H{"message": "log created successfully"})
 }
 

@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"common/pkg/logger"
+	"common/pkg/response"
 	"common/pkg/validator"
 	"logify/internal/auth/dto"
 	"logify/internal/auth/services"
@@ -42,17 +43,24 @@ func NewAuthHandler(service services.AuthService, log logger.Logger, validator v
 // @Param user body dto.RegisterRequest true "User details"
 // @Router /auth/register [post]
 func (h *authHandler) Register(c *gin.Context) {
-	var req dto.RegisterRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, err.Error())
-		return
-	}
-	resp, err := h.service.Register(c.Request.Context(), &req)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, err.Error())
-		return
-	}
-	c.JSON(http.StatusOK, resp)
+	response.SendSuccess(c, "User registered successfully", map[string]interface{}{
+		"message": "User registered successfully",
+	}, nil)
+	// var req dto.RegisterRequest
+	// if err := c.ShouldBindJSON(&req); err != nil {
+	// 	resp := response.Error(http.StatusBadRequest, "Failed to register user", err.Error())
+	// 	c.JSON(http.StatusBadRequest, resp)
+	// 	return
+	// }
+
+	// resp, err := h.service.Register(c.Request.Context(), &req)
+	// if err != nil {
+	// 	// response.HandleResponse(c, http.StatusBadRequest, "Failed to register user", nil)
+	// 	return
+	// }
+
+	// res := response.Success("User registered successfully", resp, nil)
+	// c.JSON(res.StatusCode, res.Data)
 }
 
 // Login godoc
@@ -92,11 +100,13 @@ func (h *authHandler) RefreshToken(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, err.Error())
 		return
 	}
+
 	resp, err := h.service.RefreshToken(c.Request.Context(), &req)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, err.Error())
 		return
 	}
+
 	c.JSON(http.StatusOK, resp)
 }
 

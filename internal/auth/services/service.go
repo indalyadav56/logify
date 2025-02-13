@@ -5,11 +5,12 @@ import (
 	"common/pkg/logger"
 	"context"
 	"errors"
-	"github.com/google/uuid"
-	"golang.org/x/crypto/bcrypt"
 	"logify/internal/auth/dto"
 	"logify/internal/user/models"
 	"logify/internal/user/services"
+
+	"github.com/google/uuid"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type AuthService interface {
@@ -47,7 +48,8 @@ func (s *authService) Register(ctx context.Context, req *dto.RegisterRequest) (i
 	}
 
 	token, err := s.jwt.GenerateToken(map[string]interface{}{
-		"user_id": newUser.ID.String(),
+		"user_id":   newUser.ID.String(),
+		"tenant_id": newUser.ID.String(),
 	})
 	if err != nil {
 		return nil, err
