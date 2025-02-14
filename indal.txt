@@ -21,8 +21,7 @@ create library to push/stream in logging dashboard
 
 
 
-
-
+priority base logging :- https://leapcell.io/blog/zap-logging-go-potential?ref=dailydev
 
 
 log search api integration 
@@ -61,7 +60,7 @@ user journey should be with time user has visited 4 services (auth, payment, use
 
 
 
-user coming from web, mobile, as per user agent header
+feature add:- user coming from web, mobile, as per user agent header
 
 
 
@@ -73,3 +72,5 @@ make sensitive data masking engine with custom configrable as per user need also
 
 
 list down each every feature documentation for this
+
+search text highlights feature add

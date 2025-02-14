@@ -1,7 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Select,
@@ -14,23 +13,11 @@ import { JsonView } from "react-json-view-lite";
 import "react-json-view-lite/dist/index.css";
 import {
   Search,
-  Filter,
   Clock,
   AlertCircle,
   Info,
-  Download,
-  ChevronDown,
-  Play,
-  Pause,
-  Keyboard,
-  SplitSquareVertical,
-  Maximize2,
-  Share2,
-  BookmarkPlus,
-  Trash2,
 } from "lucide-react";
 import { useLogData } from "@/hooks/useLogData";
-import { DatePickerWithRange } from "@/components/ui/date-range-picker";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -74,15 +61,8 @@ export default function LogExplorer() {
   const [selectedLevel, setSelectedLevel] = useState<string>("all");
   const [selectedService, setSelectedService] = useState<string>("all");
   const [logs, setLogs] = useState([]);
-  const [timeRange, setTimeRange] = useState<TimeRange>({
-    from: subHours(new Date(), 24),
-    to: new Date(),
-  });
   const [selectedMetadataFields, setSelectedMetadataFields] = useState<string[]>([]);
-  const [isLiveTail, setIsLiveTail] = useState<boolean>(false);
-  const [savedFilters, setSavedFilters] = useState<SavedFilter[]>([]);
   const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState<boolean>(false);
-  const [viewMode, setViewMode] = useState<"split" | "full">("split");
 
   // Get unique metadata fields from all logs
   const metadataFields = useMemo(() => {
@@ -119,25 +99,14 @@ export default function LogExplorer() {
     }
   };
 
-  const handleSaveCurrentFilter = (): void => {
-    const newFilter: SavedFilter = {
-      name: `Filter ${savedFilters.length + 1}`,
-      filters: {
-        searchTerm,
-        level: selectedLevel,
-        service: selectedService,
-        timeRange,
-        metadataFields: selectedMetadataFields,
-      },
-    };
-    setSavedFilters(prev => [...prev, newFilter]);
-    toast.success("Filter saved successfully");
-  };
-
   useEffect(() => {
-    axios.post('http://localhost:8080/v1/logs/search').then((response) => {
-      console.log("INDAL",response.data.logs)
-      setLogs(response.data.logs)
+    axios.post('http://localhost:8080/v1/logs/search', {}, {
+      headers: {
+        'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwcm9qZWN0X2lkIjoiYTdjMDI4MjYtMDA1YS00Y2MxLWE0ZWYtYmMxNjJjY2ZjYWFhIiwidGVuYW50X2lkIjoiZDliZGZjMDYtYWMxYi00MTU5LTg1ZWEtMTNmODVhNjJiNzQ0IiwidXNlcl9pZCI6ImRjZmYxNjFjLWI4YmUtNGRiNS1iYjMzLWFjNjBlMTVmNDM4MiJ9.zlrqHhCe0KErS_-8QOQgla3WWP528G2YjooeU2jIsYk`
+      }
+    }).then((response) => {
+      console.log("INDAL",response.data.data)
+      setLogs(response.data.data)
     });
   },[])
 

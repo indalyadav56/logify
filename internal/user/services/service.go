@@ -11,8 +11,6 @@ type UserService interface {
 	GetByID(id string) (*models.User, error)
 	Update(id string, user *models.User) (*models.User, error)
 	Delete(id string) error
-	// GetAll() ([]*models.User, error)
-	// Search(query string) ([]*models.User, error)
 	GetByEmail(email string) (*models.User, error)
 }
 
@@ -57,16 +55,6 @@ func (s *userService) Update(id string, user *models.User) (*models.User, error)
 func (s *userService) Delete(id string) error {
 	return s.userRepo.Delete(id)
 }
-
-// // GetAll retrieves all user records
-// func (s *userService) GetAll() ([]*models.User, error) {
-// 	return s.userRepo.FindAll()
-// }
-
-// // Search allows searching for user entities based on a query
-// func (s *userService) Search(query string) ([]*models.User, error) {
-// 	return s.userRepo.Search(query)
-// }
 
 func (s *userService) GetByEmail(email string) (*models.User, error) {
 	existingUser, err := s.userRepo.FindByEmail(email)

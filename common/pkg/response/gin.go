@@ -7,12 +7,12 @@ import (
 )
 
 // HandleResponse is a generic function to handle all types of responses.
-func HandleResponse(ctx *gin.Context, statusCode int, message string, dataOrErrors interface{}, pagination *Pagination) {
+func HandleResponse(ctx *gin.Context, statusCode int, message string, dataOrErrors interface{}, pagination ...*Pagination) {
 	var resp APIResponse
 
 	switch {
 	case statusCode >= http.StatusOK && statusCode < http.StatusMultipleChoices: // 2xx range
-		resp = Success(message, dataOrErrors, pagination)
+		resp = Success(message, dataOrErrors, pagination...)
 	case statusCode >= http.StatusBadRequest: // 4xx and 5xx range
 		resp = Error(statusCode, message, dataOrErrors)
 		ctx.Abort()
@@ -25,8 +25,8 @@ func HandleResponse(ctx *gin.Context, statusCode int, message string, dataOrErro
 }
 
 // SendSuccess is a helper function for success responses.
-func SendSuccess(ctx *gin.Context, message string, data interface{}, pagination *Pagination) {
-	HandleResponse(ctx, http.StatusOK, message, data, pagination)
+func SendSuccess(ctx *gin.Context, message string, data interface{}, pagination ...*Pagination) {
+	HandleResponse(ctx, http.StatusOK, message, data, pagination...)
 }
 
 // SendError is a helper function for error responses.

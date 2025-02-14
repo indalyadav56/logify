@@ -4,6 +4,7 @@ import (
 	database "common/pkg/db"
 	"common/pkg/jwt"
 	"common/pkg/logger"
+	"common/pkg/redis"
 	"common/pkg/validator"
 	"logify/config"
 
@@ -36,7 +37,9 @@ type Dependencies struct {
 	Server    *gin.Engine
 	Logger    logger.Logger
 	JWT       jwt.JWT
+	ClientJWT jwt.JWT
 	Validator validator.Validator
+	Redis     redis.Redis
 	EsClient  *elasticsearch.Client
 
 	AuthHandler authHandlers.AuthHandler

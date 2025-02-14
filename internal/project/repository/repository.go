@@ -28,8 +28,8 @@ func NewProjectRepository(db *sql.DB, log logger.Logger) *projectRepository {
 
 // Insert inserts a new record into the database
 func (r *projectRepository) Insert(project *models.Project) (*models.Project, error) {
-	query := "INSERT INTO projects (name, user_id, environment, api_key) VALUES ($1, $2, $3, $4) RETURNING id"
-	err := r.db.QueryRow(query, project.Name, project.UserID, project.Environment, project.ApiKey).Scan(&project.ID)
+	query := "INSERT INTO projects (name, user_id, tenant_id, environment, api_key) VALUES ($1, $2, $3, $4, $5) RETURNING id"
+	err := r.db.QueryRow(query, project.Name, project.UserID, project.TenantID, project.Environment, project.ApiKey).Scan(&project.ID)
 	if err != nil {
 		return nil, err
 	}

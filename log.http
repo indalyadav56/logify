@@ -1,9 +1,11 @@
 GET http://localhost:8080/v1/logs/services
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwcm9qZWN0X2lkIjoiYTdjMDI4MjYtMDA1YS00Y2MxLWE0ZWYtYmMxNjJjY2ZjYWFhIiwidGVuYW50X2lkIjoiZDliZGZjMDYtYWMxYi00MTU5LTg1ZWEtMTNmODVhNjJiNzQ0IiwidXNlcl9pZCI6ImRjZmYxNjFjLWI4YmUtNGRiNS1iYjMzLWFjNjBlMTVmNDM4MiJ9.zlrqHhCe0KErS_-8QOQgla3WWP528G2YjooeU2jIsYk
 Content-Type: application/json
 
 
 ### search logs 
 POST http://localhost:8080/v1/logs/search HTTP/1.1
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwcm9qZWN0X2lkIjoiYTdjMDI4MjYtMDA1YS00Y2MxLWE0ZWYtYmMxNjJjY2ZjYWFhIiwidGVuYW50X2lkIjoiZDliZGZjMDYtYWMxYi00MTU5LTg1ZWEtMTNmODVhNjJiNzQ0IiwidXNlcl9pZCI6ImRjZmYxNjFjLWI4YmUtNGRiNS1iYjMzLWFjNjBlMTVmNDM4MiJ9.zlrqHhCe0KErS_-8QOQgla3WWP528G2YjooeU2jIsYk
 Content-Type: application/json
 
 {
@@ -27,14 +29,15 @@ Content-Type: application/json
 
 ### publish log
 POST http://localhost:8080/v1/logs
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwcm9qZWN0X2lkIjoiYTdjMDI4MjYtMDA1YS00Y2MxLWE0ZWYtYmMxNjJjY2ZjYWFhIiwidGVuYW50X2lkIjoiZDliZGZjMDYtYWMxYi00MTU5LTg1ZWEtMTNmODVhNjJiNzQ0IiwidXNlcl9pZCI6ImRjZmYxNjFjLWI4YmUtNGRiNS1iYjMzLWFjNjBlMTVmNDM4MiJ9.zlrqHhCe0KErS_-8QOQgla3WWP528G2YjooeU2jIsYk
 Content-Type: application/json
 
 {
   "level": "warning",
   "message": "User login success test",
   "service": "user_service",
-  "project_id":"test",
-  "tenant_id":"test",
+  "project_id":"a7c02826-005a-4cc1-a4ef-bc162ccfcaaa",
+  "tenant_id":"d9bdfc06-ac1b-4159-85ea-13f85a62b744",
   "metadata": {
     "action": "INTERCEPTOR",
     "file": "/Users/indal/Desktop/Workspace/paydoh/deployment/bank-api/paydoh-commons/services/logger_service.go",
@@ -52,5 +55,31 @@ Content-Type: application/json
     "user_id": "77e7924e-ced8-4"
   }
 }
+
+
+# for third-party client
+# {
+#   "level": "warning",
+#   "message": "User login success test",
+#   "service": "user_service",
+#   "project_id":"test",
+#   "tenant_id":"test",
+#   "metadata": {
+#     "action": "INTERCEPTOR",
+#     "file": "/Users/indal/Desktop/Workspace/paydoh/deployment/bank-api/paydoh-commons/services/logger_service.go",
+#     "func_name": "bitbucket.org/paydoh/paydoh-commons/services.(*LoggerService).LogInfo",
+#     "level": "info",
+#     "line": 246,
+#     "msg": "Decrypted response body: {\"Response\":{\"ResponseCode\":\"0\",\"ResponseMessage\":\"SUCCESS\",\"TransID\":\"GITXN201135404\",\"LongCodeMobileNo\":\"9876543210\",\"VMN\":\"9876543210\"}}",
+#     "request_body": "{\"encryptReq\":\"bt3IwUo9hu+T9M/BXPKe13Ze1ueapHo71via0NveWpVWkmnDHE17BVCiwRUZm5QSGJTOwkR2cNvqpcXpbf01d+M5c3WnEypjehjM9vk3UTJJ8cIIIDLA6SRorOUXxXXz\"}",
+#     "request_host": "localhost:3001",
+#     "request_id": "9ee6fe9b-6f99-477d-b163-8da0640669e4",
+#     "request_uri": "/fintech/upi/mobile-mapping",
+#     "response_body": "{\"encryptRes\":\"UWh0gZ8io4SJ7tKTUysdneEXfboxZ7IwkDa/FSqdtcaaUsDEzGYsYaKJgFi2Cwa7lj9dc6mhS9fnV1P7vDAM1zjiiMFXFFCzmf3NRflxe5A4o9p2NRGPCWPpxb7A1mqn3UmKvNV9AcXX4ctJBLOVW1mTW+V3OylgX2u7+senye8KfvZ4P63fmnL0bjOtbqcn\"}",
+#     "response_status_code": 200,
+#     "time": "2025-02-11T15:11:57+05:30",
+#     "user_id": "77e7924e-ced8-4"
+#   }
+# }
 
 

@@ -43,24 +43,19 @@ func NewAuthHandler(service services.AuthService, log logger.Logger, validator v
 // @Param user body dto.RegisterRequest true "User details"
 // @Router /auth/register [post]
 func (h *authHandler) Register(c *gin.Context) {
-	response.SendSuccess(c, "User registered successfully", map[string]interface{}{
-		"message": "User registered successfully",
-	}, nil)
-	// var req dto.RegisterRequest
-	// if err := c.ShouldBindJSON(&req); err != nil {
-	// 	resp := response.Error(http.StatusBadRequest, "Failed to register user", err.Error())
-	// 	c.JSON(http.StatusBadRequest, resp)
-	// 	return
-	// }
+	var req dto.RegisterRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.SendError(c, http.StatusBadRequest, "Failed to register user", err)
+		return
+	}
 
-	// resp, err := h.service.Register(c.Request.Context(), &req)
-	// if err != nil {
-	// 	// response.HandleResponse(c, http.StatusBadRequest, "Failed to register user", nil)
-	// 	return
-	// }
+	resp, err := h.service.Register(c.Request.Context(), &req)
+	if err != nil {
+		response.SendError(c, http.StatusInternalServerError, "Failed to register user", err)
+		return
+	}
 
-	// res := response.Success("User registered successfully", resp, nil)
-	// c.JSON(res.StatusCode, res.Data)
+	response.SendSuccess(c, "User registered successfully", resp)
 }
 
 // Login godoc
@@ -74,16 +69,17 @@ func (h *authHandler) Register(c *gin.Context) {
 func (h *authHandler) Login(c *gin.Context) {
 	var req dto.LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, err.Error())
+		response.SendError(c, http.StatusBadRequest, "Failed to login user", err)
 		return
 	}
 
 	resp, err := h.service.Login(c.Request.Context(), &req)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, err.Error())
+		response.SendError(c, http.StatusBadRequest, "Failed to login user", err)
 		return
 	}
-	c.JSON(http.StatusOK, resp)
+
+	response.SendSuccess(c, "User logged in successfully", resp)
 }
 
 // RefreshToken godoc

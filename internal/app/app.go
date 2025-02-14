@@ -1,6 +1,7 @@
 package app
 
 import (
+	commonMiddlewares "common/middlewares"
 	database "common/pkg/db"
 	"common/pkg/jwt"
 	"common/pkg/logger"
@@ -104,6 +105,13 @@ func (a *App) initDependencies() error {
 	}
 	a.deps.JWT = jwt.New(jwtConfig)
 
+	// for client  project api key
+	jwtClientConfig := jwt.JWTConfig{
+		SecretKey:     []byte(a.deps.Config.ClientJWTSecret),
+		TokenDuration: time.Duration(a.deps.Config.JWTExpirationDays) * 24 * time.Hour,
+	}
+	a.deps.ClientJWT = jwt.New(jwtClientConfig)
+
 	a.deps.Server = gin.Default()
 
 	// Initialize Elasticsearch client
@@ -144,7 +152,7 @@ func (a *App) initServices() {
 	a.deps.UserService = userServices.NewUserService(a.deps.UserRepository, a.deps.Logger)
 	a.deps.AuthService = authServices.NewAuthService(a.deps.Logger, a.deps.JWT, a.deps.UserService)
 	a.deps.LogService = logServices.NewLogService(a.deps.LogRepository, a.deps.Logger, a.deps.EsClient)
-	a.deps.ProjectService = projectServices.NewProjectService(a.deps.ProjectRepository, a.deps.Logger, a.deps.JWT)
+	a.deps.ProjectService = projectServices.NewProjectService(a.deps.ProjectRepository, a.deps.Logger, a.deps.ClientJWT)
 	a.deps.NotificationService = notificationServices.NewNotificationService(a.deps.NotificationRepository, a.deps.Logger)
 }
 
@@ -157,13 +165,20 @@ func (a *App) initHandlers() {
 }
 
 func (a *App) registerRoutes() {
-	a.deps.Server.Use(cors.Default())
+	a.deps.Server.Use(cors.New(cors.Config{
+		AllowAllOrigins: true,
+		AllowMethods:    []string{"GET", "POST", "PUT", "DELETE"},
+		AllowHeaders:    []string{"Origin", "Content-Type", "Authorization"},
+	}))
 	a.deps.Server.Use(gzip.Gzip(gzip.DefaultCompression))
+	a.deps.Server.Use(commonMiddlewares.LoggerMiddleware(a.deps.Logger, a.deps.JWT))
+
+	// a.deps.Server.Use(middlewares.CheckStorageLimit(a.deps.Redis))
 
 	userRoutes.UserRoutes(a.deps.Server, a.deps.UserHandler)
 	authRoutes.AuthRoutes(a.deps.Server, a.deps.AuthHandler)
-	logRoutes.LogRoutes(a.deps.Server, a.deps.LogHandler)
-	projectRoutes.ProjectRoutes(a.deps.Server, a.deps.ProjectHandler)
+	logRoutes.LogRoutes(a.deps.Server, a.deps.LogHandler, a.deps.Logger, a.deps.ClientJWT)
+	projectRoutes.ProjectRoutes(a.deps.Server, a.deps.ProjectHandler, a.deps.Logger, a.deps.JWT)
 	notificationRoutes.NotificationRoutes(a.deps.Server, a.deps.NotificationHandler)
 
 	a.deps.Server.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))

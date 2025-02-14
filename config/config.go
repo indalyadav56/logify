@@ -29,6 +29,8 @@ type Config struct {
 	JWTSecret         string `mapstructure:"JWT_SECRET" validate:"required"`
 	JWTExpirationDays int    `mapstructure:"JWT_EXPIRATION_DAYS" validate:"required,gt=0"`
 
+	ClientJWTSecret string `mapstructure:"CLIENT_JWT_SECRET" validate:"required"`
+
 	// log
 	LogFilePath string `mapstructure:"LOG_FILE_PATH"`
 }

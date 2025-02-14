@@ -27,7 +27,7 @@ func NewUserRepository(db *sql.DB, log logger.Logger) *userRepository {
 	}
 }
 
-// Insert inserts a new record into the database
+// Insert inserts a new record into the database.
 func (r *userRepository) Insert(user *models.User) (*models.User, error) {
 
 	query := "INSERT INTO users (first_name, last_name, email, password) VALUES ($1, $2, $3, $4) RETURNING id"
@@ -107,10 +107,10 @@ func (r *userRepository) Delete(id string) error {
 
 func (r *userRepository) FindByEmail(email string) (*models.User, error) {
 	query := `
-		SELECT id, first_name, middle_name, last_name, email, password from users where email = $1;
+		SELECT id, tenant_id, first_name, middle_name, last_name, email, password from users where email = $1;
 	`
 	var user models.User
-	err := r.db.QueryRow(query, email).Scan(&user.ID, &user.FirstName, &user.MiddleName, &user.LastName, &user.Email, &user.Password)
+	err := r.db.QueryRow(query, email).Scan(&user.ID, &user.TenantID, &user.FirstName, &user.MiddleName, &user.LastName, &user.Email, &user.Password)
 	if err != nil {
 		return nil, err
 	}

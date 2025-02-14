@@ -19,8 +19,8 @@ import (
 )
 
 type LogService interface {
-	PublishLog(log string) error
-	Search(query string) (interface{}, error)
+	PublishLog(log string, tenantID string, projectID string) error
+	Search(query string, tenantID string, projectID string) (interface{}, error)
 	GetAllServices() (interface{}, error)
 	LogConsumer() error
 }
@@ -39,7 +39,7 @@ func NewLogService(repo repository.LogRepository, log logger.Logger, esClient *e
 	}
 }
 
-func (s *logService) PublishLog(log string) error {
+func (s *logService) PublishLog(log string, tenantID string, projectID string) error {
 	publisher, err := kafka.NewPublisher(
 		kafka.PublisherConfig{
 			Brokers:   []string{"localhost:9092"},
@@ -62,7 +62,7 @@ func (s *logService) PublishLog(log string) error {
 	return nil
 }
 
-func (s *logService) Search(search string) (interface{}, error) {
+func (s *logService) Search(search string, tenantID string, projectID string) (interface{}, error) {
 	query := map[string]interface{}{
 		"query": map[string]interface{}{
 			"bool": map[string]interface{}{
@@ -82,11 +82,10 @@ func (s *logService) Search(search string) (interface{}, error) {
 		log.Fatalf("Error marshaling query: %s", err)
 	}
 
-	// tenant-tenant-id-project-projectid
-
+	index := fmt.Sprintf("tenant-%s-project-%s-date-*", tenantID, projectID)
 	searchRes, err := s.esClient.Search(
 		s.esClient.Search.WithContext(context.Background()),
-		s.esClient.Search.WithIndex("tenant-test-project-test-date-*"),
+		s.esClient.Search.WithIndex(index),
 		s.esClient.Search.WithBody(bytes.NewReader(jsonQuery)),
 	)
 	if err != nil {

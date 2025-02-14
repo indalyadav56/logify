@@ -16,7 +16,7 @@ CREATE TABLE if not exists users (
 );
 
 CREATE INDEX if not exists idx_users_email ON users(email);
-CREATE INDEX if not exists idx_users_tanet_id ON users(tanet_id);
+CREATE INDEX if not exists idx_users_tenant_id ON users(tenant_id);
 -- +goose StatementEnd
 
 -- +goose Down

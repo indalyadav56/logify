@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"common/pkg/logger"
+	"common/pkg/response"
 	"common/pkg/validator"
 	"fmt"
 	"logify/internal/log/services"
@@ -37,10 +38,13 @@ func NewLogHandler(service services.LogService, log logger.Logger, validator val
 // @Produce json
 // @Router /v1/logs [post]
 func (h *logHandler) PublishLog(c *gin.Context) {
+	tenantID := c.MustGet("tenant_id").(string)
+	projectID := c.MustGet("project_id").(string)
+
 	rawData, err := c.GetRawData()
 	if err != nil {
 		h.log.Error("failed to get raw data", err)
-		c.JSON(500, gin.H{"message": "failed to get raw data"})
+		response.SendError(c, http.StatusInternalServerError, "failed to get raw data", err)
 		return
 	}
 
@@ -50,34 +54,38 @@ func (h *logHandler) PublishLog(c *gin.Context) {
 	// 	c.JSON(400, gin.H{"message": "failed to validate raw data"})
 	// 	return
 	// }
-	if err := h.service.PublishLog(string(rawData)); err != nil {
+	if err := h.service.PublishLog(string(rawData), tenantID, projectID); err != nil {
 		h.log.Error("failed to publish log", err)
-		c.JSON(500, gin.H{"message": "failed to publish log"})
+		response.SendError(c, http.StatusInternalServerError, "failed to publish log", err)
 		return
 	}
 
-	c.JSON(http.StatusAccepted, gin.H{"message": "log created successfully"})
+	response.SendSuccess(c, "log created successfully", nil)
 }
 
 func (h *logHandler) LogSearch(c *gin.Context) {
-	result, err := h.service.Search("query")
+	tenantID := c.MustGet("tenant_id").(string)
+	projectID := c.MustGet("project_id").(string)
+
+	result, err := h.service.Search("query", tenantID, projectID)
 	if err != nil {
 		h.log.Error("failed to filter logs", err)
-		c.JSON(500, gin.H{"message": "failed to filter logs"})
+		response.SendError(c, http.StatusInternalServerError, "failed to filter logs", err)
 		return
 	}
 
-	c.JSON(200, gin.H{"message": "Get log", "logs": result})
+	response.SendSuccess(c, "Get log", result)
+
 }
 
 func (h *logHandler) GetAllServices(c *gin.Context) {
 	result, err := h.service.GetAllServices()
 	if err != nil {
-		h.log.Error("failed to filter logs", err)
-		c.JSON(500, gin.H{"message": "failed to filter logs"})
+		h.log.Error("failed to get all services", err)
+		response.SendError(c, http.StatusInternalServerError, "failed to get all services", err)
 		return
 	}
 
-	c.JSON(200, gin.H{"message": "Get log", "logs": result})
+	response.SendSuccess(c, "Get log", result)
 
 }

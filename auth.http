@@ -2,7 +2,7 @@ POST http://localhost:8080/v1/auth/login
 Content-Type: application/json
 
 {
-    "email": "admin@admin.com",
+    "email": "admin123@admin.com",
     "password": "admin"
 }
 
@@ -11,6 +11,6 @@ POST http://localhost:8080/v1/auth/register
 Content-Type: application/json
 
 {
-    "email": "admin@admin.com",
+    "email": "admin123@admin.com",
     "password": "admin"
 }

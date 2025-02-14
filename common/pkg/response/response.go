@@ -29,7 +29,7 @@ type Pagination struct {
 	TotalPages  int `json:"total_pages"`
 }
 
-func Success(message string, data interface{}, pagination *Pagination) APIResponse {
+func Success(message string, data interface{}, pagination ...*Pagination) APIResponse {
 	return APIResponse{
 		Data:       data,
 		Message:    message,
@@ -39,6 +39,21 @@ func Success(message string, data interface{}, pagination *Pagination) APIRespon
 		// },
 		// Pagination: pagination,
 	}
+}
+
+func SuccessWithPagination(message string, data interface{}, pagination *Pagination) APIResponse {
+	return APIResponse{
+		Data:       data,
+		Message:    message,
+		StatusCode: http.StatusOK,
+		Meta: &Metadata{
+			Timestamp: time.Now(),
+		},
+		Pagination: pagination,
+	}
+}
+
+func parseError(statusCode int, message string, err interface{}) {
 }
 
 func Error(statusCode int, message string, err interface{}) APIResponse {

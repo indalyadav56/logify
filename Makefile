@@ -1,3 +1,11 @@
+# include .env
+
+# # Export all variables from .env
+# export $(shell sed 's/=.*//' .env)
+
+# DB_STRING = postgres://$(POSTGRES_USER_NAME):$(POSTGRES_PASSWORD)@$(POSTGRES_HOST):5432/$(POSTGRES_DATABASE)?sslmode=disable
+
+
 
 # Project variables
 BINARY_NAME := myapp
