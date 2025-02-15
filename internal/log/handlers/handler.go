@@ -4,9 +4,10 @@ import (
 	"common/pkg/logger"
 	"common/pkg/response"
 	"common/pkg/validator"
-	"fmt"
+	"logify/internal/log/dto"
 	"logify/internal/log/services"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -41,20 +42,26 @@ func (h *logHandler) PublishLog(c *gin.Context) {
 	tenantID := c.MustGet("tenant_id").(string)
 	projectID := c.MustGet("project_id").(string)
 
-	rawData, err := c.GetRawData()
-	if err != nil {
-		h.log.Error("failed to get raw data", err)
-		response.SendError(c, http.StatusInternalServerError, "failed to get raw data", err)
-		return
-	}
-
-	fmt.Println("rawData:::=>", string(rawData))
 	// if err := h.validator.Validate(rawData); err != nil {
 	// 	h.log.Error("failed to validate raw data", err)
 	// 	c.JSON(400, gin.H{"message": "failed to validate raw data"})
 	// 	return
 	// }
-	if err := h.service.PublishLog(string(rawData), tenantID, projectID); err != nil {
+
+	var req dto.LogRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		h.log.Error("failed to bind json", err)
+		response.SendError(c, http.StatusBadRequest, "failed to bind json", err)
+		return
+	}
+
+	if req.Timestamp == "" {
+		req.Timestamp = time.Now().UTC().Format(time.RFC3339)
+	}
+
+	req.TenantID = tenantID
+	req.ProjectID = projectID
+	if err := h.service.PublishLog(&req); err != nil {
 		h.log.Error("failed to publish log", err)
 		response.SendError(c, http.StatusInternalServerError, "failed to publish log", err)
 		return
@@ -67,7 +74,17 @@ func (h *logHandler) LogSearch(c *gin.Context) {
 	tenantID := c.MustGet("tenant_id").(string)
 	projectID := c.MustGet("project_id").(string)
 
-	result, err := h.service.Search("query", tenantID, projectID)
+	var req dto.LogSearchRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		h.log.Error("failed to bind json", err)
+		response.SendError(c, http.StatusBadRequest, "failed to bind json", err)
+		return
+	}
+
+	req.TenantID = tenantID
+	req.ProjectID = projectID
+
+	result, err := h.service.Search(&req)
 	if err != nil {
 		h.log.Error("failed to filter logs", err)
 		response.SendError(c, http.StatusInternalServerError, "failed to filter logs", err)

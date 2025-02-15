@@ -3,19 +3,12 @@ import { Link, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { ThemeToggle } from "@/components/theme/theme-toggle";
 import {
   ChevronLeft,
   ChevronRight,
   BarChart2,
   LayoutDashboard,
-  Settings,
-  Users,
-  Boxes,
-  AlertCircle,
   Terminal,
-  FileText,
-  Gauge,
 } from "lucide-react";
 
 interface NavItem {
@@ -37,45 +30,13 @@ const sidebarItems: NavItem[] = [
     icon: <BarChart2 className="h-5 w-5" />,
   },
   {
-    title: "Monitoring",
-    href: "/monitoring",
-    icon: <Gauge className="h-5 w-5" />,
-  },
-  {
     title: "Logs",
     href: "/logs",
     icon: <Terminal className="h-5 w-5" />,
     badge: 3,
-  },
-  {
-    title: "Resources",
-    href: "/resources",
-    icon: <Boxes className="h-5 w-5" />,
-  },
-  {
-    title: "Documentation",
-    href: "/docs",
-    icon: <FileText className="h-5 w-5" />,
-  },
-  {
-    title: "Team",
-    href: "/team",
-    icon: <Users className="h-5 w-5" />,
-  },
+  }
 ];
 
-const bottomItems: NavItem[] = [
-  {
-    title: "Settings",
-    href: "/settings",
-    icon: <Settings className="h-5 w-5" />,
-  },
-  {
-    title: "Support",
-    href: "/support",
-    icon: <AlertCircle className="h-5 w-5" />,
-  },
-];
 
 interface SidebarProps {
   className?: string;
@@ -160,16 +121,6 @@ export const Sidebar = ({ className }: SidebarProps) => {
           <NavItem key={item.href} item={item} />
         ))}
       </nav>
-
-      {/* Bottom Items */}
-      <div className="border-t px-3 py-4 space-y-3">
-        {bottomItems.map((item) => (
-          <NavItem key={item.href} item={item} />
-        ))}
-        <div className="px-3">
-          <ThemeToggle />
-        </div>
-      </div>
     </motion.aside>
   );
 };

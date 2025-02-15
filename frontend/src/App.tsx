@@ -3,8 +3,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import MainLayout from "@/layouts/MainLayout";
 
-const LogExplorer = lazy(() => import("@/pages/explorer/LogExplorer"));
-const Indal = lazy(() => import("@/pages/indal/indal"));
+const LogPage = lazy(() => import("@/pages/logs/Logs"));
 
 const PageLoading = () => (
   <div className="flex items-center justify-center min-h-screen">
@@ -20,8 +19,7 @@ function App() {
           <Routes>
             {/* Main layout routes */}
             <Route element={<MainLayout />}>
-              <Route path="/" element={<LogExplorer />} />
-              <Route path="/indal" element={<Indal />} />
+              <Route path="/" element={<LogPage/>} />
             </Route>
 
             {/* Catch all route */}

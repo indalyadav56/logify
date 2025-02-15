@@ -47,6 +47,12 @@ log search api integration
   }
 }
 
+logger.log({
+  level: 'info',
+  message: 'Hello distributed log files!'
+});
+
+
 
 encryption integration 
 auth integration
@@ -74,3 +80,28 @@ make sensitive data masking engine with custom configrable as per user need also
 list down each every feature documentation for this
 
 search text highlights feature add
+
+
+input and output builder tool for custom data param binding for unstructure logs 
+
+
+
+POST http://localhost:8080/v1/logs
+Content-Type: application/json
+Authorization: Bearer <your-token>
+
+[
+  {
+    "level": "error",
+    "message": "User login failed",
+    "service": "user-service",
+    "timestamp": "2025-02-11T15:11:57+05:30",
+    "metadata": { "test": "test" }
+  },
+  {
+    "level": "info",
+    "message": "User logged in",
+    "service": "auth-service",
+    "timestamp": "2025-02-11T16:00:00+05:30"
+  }
+]

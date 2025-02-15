@@ -16,11 +16,12 @@ import (
 	"github.com/ThreeDotsLabs/watermill-kafka/v3/pkg/kafka"
 	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/elastic/go-elasticsearch/v8"
+	"github.com/google/uuid"
 )
 
 type LogService interface {
-	PublishLog(log string, tenantID string, projectID string) error
-	Search(query string, tenantID string, projectID string) (interface{}, error)
+	PublishLog(log *dto.LogRequest) error
+	Search(req *dto.LogSearchRequest) (interface{}, error)
 	GetAllServices() (interface{}, error)
 	LogConsumer() error
 }
@@ -39,7 +40,7 @@ func NewLogService(repo repository.LogRepository, log logger.Logger, esClient *e
 	}
 }
 
-func (s *logService) PublishLog(log string, tenantID string, projectID string) error {
+func (s *logService) PublishLog(log *dto.LogRequest) error {
 	publisher, err := kafka.NewPublisher(
 		kafka.PublisherConfig{
 			Brokers:   []string{"localhost:9092"},
@@ -51,7 +52,13 @@ func (s *logService) PublishLog(log string, tenantID string, projectID string) e
 		fmt.Println(err)
 	}
 
-	msg := message.NewMessage(watermill.NewUUID(), []byte(log))
+	log.ID = uuid.New().String()
+	byteData, err := json.Marshal(log)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	msg := message.NewMessage(watermill.NewUUID(), byteData)
 
 	if err := publisher.Publish("logify", msg); err != nil {
 		fmt.Printf("error publishing message: %v", err)
@@ -62,19 +69,146 @@ func (s *logService) PublishLog(log string, tenantID string, projectID string) e
 	return nil
 }
 
-func (s *logService) Search(search string, tenantID string, projectID string) (interface{}, error) {
+// BuildElasticsearchQuery constructs the Elasticsearch query from LogSearchRequest
+func BuildElasticsearchQuery(req *dto.LogSearchRequest) (map[string]interface{}, error) {
+	mustClauses := []map[string]interface{}{}
+
+	// Add case-insensitive wildcard search for messages
+	if len(req.MessageContains) > 0 {
+		for _, msg := range req.MessageContains {
+			mustClauses = append(mustClauses, map[string]interface{}{
+				"multi_match": map[string]interface{}{
+					"query":    msg,
+					"type":     "best_fields",
+					"operator": "AND",
+				},
+			})
+		}
+	}
+
+	// **Case-insensitive match for `service` field (multiple values)**
+	if len(req.Services) > 0 {
+		serviceClauses := []map[string]interface{}{}
+		for _, service := range req.Services {
+			serviceClauses = append(serviceClauses, map[string]interface{}{
+				"match": map[string]interface{}{
+					"service": service,
+				},
+			})
+		}
+		mustClauses = append(mustClauses, map[string]interface{}{
+			"bool": map[string]interface{}{
+				"should":               serviceClauses,
+				"minimum_should_match": 100, // At least one service must match
+			},
+		})
+	}
+
+	// **Case-insensitive match for `level` field (multiple values)**
+	if len(req.Levels) > 0 {
+		levelClauses := []map[string]interface{}{}
+		for _, level := range req.Levels {
+			levelClauses = append(levelClauses, map[string]interface{}{
+				"match": map[string]interface{}{
+					"level": level,
+				},
+			})
+		}
+		mustClauses = append(mustClauses, map[string]interface{}{
+			"bool": map[string]interface{}{
+				"should":               levelClauses,
+				"minimum_should_match": 1, // At least one level must match
+			},
+		})
+	}
+
+	// Add timestamp range filter
+	if req.TimestampRange.From != "" && req.TimestampRange.To != "" {
+		mustClauses = append(mustClauses, map[string]interface{}{
+			"range": map[string]interface{}{
+				"timestamp": map[string]interface{}{
+					"gte":    req.TimestampRange.From, // Greater than or equal to `from`
+					"lte":    req.TimestampRange.To,   // Less than or equal to `to`
+					"format": "strict_date_optional_time",
+				},
+			},
+		})
+	}
+
+	// Add metadata filters (key-value pairs)
+	for key, value := range req.Metadata {
+		mustClauses = append(mustClauses, map[string]interface{}{
+			"match": map[string]interface{}{
+				fmt.Sprintf("metadata.%s.keyword", key): value, // Using keyword for exact match
+			},
+		})
+	}
+
+	// **Add required project_id filter** (Using .keyword for exact match)
+	if req.ProjectID != "" {
+		mustClauses = append(mustClauses, map[string]interface{}{
+			"term": map[string]interface{}{
+				"project_id.keyword": req.ProjectID,
+			},
+		})
+	}
+
+	// **Add required tenant_id filter** (Using .keyword for exact match)
+	if req.TenantID != "" {
+		mustClauses = append(mustClauses, map[string]interface{}{
+			"term": map[string]interface{}{
+				"tenant_id.keyword": req.TenantID,
+			},
+		})
+	}
+
+	// Set default sorting field & order
+	sortBy := "timestamp"
+	if req.Sort != "" {
+		sortBy = req.Sort // Use user-defined field
+	}
+
+	sortOrder := "desc" // Default order
+	if req.Order == "asc" {
+		sortOrder = "asc"
+	}
+
+	// Set default pagination values
+	page := req.Page
+	if page < 1 {
+		page = 1
+	}
+	size := req.Limit
+	if size <= 0 {
+		size = 10 // Default to 10 results per page
+	}
+	from := (page - 1) * size // Calculate "from" for pagination
+
+	// Construct the final Elasticsearch query
 	query := map[string]interface{}{
 		"query": map[string]interface{}{
 			"bool": map[string]interface{}{
-				"must": []map[string]interface{}{
-					// {
-					// 	"match": map[string]interface{}{
-					// 		"log": "info",
-					// 	},
-					// },
+				"must": mustClauses,
+			},
+		},
+		"sort": []map[string]interface{}{
+			{
+				sortBy: map[string]interface{}{
+					"order": sortOrder,
 				},
 			},
 		},
+		"from": from, // Pagination start index
+		"size": size, // Number of results per page
+	}
+
+	return query, nil
+}
+
+func (s *logService) Search(req *dto.LogSearchRequest) (interface{}, error) {
+	query, err := BuildElasticsearchQuery(req)
+	if err != nil {
+		return nil, err
 	}
 
 	jsonQuery, err := json.Marshal(query)
@@ -82,7 +216,9 @@ func (s *logService) Search(search string, tenantID string, projectID string) (i
 		log.Fatalf("Error marshaling query: %s", err)
 	}
 
-	index := fmt.Sprintf("tenant-%s-project-%s-date-*", tenantID, projectID)
+	fmt.Println("jsonQuery", string(jsonQuery))
+
+	index := fmt.Sprintf("tenant-%s-project-%s-date-*", req.TenantID, req.ProjectID)
 	searchRes, err := s.esClient.Search(
 		s.esClient.Search.WithContext(context.Background()),
 		s.esClient.Search.WithIndex(index),
@@ -176,7 +312,7 @@ func (s *logService) LogConsumer() error {
 
 	go func() {
 		for msg := range messages {
-			var logDto dto.Log
+			var logDto dto.LogRequest
 			if err := json.Unmarshal(msg.Payload, &logDto); err != nil {
 				log.Printf("Error unmarshaling message: %v", err)
 			}
@@ -193,3 +329,33 @@ func (s *logService) LogConsumer() error {
 
 	return nil
 }
+
+// // IndexLog indexes a single log entry into Elasticsearch
+// func (e *logService) IndexLog(ctx context.Context, logEntry dto.Log) error {
+// 	// Define the index format
+// 	index := fmt.Sprintf("tenant-%s-project-%s-date-%s",
+// 		logEntry.TenantID,
+// 		logEntry.ProjectID,
+// 		logEntry.Timestamp.Format("2006-01-02"),
+// 	)
+
+// 	// Marshal logEntry to JSON
+// 	data, err := json.Marshal(logEntry)
+// 	if err != nil {
+// 		log.Printf("Error marshaling log entry: %v", err)
+// 		return err
+// 	}
+
+// 	// Index document in Elasticsearch
+// 	req := bytes.NewReader(data)
+// 	res, err := e.client.Index(index, req)
+// 	if err != nil {
+// 		log.Printf("Error inserting document into Elasticsearch: %v", err)
+// 		return err
+// 	}
+// 	defer res.Body.Close()
+
+// 	// Log success response
+// 	log.Printf("Document indexed successfully in %s", index)
+// 	return nil
+// }
