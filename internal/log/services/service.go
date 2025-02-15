@@ -239,6 +239,10 @@ func (s *logService) Search(req *dto.LogSearchRequest) (interface{}, error) {
 	hits := result["hits"].(map[string]interface{})["hits"].([]interface{})
 	for _, hit := range hits {
 		source := hit.(map[string]interface{})["_source"].(map[string]interface{})
+		fmt.Print("source_INDAL===>", source)
+		delete(source, "project_id")
+		delete(source, "tenant_id")
+		delete(source, "user_id")
 		logs = append(logs, source)
 	}
 

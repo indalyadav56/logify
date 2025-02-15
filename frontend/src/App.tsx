@@ -3,7 +3,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import MainLayout from "@/layouts/MainLayout";
 
-const LogPage = lazy(() => import("@/pages/logs/Logs"));
+const LogPage = lazy(() => import("@/pages/explorer/Logs"));
 
 const PageLoading = () => (
   <div className="flex items-center justify-center min-h-screen">
