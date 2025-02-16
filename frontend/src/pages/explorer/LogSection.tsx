@@ -1,35 +1,17 @@
 import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-} from "@/components/ui/card";
 import { formatDistanceToNow, format } from "date-fns";
 import {
-  Copy,
   AlertTriangle,
   Info,
   FileText,
-  Maximize2,
   Share2,
   Download,
-  Terminal,
-  Filter,
-  Bookmark,
-  BookmarkCheck,
   Table,
   List,
   Calendar,
-  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useCallback, useEffect } from "react";
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "@/components/ui/hover-card";
 import {
   Dialog,
   DialogContent,
@@ -37,19 +19,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TimelineView } from "./components/TimelineView";
 import { TableView } from "./components/TableView";
 import { ListView } from "./components/ListView";
+import { CompactView } from "./components/CompactView";
 import LogSectionHeader from "./components/LogSectionHeader";
 
 interface Log {
@@ -81,7 +57,6 @@ export default function LogSection({ logs }: LogSectionProps) {
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [quickFilter, setQuickFilter] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>("list");
-  const [selectedLogs, setSelectedLogs] = useState<Set<string>>(new Set());
   const [theme, setTheme] = useState<Theme>("system");
   const [fontSize, setFontSize] = useState(14);
   const [compactMode, setCompactMode] = useState(false);
@@ -89,58 +64,6 @@ export default function LogSection({ logs }: LogSectionProps) {
   const [visibleColumns, setVisibleColumns] = useState<Set<string>>(
     new Set(["level", "message", "timestamp", "service"])
   );
-  const [customFilters, setCustomFilters] = useState<
-    Array<{ id: string; field: string; value: string }>
-  >([]);
-  const [savedViews, setSavedViews] = useState<
-    Array<{ id: string; name: string; filters: any }>
-  >([]);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [autoRefresh, setAutoRefresh] = useState(false);
-  const [refreshInterval, setRefreshInterval] = useState(30); // seconds
-  const [lastRefresh, setLastRefresh] = useState(new Date());
-
-  // Auto-refresh functionality
-  useEffect(() => {
-    let intervalId: NodeJS.Timeout;
-
-    if (autoRefresh) {
-      intervalId = setInterval(() => {
-        handleRefresh();
-      }, refreshInterval * 1000);
-    }
-
-    return () => {
-      if (intervalId) {
-        clearInterval(intervalId);
-      }
-    };
-  }, [autoRefresh, refreshInterval]);
-
-  // Handle manual refresh
-  const handleRefresh = useCallback(async () => {
-    setIsRefreshing(true);
-    try {
-      // Simulate refresh - replace this with your actual refresh logic
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      setLastRefresh(new Date());
-      toast.success("Logs refreshed successfully");
-    } catch (error) {
-      toast.error("Failed to refresh logs");
-    } finally {
-      setIsRefreshing(false);
-    }
-  }, []);
-
-  // Toggle time format
-  const toggleTimeFormat = useCallback(() => {
-    setTimeFormat((prev) => (prev === "relative" ? "absolute" : "relative"));
-    toast.success(
-      `Switched to ${
-        timeFormat === "relative" ? "absolute" : "relative"
-      } time format`
-    );
-  }, [timeFormat]);
 
   // Load user preferences from localStorage
   useEffect(() => {
@@ -196,71 +119,6 @@ export default function LogSection({ logs }: LogSectionProps) {
     };
     calculateStats();
   }, [logs]);
-
-  // Bulk actions for selected logs
-  const handleBulkAction = (action: "delete" | "export" | "bookmark") => {
-    switch (action) {
-      case "delete":
-        toast.error("Selected logs will be deleted");
-        setSelectedLogs(new Set());
-        break;
-      case "export":
-        const selectedLogData = logs.filter((log) => selectedLogs.has(log.id));
-        const blob = new Blob([JSON.stringify(selectedLogData, null, 2)], {
-          type: "application/json",
-        });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `logs-export-${format(
-          new Date(),
-          "yyyy-MM-dd-HH-mm"
-        )}.json`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        toast.success(`${selectedLogs.size} logs exported successfully`);
-        break;
-      case "bookmark":
-        selectedLogs.forEach((id) => {
-          setBookmarkedLogs((prev) => {
-            const newBookmarks = new Set(prev);
-            newBookmarks.add(id);
-            return newBookmarks;
-          });
-        });
-        toast.success(`${selectedLogs.size} logs bookmarked`);
-        break;
-    }
-  };
-
-  // Save current view
-  const saveCurrentView = () => {
-    const newView = {
-      id: Date.now().toString(),
-      name: `View ${savedViews.length + 1}`,
-      filters: {
-        quickFilter,
-        showBookmarkedOnly,
-        sortOrder,
-        customFilters,
-        viewMode,
-      },
-    };
-    setSavedViews((prev) => [...prev, newView]);
-    toast.success("View saved successfully");
-  };
-
-  // Apply saved view
-  const applyView = (view: (typeof savedViews)[0]) => {
-    setQuickFilter(view.filters.quickFilter);
-    setShowBookmarkedOnly(view.filters.showBookmarkedOnly);
-    setSortOrder(view.filters.sortOrder);
-    setCustomFilters(view.filters.customFilters);
-    setViewMode(view.filters.viewMode);
-    toast.success("View applied successfully");
-  };
 
   const filteredAndSortedLogs = logs
     .filter((log) => {
@@ -351,7 +209,7 @@ export default function LogSection({ logs }: LogSectionProps) {
               className="w-full"
               onValueChange={(value) => setViewMode(value as ViewMode)}
             >
-              <TabsList className="grid w-full grid-cols-3 lg:w-[400px]">
+              <TabsList className="grid w-full grid-cols-4 lg:w-[600px]">
                 <TabsTrigger value="list" className="flex items-center gap-2">
                   <List className="h-4 w-4" />
                   List View
@@ -367,265 +225,60 @@ export default function LogSection({ logs }: LogSectionProps) {
                   <Calendar className="h-4 w-4" />
                   Timeline
                 </TabsTrigger>
+                <TabsTrigger
+                  value="compact"
+                  className="flex items-center gap-2"
+                >
+                  <FileText className="h-4 w-4" />
+                  Compact
+                </TabsTrigger>
               </TabsList>
 
               <TabsContent value="list" className="mt-4">
-                <ListView
-                  logs={filteredAndSortedLogs}
-                  bookmarkedLogs={bookmarkedLogs}
-                  // toggleBookmark={toggleBookmark}
-                  setSelectedLog={setSelectedLog}
-                  formatTimestamp={formatTimestamp}
-                />
+                <ScrollArea className="h-[calc(100vh-120px)] w-full p-4 w-full max-w-full">
+                  <ListView
+                    logs={filteredAndSortedLogs}
+                    bookmarkedLogs={bookmarkedLogs}
+                    setSelectedLog={setSelectedLog}
+                    formatTimestamp={formatTimestamp}
+                  />
+                </ScrollArea>
               </TabsContent>
 
               <TabsContent value="table" className="mt-4">
-                <TableView
-                  logs={filteredAndSortedLogs}
-                  bookmarkedLogs={bookmarkedLogs}
-                  // toggleBookmark={toggleBookmark}
-                  setSelectedLog={setSelectedLog}
-                  formatTimestamp={formatTimestamp}
-                />
+                <ScrollArea className="h-[calc(100vh-120px)] w-full p-4">
+                  <TableView
+                    logs={filteredAndSortedLogs}
+                    bookmarkedLogs={bookmarkedLogs}
+                    setSelectedLog={setSelectedLog}
+                    formatTimestamp={formatTimestamp}
+                  />
+                </ScrollArea>
               </TabsContent>
 
               <TabsContent value="timeline" className="mt-4">
-                <TimelineView
-                  logs={filteredAndSortedLogs}
-                  bookmarkedLogs={bookmarkedLogs}
-                  // toggleBookmark={toggleBookmark}
-                  // toggleBookmark={toggleBookmark}
-                  setSelectedLog={setSelectedLog}
-                  formatTimestamp={formatTimestamp}
-                />
+                <ScrollArea className="h-[calc(100vh-120px)] p-4 w-full max-w-full">
+                  <TimelineView
+                    logs={filteredAndSortedLogs}
+                    bookmarkedLogs={bookmarkedLogs}
+                    setSelectedLog={setSelectedLog}
+                    formatTimestamp={formatTimestamp}
+                  />
+                </ScrollArea>
               </TabsContent>
 
               <TabsContent value="compact" className="mt-4">
-                <AnimatePresence mode="popLayout">
-                  {filteredAndSortedLogs.map((log, index) => {
-                    const levelDetails = getLevelDetails(log.level);
-                    return (
-                      <motion.div
-                        key={log.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.95 }}
-                        transition={{ delay: index * 0.05 }}
-                      >
-                        <Card
-                          className="group relative hover:shadow-md transition-all duration-200 border-l-4 w-full"
-                          style={{ borderLeftColor: levelDetails.borderColor }}
-                        >
-                          <CardHeader className="pb-2">
-                            <div className="flex items-center justify-between gap-2 flex-wrap">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <Badge
-                                  variant="secondary"
-                                  className={`flex items-center gap-1.5 ${levelDetails.color} shrink-0`}
-                                >
-                                  {levelDetails.icon}
-                                  {log.level}
-                                </Badge>
-                                <Badge
-                                  variant="outline"
-                                  className="font-mono shrink-0"
-                                >
-                                  {log.service}
-                                </Badge>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="text-sm text-muted-foreground p-0 h-auto font-normal hover:text-primary"
-                                  // onClick={toggleTimeFormat}
-                                >
-                                  {formatTimestamp(log.timestamp)}
-                                </Button>
-                              </div>
-                              <div className="flex items-center gap-2 shrink-0">
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="opacity-0 group-hover:opacity-100 transition-opacity"
-                                  onClick={() => toggleBookmark(log.id)}
-                                >
-                                  {bookmarkedLogs.has(log.id) ? (
-                                    <BookmarkCheck className="h-4 w-4 text-primary" />
-                                  ) : (
-                                    <Bookmark className="h-4 w-4" />
-                                  )}
-                                </Button>
-                                <DropdownMenu>
-                                  <DropdownMenuTrigger asChild>
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      className="opacity-0 group-hover:opacity-100 transition-opacity"
-                                    >
-                                      <Terminal className="h-4 w-4" />
-                                    </Button>
-                                  </DropdownMenuTrigger>
-                                  <DropdownMenuContent align="end">
-                                    <DropdownMenuItem
-                                      onClick={() =>
-                                        handleCopy(
-                                          JSON.stringify(log, null, 2),
-                                          log.id
-                                        )
-                                      }
-                                    >
-                                      <Copy className="h-4 w-4 mr-2" />
-                                      Copy as JSON
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                      onClick={() => handleShare(log)}
-                                    >
-                                      <Share2 className="h-4 w-4 mr-2" />
-                                      Share Log
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                      onClick={() => handleDownload(log)}
-                                    >
-                                      <Download className="h-4 w-4 mr-2" />
-                                      Download
-                                    </DropdownMenuItem>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem
-                                      onClick={() => {
-                                        const query = `level:${log.level} service:${log.service}`;
-                                        setQuickFilter(query);
-                                        toast.success(
-                                          `Quick filter set to: ${query}`
-                                        );
-                                      }}
-                                    >
-                                      <Filter className="h-4 w-4 mr-2" />
-                                      Filter Similar Logs
-                                    </DropdownMenuItem>
-                                  </DropdownMenuContent>
-                                </DropdownMenu>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="opacity-0 group-hover:opacity-100 transition-opacity"
-                                  onClick={() => setSelectedLog(log)}
-                                >
-                                  <Maximize2 className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </div>
-                          </CardHeader>
-                          <CardContent>
-                            <div className="space-y-3">
-                              <div className="font-mono text-sm text-muted-foreground break-all">
-                                {log.message}
-                              </div>
-
-                              {(log.action || log.file || log.func_name) && (
-                                <div className="grid gap-2 text-xs text-muted-foreground font-mono">
-                                  {log.action && (
-                                    <div className="flex items-center gap-1">
-                                      <span className="font-medium shrink-0">
-                                        Action:
-                                      </span>
-                                      <span className="break-all">
-                                        {log.action}
-                                      </span>
-                                    </div>
-                                  )}
-                                  {log.file && (
-                                    <div className="flex items-center gap-1">
-                                      <span className="font-medium shrink-0">
-                                        File:
-                                      </span>
-                                      <span className="break-all">
-                                        {log.file}
-                                      </span>
-                                    </div>
-                                  )}
-                                  {log.func_name && (
-                                    <div className="flex items-center gap-1">
-                                      <span className="font-medium shrink-0">
-                                        Function:
-                                      </span>
-                                      <span className="break-all">
-                                        {log.func_name}
-                                      </span>
-                                    </div>
-                                  )}
-                                </div>
-                              )}
-
-                              {Object.keys(log.metadata).length > 0 && (
-                                <CardDescription>
-                                  <HoverCard>
-                                    <HoverCardTrigger asChild>
-                                      <div className="flex flex-wrap gap-2 cursor-pointer">
-                                        {Object.entries(log.metadata)
-                                          .slice(0, 3)
-                                          .map(([key, value]) => (
-                                            <Badge
-                                              key={key}
-                                              variant="secondary"
-                                              className="text-xs inline-flex items-center max-w-[200px]"
-                                            >
-                                              <span className="truncate">
-                                                {key}: {value}
-                                              </span>
-                                            </Badge>
-                                          ))}
-                                        {Object.keys(log.metadata).length >
-                                          3 && (
-                                          <Badge
-                                            variant="secondary"
-                                            className="text-xs shrink-0"
-                                          >
-                                            +
-                                            {Object.keys(log.metadata).length -
-                                              3}{" "}
-                                            more
-                                          </Badge>
-                                        )}
-                                      </div>
-                                    </HoverCardTrigger>
-                                    <HoverCardContent className="w-80">
-                                      <div className="space-y-2">
-                                        <h4 className="text-sm font-semibold">
-                                          Metadata
-                                        </h4>
-                                        <div className="grid gap-1">
-                                          {Object.entries(log.metadata).map(
-                                            ([key, value]) => (
-                                              <div
-                                                key={key}
-                                                className="grid grid-cols-[auto,1fr] gap-2 text-xs items-center"
-                                              >
-                                                <span className="font-medium text-muted-foreground whitespace-nowrap">
-                                                  {key}:
-                                                </span>
-                                                <span className="font-mono truncate">
-                                                  {value}
-                                                </span>
-                                              </div>
-                                            )
-                                          )}
-                                        </div>
-                                      </div>
-                                    </HoverCardContent>
-                                  </HoverCard>
-                                </CardDescription>
-                              )}
-                            </div>
-                          </CardContent>
-                        </Card>
-                      </motion.div>
-                    );
-                  })}
-                </AnimatePresence>
+                <ScrollArea className="h-[calc(100vh-120px)] p-4 w-full max-w-full">
+                <CompactView
+                  logs={filteredAndSortedLogs}
+                  bookmarkedLogs={bookmarkedLogs}
+                  setSelectedLog={setSelectedLog}
+                  formatTimestamp={formatTimestamp}
+                  />
+              </ScrollArea>
               </TabsContent>
             </Tabs>
           </div>
-
-     
         </div>
       </div>
 
@@ -651,19 +304,11 @@ export default function LogSection({ logs }: LogSectionProps) {
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => selectedLog && handleShare(selectedLog)}
-                >
+                <Button variant="outline" size="sm">
                   <Share2 className="h-4 w-4 mr-2" />
                   Share
                 </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => selectedLog && handleDownload(selectedLog)}
-                >
+                <Button variant="outline" size="sm">
                   <Download className="h-4 w-4 mr-2" />
                   Download
                 </Button>

@@ -4,6 +4,24 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Log, getLevelDetails } from "../utils";
 import { Bookmark, BookmarkCheck, Maximize2 } from "lucide-react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+import { useState } from "react";
 
 interface TableViewProps {
   logs: Log[];
@@ -20,76 +38,130 @@ export function TableView({
   setSelectedLog,
   formatTimestamp,
 }: TableViewProps) {
+  const [page, setPage] = useState(1);
+  const itemsPerPage = 10;
+  const totalPages = Math.ceil(logs.length / itemsPerPage);
+  const startIndex = (page - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentLogs = logs.slice(startIndex, endIndex);
+
   return (
-    <Card>
-      <CardContent className="p-0">
-        <div className="relative overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="text-xs uppercase bg-muted/50">
-              <tr>
-                <th className="px-4 py-3 font-medium">Level</th>
-                <th className="px-4 py-3 font-medium">Timestamp</th>
-                <th className="px-4 py-3 font-medium">Service</th>
-                <th className="px-4 py-3 font-medium">Message</th>
-                <th className="px-4 py-3 font-medium">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {logs.map((log) => {
-                const levelDetails = getLevelDetails(log.level);
-                return (
-                  <motion.tr
-                    key={log.id}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="border-b hover:bg-muted/50 group/row"
-                  >
-                    <td className="px-4 py-3">
-                      <Badge variant="secondary" className={`flex items-center gap-1.5 ${levelDetails.color}`}>
-                        {levelDetails.icon}
-                        {log.level}
-                      </Badge>
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      {formatTimestamp(log.timestamp)}
-                    </td>
-                    <td className="px-4 py-3">
-                      <Badge variant="outline" className="font-mono">
-                        {log.service}
-                      </Badge>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="max-w-xl truncate">{log.message}</div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2 opacity-0 group-hover/row:opacity-100 transition-opacity">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => toggleBookmark(log.id)}
-                        >
-                          {bookmarkedLogs.has(log.id) ? (
-                            <BookmarkCheck className="h-4 w-4 text-primary" />
-                          ) : (
-                            <Bookmark className="h-4 w-4" />
-                          )}
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => setSelectedLog(log)}
-                        >
-                          <Maximize2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </td>
-                  </motion.tr>
-                );
-              })}
-            </tbody>
-          </table>
+    <div className="w-full h-full space-y-4">
+      <div className="rounded-md border w-full">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[100px]">Level</TableHead>
+              <TableHead className="w-[180px]">Timestamp</TableHead>
+              <TableHead className="w-[150px]">Service</TableHead>
+              <TableHead className="min-w-[300px]">Message</TableHead>
+              <TableHead className="w-[100px] text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {currentLogs.map((log) => {
+              const levelDetails = getLevelDetails(log.level);
+              return (
+                <TableRow key={log.id} className="group">
+                  <TableCell>
+                    <Badge
+                      variant="secondary"
+                      className={`${levelDetails.color}`}
+                    >
+                      {log.level}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="font-mono">
+                    {formatTimestamp(log.timestamp)}
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className="font-mono">
+                      {log.service}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="max-w-[500px]">
+                    <span className="truncate block">{log.message}</span>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => toggleBookmark(log.id)}
+                      >
+                        {bookmarkedLogs.has(log.id) ? (
+                          <BookmarkCheck className="h-4 w-4 text-primary" />
+                        ) : (
+                          <Bookmark className="h-4 w-4" />
+                        )}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setSelectedLog(log)}
+                      >
+                        <Maximize2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+      </div>
+
+      <div className="flex items-center justify-between px-2">
+        <div className="text-sm text-muted-foreground">
+          Showing {startIndex + 1} to {Math.min(endIndex, logs.length)} of{" "}
+          {logs.length} entries
         </div>
-      </CardContent>
-    </Card>
+        <Pagination>
+          <PaginationContent>
+            <PaginationItem>
+              <PaginationPrevious
+                onClick={() => setPage(page - 1)}
+                disabled={page === 1}
+              />
+            </PaginationItem>
+            {[...Array(totalPages)].map((_, index) => {
+              const pageNumber = index + 1;
+              if (
+                pageNumber === 1 ||
+                pageNumber === totalPages ||
+                (pageNumber >= page - 1 && pageNumber <= page + 1)
+              ) {
+                return (
+                  <PaginationItem key={pageNumber}>
+                    <PaginationLink
+                      onClick={() => setPage(pageNumber)}
+                      isActive={page === pageNumber}
+                    >
+                      {pageNumber}
+                    </PaginationLink>
+                  </PaginationItem>
+                );
+              } else if (
+                (pageNumber === 2 && page > 3) ||
+                (pageNumber === totalPages - 1 && page < totalPages - 2)
+              ) {
+                return (
+                  <PaginationItem key={pageNumber}>
+                    <PaginationEllipsis />
+                  </PaginationItem>
+                );
+              }
+              return null;
+            })}
+            <PaginationItem>
+              <PaginationNext
+                onClick={() => setPage(page + 1)}
+                disabled={page === totalPages}
+              />
+            </PaginationItem>
+          </PaginationContent>
+        </Pagination>
+      </div>
+    </div>
   );
 }

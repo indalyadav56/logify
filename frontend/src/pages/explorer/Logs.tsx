@@ -18,12 +18,7 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Sheet,
   SheetContent,
@@ -40,7 +35,6 @@ import {
 import DateTimePicker from "@/components/DateRangePicker";
 import LogSection from "./LogSection";
 import { useLogStore } from "@/store/useLogStore";
-import { ScrollArea } from "@/components/ui/scroll-area";
 
 const levelOptions = ["ERROR", "WARNING", "INFO", "DEBUG"];
 const serviceOptions = ["auth-service", "user-service", "payment-service"];
@@ -109,7 +103,7 @@ export default function LogExplorer() {
     }
   };
 
-  const handleExport = (format: 'json' | 'csv') => {
+  const handleExport = (format: "json" | "csv") => {
     // Implementation for export functionality
     console.log(`Exporting as ${format}`);
   };
@@ -130,10 +124,10 @@ export default function LogExplorer() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
-                  <DropdownMenuItem onClick={() => handleExport('json')}>
+                  <DropdownMenuItem onClick={() => handleExport("json")}>
                     Export as JSON
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleExport('csv')}>
+                  <DropdownMenuItem onClick={() => handleExport("csv")}>
                     Export as CSV
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -185,7 +179,9 @@ export default function LogExplorer() {
                   <div>
                     <h3 className="text-sm font-medium mb-3">Time Range</h3>
                     <Tabs
-                      value={filters.isCustomRange ? "custom" : filters.timeRange}
+                      value={
+                        filters.isCustomRange ? "custom" : filters.timeRange
+                      }
                       onValueChange={(value) => {
                         if (value === "custom") {
                           setFilter("isCustomRange", true);
@@ -206,7 +202,9 @@ export default function LogExplorer() {
                       <TabsContent value="custom" className="mt-3">
                         <DateTimePicker
                           date={filters.customDateRange}
-                          setDate={(range) => setFilter("customDateRange", range)}
+                          setDate={(range) =>
+                            setFilter("customDateRange", range)
+                          }
                         />
                       </TabsContent>
                     </Tabs>
@@ -236,8 +234,12 @@ export default function LogExplorer() {
                               : ""
                           }`}
                           onClick={() => {
-                            const newLevels = filters.selectedLevels.includes(level)
-                              ? filters.selectedLevels.filter((l) => l !== level)
+                            const newLevels = filters.selectedLevels.includes(
+                              level
+                            )
+                              ? filters.selectedLevels.filter(
+                                  (l) => l !== level
+                                )
                               : [...filters.selectedLevels, level];
                             setFilter("selectedLevels", newLevels);
                           }}
@@ -253,7 +255,9 @@ export default function LogExplorer() {
                     <h3 className="text-sm font-medium mb-3">Service</h3>
                     <Select
                       value={filters.selectedService}
-                      onValueChange={(value) => setFilter("selectedService", value)}
+                      onValueChange={(value) =>
+                        setFilter("selectedService", value)
+                      }
                     >
                       <SelectTrigger>
                         <SelectValue />
@@ -292,24 +296,28 @@ export default function LogExplorer() {
                         <Input
                           placeholder="Value"
                           value={currentMetadataValue}
-                          onChange={(e) => setCurrentMetadataValue(e.target.value)}
+                          onChange={(e) =>
+                            setCurrentMetadataValue(e.target.value)
+                          }
                         />
                         <Button onClick={handleAddMetadata}>Add</Button>
                       </div>
                       <div className="flex flex-wrap gap-2">
-                        {Object.entries(filters.metadata).map(([key, value]) => (
-                          <Badge
-                            key={key}
-                            variant="secondary"
-                            className="flex items-center gap-1"
-                          >
-                            {key}: {value}
-                            <X
-                              className="h-3 w-3 cursor-pointer"
-                              onClick={() => removeMetadata(key)}
-                            />
-                          </Badge>
-                        ))}
+                        {Object.entries(filters.metadata).map(
+                          ([key, value]) => (
+                            <Badge
+                              key={key}
+                              variant="secondary"
+                              className="flex items-center gap-1"
+                            >
+                              {key}: {value}
+                              <X
+                                className="h-3 w-3 cursor-pointer"
+                                onClick={() => removeMetadata(key)}
+                              />
+                            </Badge>
+                          )
+                        )}
                       </div>
                     </div>
                   </div>
@@ -331,7 +339,10 @@ export default function LogExplorer() {
               variant="outline"
               size="icon"
               onClick={() =>
-                setFilter("sortOrder", filters.sortOrder === "asc" ? "desc" : "asc")
+                setFilter(
+                  "sortOrder",
+                  filters.sortOrder === "asc" ? "desc" : "asc"
+                )
               }
             >
               <ArrowUpDown className="h-4 w-4" />
@@ -370,11 +381,7 @@ export default function LogExplorer() {
               {error}
             </div>
           ) : (
-            <ScrollArea className="h-[calc(100vh-200px)] w-full">
-              <div className="p-4 w-full max-w-full">
-                <LogSection logs={logs} />
-              </div>
-            </ScrollArea>
+            <LogSection logs={logs} />
           )}
         </div>
       </main>

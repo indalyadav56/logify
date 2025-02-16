@@ -36,6 +36,7 @@ import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem } from "@/components/ui/select";
 import { toast } from "sonner";
 import { useState, useEffect } from "react";
+import { useLogStore } from "@/store/useLogStore";
 
 type Theme = "light" | "dark" | "system";
 
@@ -50,15 +51,14 @@ export default function LogSectionHeader() {
   const [autoRefresh, setAutoRefresh] = useState(false);
   const [lastRefresh, setLastRefresh] = useState(new Date());
   const [quickFilter, setQuickFilter] = useState("");
-  const [customFilters, setCustomFilters] = useState<
-    Array<{ id: string; field: string; value: string }>
-  >([]);
   const [visibleColumns, setVisibleColumns] = useState<Set<string>>(
     new Set(["level", "message", "timestamp", "service"])
   );
   const [savedViews, setSavedViews] = useState<
     Array<{ id: string; name: string; filters: any }>
   >([]);
+
+  const { fetchLogs } = useLogStore();
 
   // Auto-refresh functionality
   useEffect(() => {
@@ -81,8 +81,7 @@ export default function LogSectionHeader() {
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      // Simulate refresh - replace this with your actual refresh logic
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await fetchLogs();
       setLastRefresh(new Date());
       toast.success("Logs refreshed successfully");
     } catch (error) {
@@ -140,7 +139,7 @@ export default function LogSectionHeader() {
         >
           <RefreshCw className="h-4 w-4" />
         </Button>
-
+        {/* 
         <Button
           variant="outline"
           size="icon"
@@ -148,125 +147,16 @@ export default function LogSectionHeader() {
           className={autoRefresh ? "bg-primary/10" : ""}
         >
           <Clock className="h-4 w-4" />
-        </Button>
+        </Button> */}
 
         <div className="text-sm text-muted-foreground">
-          Last refreshed: {formatDistanceToNow(lastRefresh, { addSuffix: true })}
+          Last refreshed:{" "}
+          {formatDistanceToNow(lastRefresh, { addSuffix: true })}
           {autoRefresh && ` • Auto-refresh every ${refreshInterval}s`}
         </div>
-
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="icon">
-              <Filter className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent>
-            <DropdownMenuItem
-              onClick={() =>
-                setCustomFilters([
-                  ...customFilters,
-                  { id: Date.now().toString(), field: "level", value: "" },
-                ])
-              }
-            >
-              Add Custom Filter
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            {customFilters.map((filter) => (
-              <DropdownMenuItem
-                key={filter.id}
-                onSelect={(e) => e.preventDefault()}
-              >
-                <div className="flex items-center gap-2">
-                  <Input
-                    value={filter.value}
-                    onChange={(e) => {
-                      const newFilters = customFilters.map((f) =>
-                        f.id === filter.id
-                          ? { ...f, value: e.target.value }
-                          : f
-                      );
-                      setCustomFilters(newFilters);
-                    }}
-                    className="w-32"
-                    placeholder={`Filter by ${filter.field}`}
-                  />
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() =>
-                      setCustomFilters(
-                        customFilters.filter((f) => f.id !== filter.id)
-                      )
-                    }
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
-
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="icon">
-              <Columns className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent>
-            <DropdownMenuCheckboxItem
-              checked={visibleColumns.has("level")}
-              onCheckedChange={(checked) => {
-                const newColumns = new Set(visibleColumns);
-                checked ? newColumns.add("level") : newColumns.delete("level");
-                setVisibleColumns(newColumns);
-              }}
-            >
-              Level
-            </DropdownMenuCheckboxItem>
-            <DropdownMenuCheckboxItem
-              checked={visibleColumns.has("message")}
-              onCheckedChange={(checked) => {
-                const newColumns = new Set(visibleColumns);
-                checked
-                  ? newColumns.add("message")
-                  : newColumns.delete("message");
-                setVisibleColumns(newColumns);
-              }}
-            >
-              Message
-            </DropdownMenuCheckboxItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
       </div>
 
       <div className="flex items-center gap-2">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="icon">
-              <BarChart2 className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
-            <div className="p-2">
-              <div className="space-y-1">
-                <h4 className="text-sm font-medium">Log Statistics</h4>
-                <Progress value={100} className="h-2 bg-red-100" />
-                <div className="text-xs text-muted-foreground">Errors: 1%</div>
-                <Progress value={100} className="h-2 bg-yellow-100" />
-                <div className="text-xs text-muted-foreground">
-                  Warnings: 0%
-                </div>
-                <div className="text-xs text-muted-foreground mt-2">
-                  Avg. Logs/min: 1
-                </div>
-              </div>
-            </div>
-          </DropdownMenuContent>
-        </DropdownMenu>
-
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="icon">
@@ -279,9 +169,7 @@ export default function LogSectionHeader() {
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             {savedViews.map((view) => (
-              <DropdownMenuItem key={view.id}>
-                {view.name}
-              </DropdownMenuItem>
+              <DropdownMenuItem key={view.id}>{view.name}</DropdownMenuItem>
             ))}
           </DropdownMenuContent>
         </DropdownMenu>
