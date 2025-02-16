@@ -36,6 +36,9 @@ const LogPage = lazy(() => import("@/pages/explorer/Logs"));
 const ExamplePage = lazy(() => import("@/pages/example"));
 const LoginPage = lazy(() => import("@/pages/auth/Login"));
 const RegisterPage = lazy(() => import("@/pages/auth/Register"));
+const SettingsPage = lazy(() => import("@/pages/settings"));
+const AnalyticsPage = lazy(() => import("@/pages/analytics"));
+const DashboardPage = lazy(() => import("@/pages/dashboard"));
 
 // Loading component for Suspense fallback
 const PageLoading = () => (
@@ -234,6 +237,11 @@ function App() {
               <Routes>
                 <Route path="/" element={<LogPage />} />
                 <Route path="/example" element={<ExamplePage />} />
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/register" element={<RegisterPage />} />
+                <Route path="/settings" element={<SettingsPage />} />
+                <Route path="/analytics" element={<AnalyticsPage />} />
+                <Route path="/dashboard" element={<DashboardPage />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </Suspense>
