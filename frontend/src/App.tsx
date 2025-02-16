@@ -16,8 +16,10 @@ import { Toaster } from "sonner";
 import {
   AudioWaveform,
   BarChart,
+  Bell,
   BookOpen,
   Bot,
+  Bookmark,
   Command,
   Frame,
   GalleryVerticalEnd,
@@ -26,10 +28,16 @@ import {
   PieChart,
   Settings2,
   SquareTerminal,
+  Download,
+  FolderClosed,
+  Webhook,
+  Users,
+  ScrollText,
 } from "lucide-react";
 import { TeamSwitcher } from "./components/team-switcher";
 import { NavUser } from "./components/nav-user";
-import { NavMain } from "./components/nav-main";
+// import { NotificationPopover } from "./components/notification-popover";
+// import { ThemeToggle } from "./components/theme-toggle";
 
 // Lazy loaded components
 const LogPage = lazy(() => import("@/pages/explorer/Logs"));
@@ -39,6 +47,14 @@ const RegisterPage = lazy(() => import("@/pages/auth/Register"));
 const SettingsPage = lazy(() => import("@/pages/settings"));
 const AnalyticsPage = lazy(() => import("@/pages/analytics"));
 const DashboardPage = lazy(() => import("@/pages/dashboard"));
+const ExportPage = lazy(() => import("@/pages/export"));
+const BookmarksPage = lazy(() => import("@/pages/bookmarks"));
+const ProjectsPage = lazy(() => import("@/pages/projects"));
+const NotificationsPage = lazy(() => import("@/pages/notifications"));
+const WebhooksPage = lazy(() => import("@/pages/webhooks"));
+const TeamsPage = lazy(() => import("@/pages/teams"));
+const AuditPage = lazy(() => import("@/pages/audit"));
+const LandingPage = lazy(() => import("@/pages/landing/LandingPage"));
 
 // Loading component for Suspense fallback
 const PageLoading = () => (
@@ -193,6 +209,41 @@ const nav = [
     icon: BarChart,
   },
   {
+    title: "Export",
+    url: "/export",
+    icon: Download,
+  },
+  {
+    title: "Bookmarks",
+    url: "/bookmarks",
+    icon: Bookmark,
+  },
+  {
+    title: "Projects",
+    url: "/projects",
+    icon: FolderClosed,
+  },
+  {
+    title: "Notifications",
+    url: "/notifications",
+    icon: Bell,
+  },
+  {
+    title: "Webhooks",
+    url: "/webhooks",
+    icon: Webhook,
+  },
+  {
+    title: "Teams",
+    url: "/teams",
+    icon: Users,
+  },
+  {
+    title: "Audit Logs",
+    url: "/audit",
+    icon: ScrollText,
+  },
+  {
     title: "Settings",
     url: "/settings",
     icon: Settings2,
@@ -222,12 +273,14 @@ function App() {
                 ))}
               </SidebarMenu>
 
-              {/* for testing purpose only */}
-              <NavMain items={data.navMain} />
             </SidebarContent>
 
             <SidebarFooter>
-              <NavUser user={data.user} />
+              <div className="flex items-center gap-4">
+                {/* <ThemeToggle /> */}
+                {/* <NotificationPopover /> */}
+                <NavUser user={data.user} />
+              </div>
             </SidebarFooter>
           </Sidebar>
 
@@ -235,6 +288,7 @@ function App() {
           <SidebarInset>
             <Suspense fallback={<PageLoading />}>
               <Routes>
+                <Route path="/home" element={<LandingPage />} />
                 <Route path="/" element={<LogPage />} />
                 <Route path="/example" element={<ExamplePage />} />
                 <Route path="/login" element={<LoginPage />} />
@@ -242,6 +296,13 @@ function App() {
                 <Route path="/settings" element={<SettingsPage />} />
                 <Route path="/analytics" element={<AnalyticsPage />} />
                 <Route path="/dashboard" element={<DashboardPage />} />
+                <Route path="/export" element={<ExportPage />} />
+                <Route path="/bookmarks" element={<BookmarksPage />} />
+                <Route path="/projects" element={<ProjectsPage />} />
+                <Route path="/notifications" element={<NotificationsPage />} />
+                <Route path="/webhooks" element={<WebhooksPage />} />
+                <Route path="/teams" element={<TeamsPage />} />
+                <Route path="/audit" element={<AuditPage />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </Suspense>
