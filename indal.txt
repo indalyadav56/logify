@@ -105,3 +105,7 @@ Authorization: Bearer <your-token>
     "timestamp": "2025-02-11T16:00:00+05:30"
   }
 ]
+
+
+
+log header view not scroll in the ui log
