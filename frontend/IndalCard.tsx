@@ -262,3 +262,27 @@
         //   </div>
         // )}
 
+
+
+
+
+
+
+
+
+// <div className="min-h-screen bg-background antialiased">
+//           <BrowserRouter>
+//             <Suspense fallback={<PageLoading />}>
+//               <Routes>
+//                 {/* Main layout routes */}
+//                 <Route element={<MainLayout />}>
+//                   <Route path="/" element={<LogPage />} />
+//                 </Route>
+//                 <Route path="example" element={<ExamplePage />} />
+
+//                 {/* Catch all route */}
+//                 <Route path="*" element={<Navigate to="/" replace />} />
+//               </Routes>
+//             </Suspense>
+//           </BrowserRouter>
+//         </div>
