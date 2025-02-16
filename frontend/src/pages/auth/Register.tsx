@@ -14,7 +14,7 @@ import {
 import { Shield, Github } from 'lucide-react';
 import { Separator } from "@/components/ui/separator";
 
-const Signup = () => {
+const RegisterPage = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = React.useState(false);
 
@@ -142,4 +142,4 @@ const Signup = () => {
   );
 };
 
-export default Signup;
+export default RegisterPage;
