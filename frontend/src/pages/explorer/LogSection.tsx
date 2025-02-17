@@ -147,9 +147,9 @@ export default function LogSection({ logs }: LogSectionProps) {
     });
 
   const formatTimestamp = (timestamp: string) => {
-    if (timeFormat === "relative") {
-      return formatDistanceToNow(new Date(timestamp), { addSuffix: true });
-    }
+    // if (timeFormat === "relative") {
+    //   return formatDistanceToNow(new Date(timestamp), { addSuffix: true });
+    // }
     return new Date(timestamp).toLocaleString();
   };
 

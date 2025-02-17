@@ -107,5 +107,9 @@ Authorization: Bearer <your-token>
 ]
 
 
+📌 4️⃣ Log Forwarding (Send Logs to External Services)
+Why? Some companies want to forward logs to their own SIEMs or monitoring tools.
 
-log header view not scroll in the ui log
+🔹 Features to Add:
+✅ Forward logs to Splunk, Datadog, Elasticsearch, Kafka, Prometheus
+✅ Support Webhooks to send logs to any system

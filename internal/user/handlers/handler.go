@@ -2,9 +2,12 @@ package handlers
 
 import (
 	"common/pkg/logger"
+	"common/pkg/response"
 	"common/pkg/validator"
-	"github.com/gin-gonic/gin"
 	"logify/internal/user/services"
+	"net/http"
+
+	"github.com/gin-gonic/gin"
 )
 
 type UserHandler interface {
@@ -80,15 +83,13 @@ func (h *userHandler) Delete(c *gin.Context) {
 // @Produce  json
 // @Router /v1/users/me [get]
 func (h *userHandler) GetCurrentUser(ctx *gin.Context) {
-	userId, ok := ctx.Get("user_id")
-	if !ok {
-		return
-	}
+	userId := ctx.MustGet("user_id")
 
 	data, err := h.service.GetByID(userId.(string))
 	if err != nil {
+		response.SendError(ctx, http.StatusInternalServerError, "failed to get user", err)
 		return
 	}
 
-	ctx.JSON(200, data)
+	response.SendSuccess(ctx, "fetched user", data)
 }

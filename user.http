@@ -1,0 +1,4 @@
+### user
+GET http://localhost:8080/v1/users/me
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDAzNjIzNzksInRlbmFudF9pZCI6ImQ5YmRmYzA2LWFjMWItNDE1OS04NWVhLTEzZjg1YTYyYjc0NCIsInVzZXJfaWQiOiJkY2ZmMTYxYy1iOGJlLTRkYjUtYmIzMy1hYzYwZTE1ZjQzODIifQ.JJqdkKkWPJehE5axmHbthdkdia3ImXAa-xE0HghdWSY

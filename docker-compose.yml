@@ -47,6 +47,7 @@ services:
   kafka:
     image: apache/kafka:3.9.0
     container_name: kafka
+    user: "appuser:appuser"
     ports:
       - "9092:9092"
     environment:

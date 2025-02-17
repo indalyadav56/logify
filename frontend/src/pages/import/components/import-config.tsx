@@ -1,4 +1,3 @@
-import { useState } from "react";
 import {
   Select,
   SelectContent,
@@ -22,6 +21,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { ParserConfig } from "./parser-config";
 
 interface ImportConfigProps {
   config: any;
@@ -61,6 +61,15 @@ export function ImportConfig({ config, onChange }: ImportConfigProps) {
     });
   };
 
+  const handleParserConfigChange = (parserConfig: any) => {
+    onChange({
+      parserConfig: {
+        ...config.parserConfig,
+        ...parserConfig,
+      },
+    });
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -70,7 +79,7 @@ export function ImportConfig({ config, onChange }: ImportConfigProps) {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <Accordion type="single" collapsible className="w-full">
+        <Accordion type="single" collapsible className="w-full space-y-4">
           <AccordionItem value="format">
             <AccordionTrigger>Format Settings</AccordionTrigger>
             <AccordionContent>
@@ -89,23 +98,35 @@ export function ImportConfig({ config, onChange }: ImportConfigProps) {
                       <SelectItem value="csv">CSV</SelectItem>
                       <SelectItem value="txt">Plain Text</SelectItem>
                       <SelectItem value="log">Log File</SelectItem>
+                      <SelectItem value="unstructured">Unstructured</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
-                <div className="grid gap-2">
-                  <Label htmlFor="delimiter">Delimiter</Label>
-                  <Input
-                    id="delimiter"
-                    name="delimiter"
-                    value={config.parseOptions.delimiter}
-                    onChange={handleParseOptionChange}
-                    placeholder=","
-                  />
-                </div>
+                {config.format !== "unstructured" && (
+                  <div className="grid gap-2">
+                    <Label htmlFor="delimiter">Delimiter</Label>
+                    <Input
+                      id="delimiter"
+                      name="delimiter"
+                      value={config.parseOptions.delimiter}
+                      onChange={handleParseOptionChange}
+                      placeholder=","
+                    />
+                  </div>
+                )}
               </div>
             </AccordionContent>
           </AccordionItem>
+
+          {config.format === "unstructured" && (
+            <AccordionItem value="parser">
+              <AccordionTrigger>Parser Configuration</AccordionTrigger>
+              <AccordionContent>
+                <ParserConfig onConfigChange={handleParserConfigChange} />
+              </AccordionContent>
+            </AccordionItem>
+          )}
 
           <AccordionItem value="fields">
             <AccordionTrigger>Field Mapping</AccordionTrigger>
@@ -152,6 +173,17 @@ export function ImportConfig({ config, onChange }: ImportConfigProps) {
                     value={config.parseOptions.messageField}
                     onChange={handleParseOptionChange}
                     placeholder="message"
+                  />
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="serviceField">Service Field</Label>
+                  <Input
+                    id="serviceField"
+                    name="serviceField"
+                    value={config.parseOptions.serviceField}
+                    onChange={handleParseOptionChange}
+                    placeholder="service"
                   />
                 </div>
               </div>

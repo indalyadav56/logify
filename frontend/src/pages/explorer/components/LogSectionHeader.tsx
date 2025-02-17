@@ -121,24 +121,16 @@ export default function LogSectionHeader() {
     <div className="flex items-center justify-between gap-4 flex-wrap py-4 px-4">
       <div className="flex items-center gap-2">
         <div className="relative w-64">
-          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
+          {/* <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" /> */}
+          {/* <Input
             placeholder="Quick filter logs..."
             className="pl-8"
             value={quickFilter}
             onChange={(e) => setQuickFilter(e.target.value)}
-          />
+          /> */}
         </div>
 
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={handleRefresh}
-          disabled={isRefreshing}
-          className={isRefreshing ? "animate-spin" : ""}
-        >
-          <RefreshCw className="h-4 w-4" />
-        </Button>
+       
         {/* 
         <Button
           variant="outline"
@@ -149,14 +141,24 @@ export default function LogSectionHeader() {
           <Clock className="h-4 w-4" />
         </Button> */}
 
-        <div className="text-sm text-muted-foreground">
+        
+      </div>
+
+      <div className="flex items-center gap-2">
+      <div className="text-sm text-muted-foreground">
           Last refreshed:{" "}
           {formatDistanceToNow(lastRefresh, { addSuffix: true })}
           {autoRefresh && ` • Auto-refresh every ${refreshInterval}s`}
         </div>
-      </div>
-
-      <div className="flex items-center gap-2">
+      <Button
+          variant="outline"
+          size="icon"
+          onClick={handleRefresh}
+          disabled={isRefreshing}
+          className={isRefreshing ? "animate-spin" : ""}
+        >
+          <RefreshCw className="h-4 w-4" />
+        </Button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="icon">

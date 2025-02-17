@@ -50,8 +50,9 @@ export function LogCard({
       transition={{ delay: index * 0.05 }}
     >
       <Card
-        className="group relative hover:shadow-md transition-all duration-200 border-l-4  mb-2 w-full"
+        className="group relative hover:shadow-md transition-all duration-200 border-l-4  mb-2 w-full cursor-pointer"
         style={{ borderLeftColor: levelDetails.borderColor }}
+        onClick={() => onSelect(log)}
       >
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between gap-2 flex-wrap">

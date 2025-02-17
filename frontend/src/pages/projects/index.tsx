@@ -1,4 +1,3 @@
-import { useProjectStore } from "@/store/useProjectStore";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProjectList } from "./components/project-list";
@@ -19,6 +18,8 @@ export default function ProjectsPage() {
   const [view, setView] = useState<"grid" | "list">("grid");
   const [searchQuery, setSearchQuery] = useState("");
   const [isCreating, setIsCreating] = useState(false);
+
+
 
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">

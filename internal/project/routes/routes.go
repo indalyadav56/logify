@@ -14,6 +14,7 @@ func ProjectRoutes(app *gin.Engine, h handlers.ProjectHandler, logger logger.Log
 	projectV1.Use(commonMiddlewares.AuthMiddleware(logger, jwt))
 	{
 		projectV1.GET("", h.Get)
+		projectV1.GET("/:projectID", h.GetOneProject)
 		projectV1.POST("", h.Create)
 		projectV1.PATCH("", h.Update)
 		projectV1.DELETE("", h.Delete)

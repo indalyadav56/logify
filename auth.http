@@ -11,9 +11,9 @@ POST http://localhost:8080/v1/auth/register
 Content-Type: application/json
 
 {
-    "email": "admin123@admin.com",
-    "first_name": "admin",
-    "middle_name": "admin",
-    "last_name": "admin",
-    "password": "admin"
+    "email": "indal@example.com",
+    "first_name": "indal",
+    "middle_name": "kumar",
+    "last_name": "yadav",
+    "password": "Indal@123"
 }

@@ -1,4 +1,4 @@
-import { Suspense } from "react";
+import { Suspense, useEffect } from "react";
 import { ThemeProvider } from "@/components/theme-provider";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import {
@@ -14,17 +14,14 @@ import {
 } from "./components/ui/sidebar";
 import { Toaster } from "sonner";
 import {
-  AudioWaveform,
   BarChart,
   Bell,
   Bookmark,
-  Command,
   GalleryVerticalEnd,
   LayoutDashboard,
   Logs,
   Settings2,
   Download,
-  FolderClosed,
   Webhook,
   Users,
   ScrollText,
@@ -36,68 +33,76 @@ import Loading from "./components/Loading";
 import { publicRoutes } from "./routes/public-routes";
 import { privateRoutes } from "./routes/private-routes";
 import { useAuthStore } from "./store/useAuthStore";
+import { Collapsible } from "./components/ui/collapsible";
+import { useProjectStore } from "./store/useProjectStore";
+import { useUserStore } from "./store/useUserStore";
 
 // Navigation items
 const navigationItems = [
   {
     title: "Dashboard",
-    url: "/dashboard",
     icon: LayoutDashboard,
+    href: "/dashboard",
   },
   {
     title: "Logs",
-    url: "/logs",
     icon: Logs,
+    href: "/logs",
   },
   {
     title: "Analytics",
-    url: "/analytics",
     icon: BarChart,
+    href: "/analytics",
   },
   {
     title: "Import",
-    url: "/import",
     icon: Upload,
+    href: "/import",
   },
   {
     title: "Export",
-    url: "/export",
     icon: Download,
+    href: "/export",
   },
   {
     title: "Bookmarks",
-    url: "/bookmarks",
     icon: Bookmark,
+    href: "/bookmarks",
   },
   {
     title: "Projects",
-    url: "/projects",
-    icon: FolderClosed,
+    icon: GalleryVerticalEnd,
+    href: "/projects",
   },
   {
     title: "Notifications",
-    url: "/notifications",
     icon: Bell,
+    href: "/notifications",
   },
   {
     title: "Webhooks",
-    url: "/webhooks",
     icon: Webhook,
+    href: "/webhooks",
   },
   {
-    title: "Teams",
-    url: "/teams",
+    title: "Teams & Members",
     icon: Users,
+    href: "/teams",
   },
   {
     title: "Audit Logs",
-    url: "/audit",
     icon: ScrollText,
+    href: "/audit",
   },
   {
     title: "Settings",
-    url: "/settings",
     icon: Settings2,
+    href: "/settings",
+  },
+  {
+    title: "Alerts",
+    icon: Bell,
+    href: "/alerts",
   },
 ];
 
@@ -107,17 +112,7 @@ const teamsData = [
     name: "Acme Inc",
     logo: GalleryVerticalEnd,
     plan: "Enterprise",
-  },
-  {
-    name: "Acme Corp.",
-    logo: AudioWaveform,
-    plan: "Startup",
-  },
-  {
-    name: "Evil Corp.",
-    logo: Command,
-    plan: "Free",
-  },
+  }
 ];
 
 // User data
@@ -130,6 +125,13 @@ const userData = {
 function AppContent() {
   const location = useLocation();
   const isPublicRoute = ["/", "/auth/login", "/auth/register"].includes(location.pathname);
+  const { projects, fetchProjects } = useProjectStore();
+  const { user, isLoading, error, fetchCurrentUser } = useUserStore();
+
+  useEffect(() => {
+    fetchCurrentUser();
+    fetchProjects();
+  }, []);
 
   return (
     <>
@@ -143,13 +145,15 @@ function AppContent() {
             <SidebarContent>
               <SidebarMenu>
                 {navigationItems.map((item) => (
-                  <SidebarMenuItem key={item.url}>
+                  <Collapsible asChild defaultOpen={true} className="group/collapsible">
+                  <SidebarMenuItem key={item.href}>
                     <SidebarMenuButton tooltip={item.title} asChild>
-                      <a href={item.url}>
-                        <item.icon className="h-4 w-4" /> {item.title} 
-                      </a>
+                      <a href={item.href}>
+                          <item.icon className="h-4 w-4" /> {item.title} 
+                        </a>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
+                  </Collapsible>
                 ))}
               </SidebarMenu>
             </SidebarContent>

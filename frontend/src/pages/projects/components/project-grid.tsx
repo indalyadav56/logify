@@ -46,7 +46,7 @@ export function ProjectGrid({ showArchived = false }: ProjectGridProps) {
     <ScrollArea className="h-[600px]">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-1">
         {filteredProjects.map((project) => (
-          <Card key={project.id} className="group">
+          <Card key={project.id} className="group cursor-pointer" onClick={() => navigate(`/projects/${project.id}`)}>
             <CardHeader className="space-y-0 pb-2">
               <div className="flex items-center justify-between">
                 <div className="space-y-1">
@@ -101,14 +101,14 @@ export function ProjectGrid({ showArchived = false }: ProjectGridProps) {
                     {project.logs_count || 0} Logs
                   </Badge>
                   <Badge variant="outline">
-                    {project.team_members?.length || 0} Members
+                    {project?.team_members?.length || 0} Members
                   </Badge>
                 </div>
               </div>
             </CardContent>
             <CardFooter className="text-xs text-muted-foreground">
               <div className="flex items-center">
-                Created {formatDistanceToNow(new Date(project.created_at), { addSuffix: true })}
+                {/* Created {formatDistanceToNow(new Date(project.created_at), { addSuffix: true })} */}
               </div>
             </CardFooter>
           </Card>

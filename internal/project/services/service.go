@@ -10,6 +10,7 @@ import (
 type ProjectService interface {
 	Create(project *models.Project) (*models.Project, error)
 	GetByID(id string) (*models.Project, error)
+	GetAll() ([]models.Project, error)
 	Update(id string, project *models.Project) (*models.Project, error)
 	Delete(id string) error
 
@@ -38,6 +39,10 @@ func (s *projectService) Create(project *models.Project) (*models.Project, error
 		return nil, err
 	}
 	return project, nil
+}
+
+func (s *projectService) GetAll() ([]models.Project, error) {
+	return s.projectRepo.List(1, 10)
 }
 
 // GetByID retrieves a project by its ID

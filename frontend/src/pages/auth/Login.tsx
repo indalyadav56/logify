@@ -100,7 +100,7 @@ const Login = () => {
           <CardFooter>
             <p className="text-center text-sm text-muted-foreground w-full">
               Don't have an account?{" "}
-              <Link to="/signup" className="text-primary hover:underline">
+              <Link to="/auth/register" className="text-primary hover:underline">
                 Sign up
               </Link>
             </p>

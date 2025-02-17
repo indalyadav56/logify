@@ -138,7 +138,7 @@ func (a *App) initDependencies() error {
 }
 
 func (a *App) InitConsumers() {
-	go a.deps.LogService.LogConsumer()
+	// go a.deps.LogService.LogConsumer()
 }
 
 func (a *App) initRepositories() {
@@ -175,7 +175,7 @@ func (a *App) registerRoutes() {
 
 	// a.deps.Server.Use(middlewares.CheckStorageLimit(a.deps.Redis))
 
-	userRoutes.UserRoutes(a.deps.Server, a.deps.UserHandler)
+	userRoutes.UserRoutes(a.deps.Server, a.deps.UserHandler, a.deps.Logger, a.deps.JWT)
 	authRoutes.AuthRoutes(a.deps.Server, a.deps.AuthHandler)
 	logRoutes.LogRoutes(a.deps.Server, a.deps.LogHandler, a.deps.Logger, a.deps.ClientJWT)
 	projectRoutes.ProjectRoutes(a.deps.Server, a.deps.ProjectHandler, a.deps.Logger, a.deps.JWT)

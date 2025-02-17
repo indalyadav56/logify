@@ -20,6 +20,18 @@ Content-Type: application/json
 #   }
 # }
 
+### get all projects
+GET http://localhost:8080/v1/projects
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDAwNjQ5NzUsInRlbmFudF9pZCI6ImQ5YmRmYzA2LWFjMWItNDE1OS04NWVhLTEzZjg1YTYyYjc0NCIsInVzZXJfaWQiOiJkY2ZmMTYxYy1iOGJlLTRkYjUtYmIzMy1hYzYwZTE1ZjQzODIifQ.-Ugxo4glOOA1x6fgxxUsC6htDu2h-J9GXwqPzswtIBA
+Content-Type: application/json
+
+
+### get a project
+GET http://localhost:8080/v1/projects/a7c02826-005a-4cc1-a4ef-bc162ccfcaaa
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDAwNjQ5NzUsInRlbmFudF9pZCI6ImQ5YmRmYzA2LWFjMWItNDE1OS04NWVhLTEzZjg1YTYyYjc0NCIsInVzZXJfaWQiOiJkY2ZmMTYxYy1iOGJlLTRkYjUtYmIzMy1hYzYwZTE1ZjQzODIifQ.-Ugxo4glOOA1x6fgxxUsC6htDu2h-J9GXwqPzswtIBA
+Content-Type: application/json
+
+
 ### Create API Key
 POST http://localhost:8080/v1/projects/a7c02826-005a-4cc1-a4ef-bc162ccfcaaa/keys
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDAwNjQ5NzUsInRlbmFudF9pZCI6ImQ5YmRmYzA2LWFjMWItNDE1OS04NWVhLTEzZjg1YTYyYjc0NCIsInVzZXJfaWQiOiJkY2ZmMTYxYy1iOGJlLTRkYjUtYmIzMy1hYzYwZTE1ZjQzODIifQ.-Ugxo4glOOA1x6fgxxUsC6htDu2h-J9GXwqPzswtIBA

@@ -27,20 +27,13 @@ type LogService interface {
 }
 
 type logService struct {
-	logRepo  repository.LogRepository
-	log      logger.Logger
-	esClient *elasticsearch.Client
+	logRepo   repository.LogRepository
+	log       logger.Logger
+	esClient  *elasticsearch.Client
+	publisher *kafka.Publisher
 }
 
 func NewLogService(repo repository.LogRepository, log logger.Logger, esClient *elasticsearch.Client) *logService {
-	return &logService{
-		logRepo:  repo,
-		log:      log,
-		esClient: esClient,
-	}
-}
-
-func (s *logService) PublishLog(log *dto.LogRequest) error {
 	publisher, err := kafka.NewPublisher(
 		kafka.PublisherConfig{
 			Brokers:   []string{"localhost:9092"},
@@ -51,7 +44,15 @@ func (s *logService) PublishLog(log *dto.LogRequest) error {
 	if err != nil {
 		fmt.Println(err)
 	}
+	return &logService{
+		logRepo:   repo,
+		log:       log,
+		esClient:  esClient,
+		publisher: publisher,
+	}
+}
 
+func (s *logService) PublishLog(log *dto.LogRequest) error {
 	log.ID = uuid.New().String()
 	byteData, err := json.Marshal(log)
 	if err != nil {
@@ -60,12 +61,10 @@ func (s *logService) PublishLog(log *dto.LogRequest) error {
 
 	msg := message.NewMessage(watermill.NewUUID(), byteData)
 
-	if err := publisher.Publish("logify", msg); err != nil {
+	if err := s.publisher.Publish("logify", msg); err != nil {
 		fmt.Printf("error publishing message: %v", err)
-	} else {
-		fmt.Printf("Published log: %s\n", log)
+		return err
 	}
-
 	return nil
 }
 
@@ -226,6 +225,7 @@ func (s *logService) Search(req *dto.LogSearchRequest) (interface{}, error) {
 	)
 	if err != nil {
 		log.Fatalf("Error searching documents: %s", err)
+		return nil, err
 	}
 	defer searchRes.Body.Close()
 

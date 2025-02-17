@@ -6,6 +6,7 @@ import { lazy } from "react";
 const DashboardPage = lazy(() => import("@/pages/dashboard"));
 const LogsPage = lazy(() => import("@/pages/explorer/Logs"));
 const ProjectsPage = lazy(() => import("@/pages/projects"));
+const ProjectDetailsPage = lazy(() => import("@/pages/projects/[id]"));
 const NotificationsPage = lazy(() => import("@/pages/notifications"));
 const WebhooksPage = lazy(() => import("@/pages/webhooks"));
 const TeamsPage = lazy(() => import("@/pages/teams"));
@@ -13,6 +14,8 @@ const AuditPage = lazy(() => import("@/pages/audit"));
 const SettingsPage = lazy(() => import("@/pages/settings"));
 const ImportPage = lazy(() => import("@/pages/import"));
 const ExportPage = lazy(() => import("@/pages/export"));
+const BookmarksPage = lazy(() => import("@/pages/bookmarks"));
+const AlertsPage = lazy(() => import("@/pages/alerts"));
 
 export const privateRoutes = [
   <Route
@@ -61,6 +64,15 @@ export const privateRoutes = [
     }
   />,
   <Route
+    key="projects-details"
+    path="/projects/:id"
+    element={
+      <ProtectedRoute>
+          <ProjectDetailsPage />
+      </ProtectedRoute>
+    }
+  />,
+  <Route
     key="notifications"
     path="/notifications"
     element={
@@ -102,6 +114,24 @@ export const privateRoutes = [
     element={
       <ProtectedRoute>
           <SettingsPage />
+      </ProtectedRoute>
+    }
+  />,
+  <Route
+    key="bookmarks"
+    path="/bookmarks"
+    element={
+      <ProtectedRoute>
+          <BookmarksPage />
+      </ProtectedRoute>
+    }
+  />,
+  <Route
+    key="alerts"
+    path="/alerts"
+    element={
+      <ProtectedRoute>
+        <AlertsPage />
       </ProtectedRoute>
     }
   />,

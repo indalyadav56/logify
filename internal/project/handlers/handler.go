@@ -15,6 +15,7 @@ import (
 type ProjectHandler interface {
 	Create(c *gin.Context)
 	Get(c *gin.Context)
+	GetOneProject(c *gin.Context)
 	Update(c *gin.Context)
 	Delete(c *gin.Context)
 
@@ -88,7 +89,33 @@ func (h *projectHandler) Create(c *gin.Context) {
 // @Param id path int true "project ID"
 // @Router /v1/projects/{id} [get]
 func (h *projectHandler) Get(c *gin.Context) {
-	// Implementation for Get
+	result, err := h.service.GetAll()
+	if err != nil {
+		h.log.Error("failed to get project", err)
+		response.SendError(c, http.StatusInternalServerError, "failed to get project", err)
+		return
+	}
+
+	response.SendSuccess(c, "fetched all projects", result)
+}
+
+// @Summary Get project details
+// @Description Get details of a project entry
+// @Tags project
+// @Accept json
+// @Produce json
+// @Param id path string true "project ID"
+// @Router /v1/projects/{id} [get]
+func (h *projectHandler) GetOneProject(c *gin.Context) {
+	id := c.Param("projectID")
+	result, err := h.service.GetByID(id)
+	if err != nil {
+		h.log.Error("failed to get project", err)
+		response.SendError(c, http.StatusInternalServerError, "failed to get project", err)
+		return
+	}
+
+	response.SendSuccess(c, "fetched project", result)
 }
 
 // @Summary Update project details

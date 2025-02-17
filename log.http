@@ -9,8 +9,16 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwcm9qZWN0X2lkIjoiY
 Content-Type: application/json
 
 {
-  "levels": [""],
-  "limit": 1
+    "level": [
+        "INFO"
+    ],
+    "message_contains": [
+        "indal"
+    ],
+    "sort": "timestamp",
+    "order": "desc",
+    "page": 1,
+    "limit": 50
 }
 
 # "metadata": {

@@ -20,6 +20,7 @@ const RegisterPage = () => {
 
   const handleSignup = (e: React.FormEvent) => {
     e.preventDefault();
+    
     setLoading(true);
     // Simulate signup
     setTimeout(() => {
@@ -131,7 +132,7 @@ const RegisterPage = () => {
           <CardFooter>
             <p className="text-center text-sm text-muted-foreground w-full">
               Already have an account?{" "}
-              <Link to="/login" className="text-primary hover:underline">
+              <Link to="/auth/login" className="text-primary hover:underline">
                 Sign in
               </Link>
             </p>

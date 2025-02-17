@@ -195,6 +195,7 @@ export default function LogExplorer() {
                         <TabsTrigger value="15m">15m</TabsTrigger>
                         <TabsTrigger value="1h">1h</TabsTrigger>
                         <TabsTrigger value="24h">24h</TabsTrigger>
+                        <TabsTrigger value="7d">7d</TabsTrigger>
                         <TabsTrigger value="custom">
                           <Calendar className="h-4 w-4" />
                         </TabsTrigger>

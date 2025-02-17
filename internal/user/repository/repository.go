@@ -41,20 +41,15 @@ func (r *userRepository) Insert(user *models.User) (*models.User, error) {
 
 // FindByID retrieves a record by its ID from the database
 func (r *userRepository) FindByID(id string) (*models.User, error) {
-	// Execute SELECT query to find a record by ID
-	// query := "SELECT id, field1, field2 FROM users WHERE id = ?"
-	// row := r.db.QueryRow(query, id)
+	query := "SELECT id, first_name, last_name, email, password FROM users WHERE id = $1"
+	row := r.db.QueryRow(query, id)
 
-	// var user models.User
-	// if err := row.Scan(&user.ID, &user.Field1, &user.Field2); err != nil {
-	// 	if err == sql.ErrNoRows {
-	// 		return nil, nil // No record found
-	// 	}
-	// 	return nil, err // Other error occurred
-	// }
+	var user models.User
+	if err := row.Scan(&user.ID, &user.FirstName, &user.LastName, &user.Email, &user.Password); err != nil {
+		return nil, err
+	}
 
-	// return &user, nil // Return the found record
-	return nil, nil
+	return &user, nil
 }
 
 // List retrieves a paginated list of records from the database
