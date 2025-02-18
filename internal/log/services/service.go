@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"time"
+	"sync"
 
 	"common/pkg/logger"
 	"logify/internal/log/dto"
@@ -14,9 +14,9 @@ import (
 
 	"github.com/ThreeDotsLabs/watermill"
 	"github.com/ThreeDotsLabs/watermill-kafka/v3/pkg/kafka"
-	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/google/uuid"
+	"github.com/twmb/franz-go/pkg/kgo"
 )
 
 type LogService interface {
@@ -27,10 +27,11 @@ type LogService interface {
 }
 
 type logService struct {
-	logRepo   repository.LogRepository
-	log       logger.Logger
-	esClient  *elasticsearch.Client
-	publisher *kafka.Publisher
+	logRepo     repository.LogRepository
+	log         logger.Logger
+	esClient    *elasticsearch.Client
+	publisher   *kafka.Publisher
+	kafkeClient *kgo.Client
 }
 
 func NewLogService(repo repository.LogRepository, log logger.Logger, esClient *elasticsearch.Client) *logService {
@@ -44,11 +45,21 @@ func NewLogService(repo repository.LogRepository, log logger.Logger, esClient *e
 	if err != nil {
 		fmt.Println(err)
 	}
+
+	// Create a Kafka client
+	kafkeClient, err := kgo.NewClient(
+		kgo.SeedBrokers("localhost:9092"),
+	)
+	if err != nil {
+		panic(err)
+	}
+
 	return &logService{
-		logRepo:   repo,
-		log:       log,
-		esClient:  esClient,
-		publisher: publisher,
+		logRepo:     repo,
+		log:         log,
+		esClient:    esClient,
+		publisher:   publisher,
+		kafkeClient: kafkeClient,
 	}
 }
 
@@ -59,12 +70,23 @@ func (s *logService) PublishLog(log *dto.LogRequest) error {
 		fmt.Println(err)
 	}
 
-	msg := message.NewMessage(watermill.NewUUID(), byteData)
+	var wg sync.WaitGroup
+	wg.Add(1)
 
-	if err := s.publisher.Publish("logify", msg); err != nil {
-		fmt.Printf("error publishing message: %v", err)
-		return err
+	record := &kgo.Record{
+		Topic: "logify",
+		Value: byteData,
 	}
+
+	s.kafkeClient.Produce(context.Background(), record, func(_ *kgo.Record, err error) {
+		defer wg.Done()
+		if err != nil {
+			fmt.Printf("record had a produce error: %v\n", err)
+		}
+	})
+
+	wg.Wait()
+
 	return nil
 }
 
@@ -292,44 +314,77 @@ func (s *logService) GetAllServices() (interface{}, error) {
 }
 
 func (s *logService) LogConsumer() error {
-	subscriber, err := kafka.NewSubscriber(
-		kafka.SubscriberConfig{
-			Brokers:       []string{"localhost:9092"},
-			Unmarshaler:   kafka.DefaultMarshaler{},
-			ConsumerGroup: "log-consumer-group",
-		},
-		watermill.NewStdLogger(false, false),
+	// subscriber, err := kafka.NewSubscriber(
+	// 	kafka.SubscriberConfig{
+	// 		Brokers:       []string{"localhost:9092"},
+	// 		Unmarshaler:   kafka.DefaultMarshaler{},
+	// 		ConsumerGroup: "log-consumer-group",
+	// 	},
+	// 	watermill.NewStdLogger(false, false),
+	// )
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+
+	// messages, err := subscriber.Subscribe(context.Background(), "logify")
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+
+	// es, err := elasticsearch.NewDefaultClient()
+	// if err != nil {
+	// 	log.Fatalf("Error creating Elasticsearch client: %v", err)
+	// }
+
+	// go func() {
+	// 	for msg := range messages {
+	// 		var logDto dto.LogRequest
+	// 		if err := json.Unmarshal(msg.Payload, &logDto); err != nil {
+	// 			log.Printf("Error unmarshaling message: %v", err)
+	// 		}
+
+	// 		index := fmt.Sprintf("tenant-%s-project-%s-date-%s", logDto.TenantID, logDto.ProjectID, time.Now().Format("2006-01-02"))
+	// 		_, err = es.Index(index, bytes.NewReader(msg.Payload))
+	// 		if err != nil {
+	// 			log.Fatalf("Error inserting document: %v", err)
+	// 		}
+
+	// 		msg.Ack()
+	// 	}
+	// }()
+
+	// Create Kafka consumer with matched topics
+	brokers := []string{"localhost:9092"}
+	matchedTopics := []string{"logify"}
+	consumer, err := kgo.NewClient(
+		kgo.SeedBrokers(brokers...),
+		kgo.ConsumeTopics(matchedTopics...),
+		kgo.ConsumeResetOffset(kgo.NewOffset().AtEnd()),
 	)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Failed to create Kafka consumer: %v", err)
 	}
+	defer consumer.Close()
 
-	messages, err := subscriber.Subscribe(context.Background(), "logify")
-	if err != nil {
-		log.Fatal(err)
-	}
+	fmt.Println("Consumer started. Listening for messages...")
 
-	es, err := elasticsearch.NewDefaultClient()
-	if err != nil {
-		log.Fatalf("Error creating Elasticsearch client: %v", err)
-	}
+	// Consume messages
+	for {
+		fetches := consumer.PollFetches(context.Background())
 
-	go func() {
-		for msg := range messages {
-			var logDto dto.LogRequest
-			if err := json.Unmarshal(msg.Payload, &logDto); err != nil {
-				log.Printf("Error unmarshaling message: %v", err)
-			}
-
-			index := fmt.Sprintf("tenant-%s-project-%s-date-%s", logDto.TenantID, logDto.ProjectID, time.Now().Format("2006-01-02"))
-			_, err = es.Index(index, bytes.NewReader(msg.Payload))
-			if err != nil {
-				log.Fatalf("Error inserting document: %v", err)
-			}
-
-			msg.Ack()
+		// Iterate over received records
+		iter := fetches.RecordIter()
+		for !iter.Done() {
+			record := iter.Next()
+			fmt.Printf("Received message: Topic=%s, Partition=%d, Offset=%d, Value=%s\n",
+				record.Topic, record.Partition, record.Offset, string(record.Value))
 		}
-	}()
+
+		// Handle errors
+		if err := fetches.Err(); err != nil {
+			fmt.Printf("Error while consuming messages: %v\n", err)
+		}
+	}
 
 	return nil
 }

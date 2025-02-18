@@ -16,6 +16,8 @@ const ImportPage = lazy(() => import("@/pages/import"));
 const ExportPage = lazy(() => import("@/pages/export"));
 const BookmarksPage = lazy(() => import("@/pages/bookmarks"));
 const AlertsPage = lazy(() => import("@/pages/alerts"));
+const BillingPage = lazy(() => import("@/pages/billing"));
+const DocsPage = lazy(() => import("@/pages/docs"));
 
 export const privateRoutes = [
   <Route
@@ -132,6 +134,24 @@ export const privateRoutes = [
     element={
       <ProtectedRoute>
         <AlertsPage />
+      </ProtectedRoute>
+    }
+  />,
+  <Route
+    key="billing"
+    path="/billing"
+    element={
+      <ProtectedRoute>
+        <BillingPage />
+      </ProtectedRoute>
+    }
+  />,
+  <Route
+    key="docs"
+    path="/docs"
+    element={
+      <ProtectedRoute>
+        <DocsPage />
       </ProtectedRoute>
     }
   />,

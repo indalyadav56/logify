@@ -26,6 +26,8 @@ import {
   Users,
   ScrollText,
   Upload,
+  CreditCard,
+  BookOpen,
 } from "lucide-react";
 import { TeamSwitcher } from "./components/team-switcher";
 import { NavUser } from "./components/nav-user";
@@ -50,6 +52,26 @@ const navigationItems = [
     href: "/logs",
   },
   {
+    title: "Projects",
+    icon: GalleryVerticalEnd,
+    href: "/projects",
+  },
+  {
+    title: "Alerts",
+    icon: Bell,
+    href: "/alerts",
+  },
+  {
+    title: "Billing",
+    icon: CreditCard,
+    href: "/billing",
+  },
+  {
+    title: "Documentation",
+    icon: BookOpen,
+    href: "/docs",
+  },
+  {
     title: "Analytics",
     icon: BarChart,
     href: "/analytics",
@@ -68,11 +90,6 @@ const navigationItems = [
     title: "Bookmarks",
     icon: Bookmark,
     href: "/bookmarks",
-  },
-  {
-    title: "Projects",
-    icon: GalleryVerticalEnd,
-    href: "/projects",
   },
   {
     title: "Notifications",
@@ -98,11 +115,6 @@ const navigationItems = [
     title: "Settings",
     icon: Settings2,
     href: "/settings",
-  },
-  {
-    title: "Alerts",
-    icon: Bell,
-    href: "/alerts",
   },
 ];
 
