@@ -11,6 +11,7 @@ import {
   SidebarMenu,
   SidebarHeader,
   SidebarFooter,
+  SidebarGroup,
 } from "./components/ui/sidebar";
 import { Toaster } from "sonner";
 import {
@@ -29,7 +30,6 @@ import {
   CreditCard,
   BookOpen,
 } from "lucide-react";
-import { TeamSwitcher } from "./components/team-switcher";
 import { NavUser } from "./components/nav-user";
 import Loading from "./components/Loading";
 import { publicRoutes } from "./routes/public-routes";
@@ -39,6 +39,7 @@ import { Collapsible } from "./components/ui/collapsible";
 import { useProjectStore } from "./store/useProjectStore";
 import { useUserStore } from "./store/useUserStore";
 import { ProjectSwitcher } from "./components/ProjectSwitcher";
+import SideBarUser from "./components/SideBarUser";
 
 // Navigation items
 const navigationItems = [
@@ -152,10 +153,11 @@ function AppContent() {
         <SidebarProvider>
           <Sidebar>
             <SidebarHeader>
-              <ProjectSwitcher projects={teamsData} />
+              <ProjectSwitcher projects={projects} />
             </SidebarHeader>
 
             <SidebarContent>
+              <SidebarGroup>
               <SidebarMenu>
                 {navigationItems.map((item) => (
                   <Collapsible asChild defaultOpen={true} className="group/collapsible">
@@ -169,15 +171,15 @@ function AppContent() {
                   </Collapsible>
                 ))}
               </SidebarMenu>
+              </SidebarGroup>
             </SidebarContent>
 
             <SidebarFooter>
               <div className="flex items-center gap-4">
-                <NavUser user={userData} />
+                <SideBarUser user={user} />
               </div>
             </SidebarFooter>
           </Sidebar>
-
           <SidebarInset>
             <Suspense fallback={<Loading />}>
               <Routes>

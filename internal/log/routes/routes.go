@@ -12,7 +12,10 @@ import (
 
 func LogRoutes(app *gin.Engine, h handlers.LogHandler, logger logger.Logger, clientJwt jwt.JWT) {
 	logV1 := app.Group("/v1/logs")
+	bmV2 := app.Group("/v1/bookmarks")
+
 	logV1.Use(middlewares.ClientAuthMiddleware(logger, clientJwt))
+	bmV2.Use(middlewares.ClientAuthMiddleware(logger, clientJwt))
 	{
 		logV1.POST("", h.PublishLog)
 		logV1.POST("/search", h.LogSearch)
@@ -20,6 +23,6 @@ func LogRoutes(app *gin.Engine, h handlers.LogHandler, logger logger.Logger, cli
 		logV1.GET("/export", h.GetAllServices)
 
 		// bookmarks
-		logV1.POST("/:logID/bookmarks", h.AddBookmark)
+		bmV2.POST("", h.AddBookmark)
 	}
 }

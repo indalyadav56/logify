@@ -86,6 +86,10 @@ Content-Type: application/json
 
 
 ### bookmark a log by id
-POST http://localhost:8080/v1/logs/Kr3IGZUBP7OFzU5_y6OW/bookmarks
+POST http://localhost:8080/v1/bookmarks
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwcm9qZWN0X2lkIjoiYTdjMDI4MjYtMDA1YS00Y2MxLWE0ZWYtYmMxNjJjY2ZjYWFhIiwidGVuYW50X2lkIjoiZDliZGZjMDYtYWMxYi00MTU5LTg1ZWEtMTNmODVhNjJiNzQ0IiwidXNlcl9pZCI6ImRjZmYxNjFjLWI4YmUtNGRiNS1iYjMzLWFjNjBlMTVmNDM4MiJ9.zlrqHhCe0KErS_-8QOQgla3WWP528G2YjooeU2jIsYk
 Content-Type: application/json
+
+{
+  "log_id": "Kr3IGZUBP7OFzU5_y6OW"
+}

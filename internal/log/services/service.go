@@ -427,7 +427,7 @@ func (s *logService) AddBookmark(logID, tenantID, projectID string) (interface{}
 
 	updateRes, err := s.openSearchClient.Update(
 		index, logID,
-		bytes.NewReader(jsonUpdateQuery), // Update payload
+		bytes.NewReader(jsonUpdateQuery),
 		s.openSearchClient.Update.WithContext(context.Background()),
 	)
 	if err != nil {

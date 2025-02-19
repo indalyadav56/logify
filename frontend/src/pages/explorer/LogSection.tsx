@@ -27,6 +27,7 @@ import { TableView } from "./components/TableView";
 import { ListView } from "./components/ListView";
 import { CompactView } from "./components/CompactView";
 import LogSectionHeader from "./components/LogSectionHeader";
+import { BookmarkButton } from "@/components/bookmark-button";
 
 interface Log {
   id: string;
@@ -49,6 +50,8 @@ type Theme = "light" | "dark" | "system";
 
 export default function LogSection({ logs }: LogSectionProps) {
   const [selectedLog, setSelectedLog] = useState<Log | null>(null);
+  const [showLogDetails, setShowLogDetails] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [timeFormat, setTimeFormat] = useState<"relative" | "absolute">(
     "relative"
   );
@@ -56,7 +59,6 @@ export default function LogSection({ logs }: LogSectionProps) {
   const [showBookmarkedOnly, setShowBookmarkedOnly] = useState(false);
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [quickFilter, setQuickFilter] = useState("");
-  const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [theme, setTheme] = useState<Theme>("system");
   const [fontSize, setFontSize] = useState(14);
   const [compactMode, setCompactMode] = useState(false);
@@ -197,91 +199,84 @@ export default function LogSection({ logs }: LogSectionProps) {
   }
 
   return (
-    <>
-      <div className="flex flex-col gap-3 w-full">
-        <div className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
-          <LogSectionHeader />
-        </div>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Tabs
-              defaultValue={viewMode}
-              className="w-full"
-              onValueChange={(value) => setViewMode(value as ViewMode)}
-            >
-              <TabsList className="grid w-full grid-cols-4 lg:w-[600px]">
-                <TabsTrigger value="list" className="flex items-center gap-2">
-                  <List className="h-4 w-4" />
-                  List View
-                </TabsTrigger>
-                <TabsTrigger value="table" className="flex items-center gap-2">
-                  <Table className="h-4 w-4" />
-                  Table View
-                </TabsTrigger>
-                <TabsTrigger
-                  value="timeline"
-                  className="flex items-center gap-2"
-                >
-                  <Calendar className="h-4 w-4" />
-                  Timeline
-                </TabsTrigger>
-                <TabsTrigger
-                  value="compact"
-                  className="flex items-center gap-2"
-                >
-                  <FileText className="h-4 w-4" />
-                  Compact
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="list" className="mt-4">
-                <ScrollArea className="h-[calc(100vh-120px)] w-full p-4 w-full max-w-full">
-                  <ListView
-                    logs={filteredAndSortedLogs}
-                    bookmarkedLogs={bookmarkedLogs}
-                    setSelectedLog={setSelectedLog}
-                    formatTimestamp={formatTimestamp}
-                  />
-                </ScrollArea>
-              </TabsContent>
-
-              <TabsContent value="table" className="mt-4">
-                <ScrollArea className="h-[calc(100vh-120px)] w-full p-4">
-                  <TableView
-                    logs={filteredAndSortedLogs}
-                    bookmarkedLogs={bookmarkedLogs}
-                    setSelectedLog={setSelectedLog}
-                    formatTimestamp={formatTimestamp}
-                  />
-                </ScrollArea>
-              </TabsContent>
-
-              <TabsContent value="timeline" className="mt-4">
-                <ScrollArea className="h-[calc(100vh-120px)] p-4 w-full max-w-full">
-                  <TimelineView
-                    logs={filteredAndSortedLogs}
-                    bookmarkedLogs={bookmarkedLogs}
-                    setSelectedLog={setSelectedLog}
-                    formatTimestamp={formatTimestamp}
-                  />
-                </ScrollArea>
-              </TabsContent>
-
-              <TabsContent value="compact" className="mt-4">
-                <ScrollArea className="h-[calc(100vh-120px)] p-4 w-full max-w-full">
-                <CompactView
-                  logs={filteredAndSortedLogs}
-                  bookmarkedLogs={bookmarkedLogs}
-                  setSelectedLog={setSelectedLog}
-                  formatTimestamp={formatTimestamp}
-                  />
-              </ScrollArea>
-              </TabsContent>
-            </Tabs>
-          </div>
+    <div className="h-full flex flex-col">
+      {/* View Mode Selector */}
+      <div className="flex items-center justify-between p-4 border-b">
+        <div className="flex items-center gap-4">
+          <Button
+            variant={viewMode === "list" ? "default" : "ghost"}
+            size="sm"
+            onClick={() => setViewMode("list")}
+          >
+            <List className="h-4 w-4 mr-2" />
+            List View
+          </Button>
+          <Button
+            variant={viewMode === "table" ? "default" : "ghost"}
+            size="sm"
+            onClick={() => setViewMode("table")}
+          >
+            <Table className="h-4 w-4 mr-2" />
+            Table View
+          </Button>
+          <Button
+            variant={viewMode === "timeline" ? "default" : "ghost"}
+            size="sm"
+            onClick={() => setViewMode("timeline")}
+          >
+            <Calendar className="h-4 w-4 mr-2" />
+            Timeline
+          </Button>
+          <Button
+            variant={viewMode === "compact" ? "default" : "ghost"}
+            size="sm"
+            onClick={() => setViewMode("compact")}
+          >
+            <FileText className="h-4 w-4 mr-2" />
+            Compact
+          </Button>
         </div>
       </div>
 
+      {/* Log Content */}
+      <ScrollArea className="flex-1">
+        <div className="p-4">
+          {viewMode === "list" && (
+            <ListView
+              logs={filteredAndSortedLogs}
+              bookmarkedLogs={bookmarkedLogs}
+              setSelectedLog={setSelectedLog}
+              formatTimestamp={formatTimestamp}
+            />
+          )}
+          {viewMode === "table" && (
+            <TableView
+              logs={filteredAndSortedLogs}
+              bookmarkedLogs={bookmarkedLogs}
+              setSelectedLog={setSelectedLog}
+              formatTimestamp={formatTimestamp}
+            />
+          )}
+          {viewMode === "timeline" && (
+            <TimelineView
+              logs={filteredAndSortedLogs}
+              bookmarkedLogs={bookmarkedLogs}
+              setSelectedLog={setSelectedLog}
+              formatTimestamp={formatTimestamp}
+            />
+          )}
+          {viewMode === "compact" && (
+            <CompactView
+              logs={filteredAndSortedLogs}
+              bookmarkedLogs={bookmarkedLogs}
+              setSelectedLog={setSelectedLog}
+              formatTimestamp={formatTimestamp}
+            />
+          )}
+        </div>
+      </ScrollArea>
+
+      {/* Log Details Dialog */}
       <Dialog open={!!selectedLog} onOpenChange={() => setSelectedLog(null)}>
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
           <DialogHeader>
@@ -375,6 +370,6 @@ export default function LogSection({ logs }: LogSectionProps) {
           </ScrollArea>
         </DialogContent>
       </Dialog>
-    </>
+    </div>
   );
 }

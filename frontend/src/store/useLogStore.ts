@@ -8,6 +8,7 @@ interface Log {
   service: string
   timestamp: string
   metadata: Record<string, string>
+  is_bookmarked: boolean
 }
 
 interface LogFilters {

@@ -32,3 +32,7 @@ type LogSearchRequest struct {
 	Page     int                    `json:"page"`
 	Limit    int                    `json:"limit"`
 }
+
+type AddBookmarkRequest struct {
+	LogID string `json:"log_id"`
+}

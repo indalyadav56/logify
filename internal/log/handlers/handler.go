@@ -110,12 +110,18 @@ func (h *logHandler) GetAllServices(c *gin.Context) {
 }
 
 func (h *logHandler) AddBookmark(c *gin.Context) {
-	logID := c.Param("logID")
 
 	tenantID := c.MustGet("tenant_id").(string)
 	projectID := c.MustGet("project_id").(string)
 
-	result, err := h.service.AddBookmark(logID, tenantID, projectID)
+	var req dto.AddBookmarkRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		h.log.Error("failed to bind json", err)
+		response.SendError(c, http.StatusBadRequest, "failed to bind json", err)
+		return
+	}
+
+	result, err := h.service.AddBookmark(req.LogID, tenantID, projectID)
 	if err != nil {
 		h.log.Error("failed to get all services", err)
 		response.SendError(c, http.StatusInternalServerError, "failed to get all services", err)
