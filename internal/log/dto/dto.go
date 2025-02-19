@@ -5,14 +5,15 @@ type LogResponse struct {
 }
 
 type LogRequest struct {
-	ID        string                 `json:"id"`
-	TenantID  string                 `json:"tenant_id"`
-	ProjectID string                 `json:"project_id"`
-	Level     string                 `json:"level"`
-	Message   string                 `json:"message"`
-	Service   string                 `json:"service"`
-	Metadata  map[string]interface{} `json:"metadata"`
-	Timestamp string                 `json:"timestamp"`
+	ID         string                 `json:"id"`
+	TenantID   string                 `json:"tenant_id"`
+	ProjectID  string                 `json:"project_id"`
+	Level      string                 `json:"level"`
+	Message    string                 `json:"message"`
+	Service    string                 `json:"service"`
+	Metadata   map[string]interface{} `json:"metadata"`
+	IsBookmark bool                   `json:"is_bookmark"`
+	Timestamp  string                 `json:"timestamp"`
 }
 
 type LogSearchRequest struct {

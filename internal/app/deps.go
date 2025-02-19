@@ -8,8 +8,10 @@ import (
 	"common/pkg/validator"
 	"logify/config"
 
-	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/gin-gonic/gin"
+	"github.com/opensearch-project/opensearch-go"
+	"github.com/twmb/franz-go/pkg/kadm"
+	"github.com/twmb/franz-go/pkg/kgo"
 
 	userHandlers "logify/internal/user/handlers"
 	userRepo "logify/internal/user/repository"
@@ -32,15 +34,17 @@ import (
 )
 
 type Dependencies struct {
-	Config    *config.Config
-	DB        *database.DB
-	Server    *gin.Engine
-	Logger    logger.Logger
-	JWT       jwt.JWT
-	ClientJWT jwt.JWT
-	Validator validator.Validator
-	Redis     redis.Redis
-	EsClient  *elasticsearch.Client
+	Config      *config.Config
+	DB          *database.DB
+	Server      *gin.Engine
+	Logger      logger.Logger
+	JWT         jwt.JWT
+	ClientJWT   jwt.JWT
+	Validator   validator.Validator
+	Redis       redis.Redis
+	OpenSearch  *opensearch.Client
+	KafkaClient *kgo.Client
+	KafkaAdmin  *kadm.Client
 
 	AuthHandler authHandlers.AuthHandler
 	AuthService authServices.AuthService

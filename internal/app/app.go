@@ -14,10 +14,12 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"
+	"github.com/opensearch-project/opensearch-go"
+	"github.com/twmb/franz-go/pkg/kadm"
+	"github.com/twmb/franz-go/pkg/kgo"
 
 	userHandlers "logify/internal/user/handlers"
 	userRepos "logify/internal/user/repository"
@@ -114,15 +116,21 @@ func (a *App) initDependencies() error {
 
 	a.deps.Server = gin.Default()
 
-	// Initialize Elasticsearch client
-	cfg := elasticsearch.Config{
+	a.deps.OpenSearch, err = opensearch.NewClient(opensearch.Config{
 		Addresses: []string{"http://localhost:9200"},
+	})
+	if err != nil {
+		log.Fatalf("Error creating the client: %s", err)
 	}
 
-	a.deps.EsClient, err = elasticsearch.NewClient(cfg)
+	a.deps.KafkaClient, err = kgo.NewClient(
+		kgo.SeedBrokers("localhost:9092"),
+	)
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
+
+	a.deps.KafkaAdmin = kadm.NewClient(a.deps.KafkaClient)
 
 	a.initRepositories()
 
@@ -138,7 +146,7 @@ func (a *App) initDependencies() error {
 }
 
 func (a *App) InitConsumers() {
-	// go a.deps.LogService.LogConsumer()
+	go a.deps.LogService.LogConsumer()
 }
 
 func (a *App) initRepositories() {
@@ -151,7 +159,7 @@ func (a *App) initRepositories() {
 func (a *App) initServices() {
 	a.deps.UserService = userServices.NewUserService(a.deps.UserRepository, a.deps.Logger)
 	a.deps.AuthService = authServices.NewAuthService(a.deps.Logger, a.deps.JWT, a.deps.UserService)
-	a.deps.LogService = logServices.NewLogService(a.deps.LogRepository, a.deps.Logger, a.deps.EsClient)
+	a.deps.LogService = logServices.NewLogService(a.deps.LogRepository, a.deps.Logger, a.deps.OpenSearch, a.deps.KafkaClient, a.deps.KafkaAdmin)
 	a.deps.ProjectService = projectServices.NewProjectService(a.deps.ProjectRepository, a.deps.Logger, a.deps.ClientJWT)
 	a.deps.NotificationService = notificationServices.NewNotificationService(a.deps.NotificationRepository, a.deps.Logger)
 }

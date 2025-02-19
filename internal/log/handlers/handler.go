@@ -16,6 +16,8 @@ type LogHandler interface {
 	PublishLog(c *gin.Context)
 	LogSearch(c *gin.Context)
 	GetAllServices(c *gin.Context)
+
+	AddBookmark(c *gin.Context)
 }
 
 type logHandler struct {
@@ -97,6 +99,23 @@ func (h *logHandler) LogSearch(c *gin.Context) {
 
 func (h *logHandler) GetAllServices(c *gin.Context) {
 	result, err := h.service.GetAllServices()
+	if err != nil {
+		h.log.Error("failed to get all services", err)
+		response.SendError(c, http.StatusInternalServerError, "failed to get all services", err)
+		return
+	}
+
+	response.SendSuccess(c, "Get log", result)
+
+}
+
+func (h *logHandler) AddBookmark(c *gin.Context) {
+	logID := c.Param("logID")
+
+	tenantID := c.MustGet("tenant_id").(string)
+	projectID := c.MustGet("project_id").(string)
+
+	result, err := h.service.AddBookmark(logID, tenantID, projectID)
 	if err != nil {
 		h.log.Error("failed to get all services", err)
 		response.SendError(c, http.StatusInternalServerError, "failed to get all services", err)

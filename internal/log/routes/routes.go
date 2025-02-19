@@ -20,8 +20,6 @@ func LogRoutes(app *gin.Engine, h handlers.LogHandler, logger logger.Logger, cli
 		logV1.GET("/export", h.GetAllServices)
 
 		// bookmarks
-		// logV1.GET("/bookmarks", h.GetBookmarks)
-		// logV1.POST("/bookmarks", h.CreateBookmark)
-		// logV1.DELETE("/bookmarks/:bookmarkID", h.DeleteBookmark)
+		logV1.POST("/:logID/bookmarks", h.AddBookmark)
 	}
 }

@@ -9,18 +9,16 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwcm9qZWN0X2lkIjoiY
 Content-Type: application/json
 
 {
-    "level": [
-        "INFO"
-    ],
-    "message_contains": [
-        "indal"
-    ],
+    "message_contains": [],
+    "timestamp_range": {
+        "from": "2025-02-10T15:40:36.432Z",
+        "to": "2025-02-18T15:55:36.432Z"
+    },
     "sort": "timestamp",
     "order": "desc",
     "page": 1,
     "limit": 50
 }
-
 # "metadata": {
 #       "request_id": "9ee6fe9b-6f99-477d-b163-8da0640669e4"
 #    },
@@ -86,3 +84,8 @@ Content-Type: application/json
 # }
 
 
+
+### bookmark a log by id
+POST http://localhost:8080/v1/logs/Kr3IGZUBP7OFzU5_y6OW/bookmarks
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwcm9qZWN0X2lkIjoiYTdjMDI4MjYtMDA1YS00Y2MxLWE0ZWYtYmMxNjJjY2ZjYWFhIiwidGVuYW50X2lkIjoiZDliZGZjMDYtYWMxYi00MTU5LTg1ZWEtMTNmODVhNjJiNzQ0IiwidXNlcl9pZCI6ImRjZmYxNjFjLWI4YmUtNGRiNS1iYjMzLWFjNjBlMTVmNDM4MiJ9.zlrqHhCe0KErS_-8QOQgla3WWP528G2YjooeU2jIsYk
+Content-Type: application/json

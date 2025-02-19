@@ -26,7 +26,8 @@ export const useUserStore = create<UserStore>((set) => ({
       const response = await fetch("http://localhost:8080/v1/users/me", {
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDAwNjQ5NzUsInRlbmFudF9pZCI6ImQ5YmRmYzA2LWFjMWItNDE1OS04NWVhLTEzZjg1YTYyYjc0NCIsInVzZXJfaWQiOiJkY2ZmMTYxYy1iOGJlLTRkYjUtYmIzMy1hYzYwZTE1ZjQzODIifQ.-Ugxo4glOOA1x6fgxxUsC6htDu2h-J9GXwqPzswtIBA`,
+          // Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
       });
 

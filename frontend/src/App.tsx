@@ -38,6 +38,7 @@ import { useAuthStore } from "./store/useAuthStore";
 import { Collapsible } from "./components/ui/collapsible";
 import { useProjectStore } from "./store/useProjectStore";
 import { useUserStore } from "./store/useUserStore";
+import { ProjectSwitcher } from "./components/ProjectSwitcher";
 
 // Navigation items
 const navigationItems = [
@@ -151,7 +152,7 @@ function AppContent() {
         <SidebarProvider>
           <Sidebar>
             <SidebarHeader>
-              <TeamSwitcher teams={teamsData} />
+              <ProjectSwitcher projects={teamsData} />
             </SidebarHeader>
 
             <SidebarContent>

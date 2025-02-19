@@ -80,7 +80,8 @@ const calculateTimeRange = (range: string) => {
       from.setDate(now.getDate() - 7);
       break;
     default:
-      from.setMinutes(now.getMinutes() - 15);
+      from.setDate(now.getDate() - 7);
+      // from.setMinutes(now.getMinutes() - 15);
   }
 
   return {
@@ -167,7 +168,7 @@ export const useLogStore = create<LogStore>((set, get) => ({
         service: filters.selectedService === "all" ? undefined : filters.selectedService,
         levels: filters.selectedLevels.length > 0 ? filters.selectedLevels : undefined,
         message_contains: filters.searchMessages,
-        timestamp_range: timeRange,
+        // timestamp_range: timeRange,
         metadata: Object.keys(filters.metadata).length > 0 ? filters.metadata : undefined,
         sort: "timestamp",
         order: filters.sortOrder,

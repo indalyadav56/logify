@@ -4,18 +4,20 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
+	"regexp"
 	"sync"
+	"time"
 
 	"common/pkg/logger"
 	"logify/internal/log/dto"
 	"logify/internal/log/repository"
 
-	"github.com/ThreeDotsLabs/watermill"
-	"github.com/ThreeDotsLabs/watermill-kafka/v3/pkg/kafka"
-	"github.com/elastic/go-elasticsearch/v8"
-	"github.com/google/uuid"
+	"github.com/opensearch-project/opensearch-go"
+	"github.com/twmb/franz-go/pkg/kadm"
+	"github.com/twmb/franz-go/pkg/kerr"
 	"github.com/twmb/franz-go/pkg/kgo"
 )
 
@@ -24,47 +26,29 @@ type LogService interface {
 	Search(req *dto.LogSearchRequest) (interface{}, error)
 	GetAllServices() (interface{}, error)
 	LogConsumer() error
+
+	AddBookmark(logID, tenantID, projectID string) (interface{}, error)
 }
 
 type logService struct {
-	logRepo     repository.LogRepository
-	log         logger.Logger
-	esClient    *elasticsearch.Client
-	publisher   *kafka.Publisher
-	kafkeClient *kgo.Client
+	logRepo          repository.LogRepository
+	log              logger.Logger
+	openSearchClient *opensearch.Client
+	kafkaClient      *kgo.Client
+	kafkaAdmin       *kadm.Client
 }
 
-func NewLogService(repo repository.LogRepository, log logger.Logger, esClient *elasticsearch.Client) *logService {
-	publisher, err := kafka.NewPublisher(
-		kafka.PublisherConfig{
-			Brokers:   []string{"localhost:9092"},
-			Marshaler: kafka.DefaultMarshaler{},
-		},
-		watermill.NewStdLogger(false, false),
-	)
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	// Create a Kafka client
-	kafkeClient, err := kgo.NewClient(
-		kgo.SeedBrokers("localhost:9092"),
-	)
-	if err != nil {
-		panic(err)
-	}
-
+func NewLogService(repo repository.LogRepository, log logger.Logger, openSearch *opensearch.Client, kafkaClient *kgo.Client, kafkaAdmin *kadm.Client) *logService {
 	return &logService{
-		logRepo:     repo,
-		log:         log,
-		esClient:    esClient,
-		publisher:   publisher,
-		kafkeClient: kafkeClient,
+		logRepo:          repo,
+		log:              log,
+		openSearchClient: openSearch,
+		kafkaClient:      kafkaClient,
+		kafkaAdmin:       kafkaAdmin,
 	}
 }
 
 func (s *logService) PublishLog(log *dto.LogRequest) error {
-	log.ID = uuid.New().String()
 	byteData, err := json.Marshal(log)
 	if err != nil {
 		fmt.Println(err)
@@ -73,20 +57,59 @@ func (s *logService) PublishLog(log *dto.LogRequest) error {
 	var wg sync.WaitGroup
 	wg.Add(1)
 
+	topic := fmt.Sprintf("logify-%s", log.ProjectID)
+
 	record := &kgo.Record{
-		Topic: "logify",
+		Topic: topic,
 		Value: byteData,
 	}
 
-	s.kafkeClient.Produce(context.Background(), record, func(_ *kgo.Record, err error) {
+	s.kafkaClient.Produce(context.Background(), record, func(_ *kgo.Record, err error) {
 		defer wg.Done()
 		if err != nil {
-			fmt.Printf("record had a produce error: %v\n", err)
+			if errors.Is(err, kerr.UnknownTopicOrPartition) {
+				s.log.Info("record had a produce error: %v\n", err)
+
+				numPartitions := int32(3)     // Explicitly convert to int32
+				replicationFactor := int16(1) // Explicitly convert to int16
+
+				// Custom topic configurations
+				topicConfigs := map[string]*string{
+					"cleanup.policy":    kadm.StringPtr("delete"),    // Options: delete, compact
+					"retention.ms":      kadm.StringPtr("604800000"), // 7 days retention
+					"segment.bytes":     kadm.StringPtr("104857600"), // 100 MB segment size
+					"max.message.bytes": kadm.StringPtr("1048576"),   // 1 MB max message size
+				}
+
+				_, err = s.kafkaAdmin.CreateTopics(context.Background(), numPartitions, replicationFactor, topicConfigs, topic)
+				if err != nil {
+					s.log.Info("Failed to create topic: %v", err)
+				}
+
+				record := &kgo.Record{
+					Topic: topic,
+					Value: byteData,
+				}
+
+				s.kafkaClient.Produce(context.Background(), record, func(_ *kgo.Record, err error) {
+					defer wg.Done()
+					if err != nil {
+						fmt.Printf("record had a produce error: %v\n", err)
+					}
+				})
+
+			}
+
+			s.log.Info("record had a produce error: %v\n", err)
 		}
 	})
 
 	wg.Wait()
 
+	return nil
+}
+
+func (s *logService) ProduceLog(log *dto.LogRequest) error {
 	return nil
 }
 
@@ -240,10 +263,10 @@ func (s *logService) Search(req *dto.LogSearchRequest) (interface{}, error) {
 	fmt.Println("jsonQuery", string(jsonQuery))
 
 	index := fmt.Sprintf("tenant-%s-project-%s-date-*", req.TenantID, req.ProjectID)
-	searchRes, err := s.esClient.Search(
-		s.esClient.Search.WithContext(context.Background()),
-		s.esClient.Search.WithIndex(index),
-		s.esClient.Search.WithBody(bytes.NewReader(jsonQuery)),
+	searchRes, err := s.openSearchClient.Search(
+		s.openSearchClient.Search.WithContext(context.Background()),
+		s.openSearchClient.Search.WithIndex(index),
+		s.openSearchClient.Search.WithBody(bytes.NewReader(jsonQuery)),
 	)
 	if err != nil {
 		log.Fatalf("Error searching documents: %s", err)
@@ -261,10 +284,12 @@ func (s *logService) Search(req *dto.LogSearchRequest) (interface{}, error) {
 	hits := result["hits"].(map[string]interface{})["hits"].([]interface{})
 	for _, hit := range hits {
 		source := hit.(map[string]interface{})["_source"].(map[string]interface{})
-		fmt.Print("source_INDAL===>", source)
+
 		delete(source, "project_id")
 		delete(source, "tenant_id")
 		delete(source, "user_id")
+
+		source["id"] = hit.(map[string]interface{})["_id"].(string)
 		logs = append(logs, source)
 	}
 
@@ -289,10 +314,10 @@ func (s *logService) GetAllServices() (interface{}, error) {
 		log.Fatalf("Error marshaling query: %s", err)
 	}
 
-	searchRes, err := s.esClient.Search(
-		s.esClient.Search.WithContext(context.Background()),
-		s.esClient.Search.WithIndex("indal"),
-		s.esClient.Search.WithBody(bytes.NewReader(jsonQuery)),
+	searchRes, err := s.openSearchClient.Search(
+		s.openSearchClient.Search.WithContext(context.Background()),
+		s.openSearchClient.Search.WithIndex("indal"),
+		s.openSearchClient.Search.WithBody(bytes.NewReader(jsonQuery)),
 	)
 	if err != nil {
 		log.Fatalf("Error searching documents: %s", err)
@@ -314,52 +339,35 @@ func (s *logService) GetAllServices() (interface{}, error) {
 }
 
 func (s *logService) LogConsumer() error {
-	// subscriber, err := kafka.NewSubscriber(
-	// 	kafka.SubscriberConfig{
-	// 		Brokers:       []string{"localhost:9092"},
-	// 		Unmarshaler:   kafka.DefaultMarshaler{},
-	// 		ConsumerGroup: "log-consumer-group",
-	// 	},
-	// 	watermill.NewStdLogger(false, false),
-	// )
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
+	admin := kadm.NewClient(s.kafkaClient)
 
-	// messages, err := subscriber.Subscribe(context.Background(), "logify")
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
+	topicList, err := admin.ListTopics(context.Background())
+	if err != nil {
+		log.Fatalf("Failed to list topics: %v", err)
+	}
 
-	// es, err := elasticsearch.NewDefaultClient()
-	// if err != nil {
-	// 	log.Fatalf("Error creating Elasticsearch client: %v", err)
-	// }
+	topicRegex := regexp.MustCompile(`^logify-.*`)
+	var matchedTopics []string
 
-	// go func() {
-	// 	for msg := range messages {
-	// 		var logDto dto.LogRequest
-	// 		if err := json.Unmarshal(msg.Payload, &logDto); err != nil {
-	// 			log.Printf("Error unmarshaling message: %v", err)
-	// 		}
+	for topic := range topicList {
+		if topicRegex.MatchString(topic) {
+			matchedTopics = append(matchedTopics, topic)
+		}
+	}
 
-	// 		index := fmt.Sprintf("tenant-%s-project-%s-date-%s", logDto.TenantID, logDto.ProjectID, time.Now().Format("2006-01-02"))
-	// 		_, err = es.Index(index, bytes.NewReader(msg.Payload))
-	// 		if err != nil {
-	// 			log.Fatalf("Error inserting document: %v", err)
-	// 		}
+	if len(matchedTopics) == 0 {
+		log.Println("No topics matched the pattern ^logify-.*")
+	}
 
-	// 		msg.Ack()
-	// 	}
-	// }()
+	fmt.Println("Consuming topics:", matchedTopics)
+
+	brokers := []string{"localhost:9092"}
 
 	// Create Kafka consumer with matched topics
-	brokers := []string{"localhost:9092"}
-	matchedTopics := []string{"logify"}
 	consumer, err := kgo.NewClient(
 		kgo.SeedBrokers(brokers...),
 		kgo.ConsumeTopics(matchedTopics...),
-		kgo.ConsumeResetOffset(kgo.NewOffset().AtEnd()),
+		kgo.ConsumeResetOffset(kgo.NewOffset().AtEnd()), // Start from the latest unread messages
 	)
 	if err != nil {
 		log.Fatalf("Failed to create Kafka consumer: %v", err)
@@ -372,12 +380,23 @@ func (s *logService) LogConsumer() error {
 	for {
 		fetches := consumer.PollFetches(context.Background())
 
-		// Iterate over received records
 		iter := fetches.RecordIter()
 		for !iter.Done() {
 			record := iter.Next()
 			fmt.Printf("Received message: Topic=%s, Partition=%d, Offset=%d, Value=%s\n",
 				record.Topic, record.Partition, record.Offset, string(record.Value))
+
+			var logDto dto.LogRequest
+			if err := json.Unmarshal(record.Value, &logDto); err != nil {
+				log.Printf("Error unmarshaling message: %v", err)
+			}
+
+			index := fmt.Sprintf("tenant-%s-project-%s-date-%s", logDto.TenantID, logDto.ProjectID, time.Now().Format("2006-01-02"))
+			_, err = s.openSearchClient.Index(index, bytes.NewReader(record.Value))
+			if err != nil {
+				log.Fatalf("Error inserting document: %v", err)
+			}
+
 		}
 
 		// Handle errors
@@ -385,36 +404,37 @@ func (s *logService) LogConsumer() error {
 			fmt.Printf("Error while consuming messages: %v\n", err)
 		}
 	}
+}
 
+func (s *logService) IndexLog(log *dto.LogRequest) error {
 	return nil
 }
 
-// // IndexLog indexes a single log entry into Elasticsearch
-// func (e *logService) IndexLog(ctx context.Context, logEntry dto.Log) error {
-// 	// Define the index format
-// 	index := fmt.Sprintf("tenant-%s-project-%s-date-%s",
-// 		logEntry.TenantID,
-// 		logEntry.ProjectID,
-// 		logEntry.Timestamp.Format("2006-01-02"),
-// 	)
+func (s *logService) AddBookmark(logID, tenantID, projectID string) (interface{}, error) {
+	updateQuery := map[string]interface{}{
+		"doc": map[string]interface{}{
+			"is_bookmarked": true,
+		},
+	}
 
-// 	// Marshal logEntry to JSON
-// 	data, err := json.Marshal(logEntry)
-// 	if err != nil {
-// 		log.Printf("Error marshaling log entry: %v", err)
-// 		return err
-// 	}
+	jsonUpdateQuery, err := json.Marshal(updateQuery)
+	if err != nil {
+		log.Fatalf("Error marshaling update query: %s", err)
+	}
+	fmt.Println("Update Query:", string(jsonUpdateQuery))
 
-// 	// Index document in Elasticsearch
-// 	req := bytes.NewReader(data)
-// 	res, err := e.client.Index(index, req)
-// 	if err != nil {
-// 		log.Printf("Error inserting document into Elasticsearch: %v", err)
-// 		return err
-// 	}
-// 	defer res.Body.Close()
+	index := fmt.Sprintf("tenant-%s-project-%s-date-*", tenantID, projectID)
 
-// 	// Log success response
-// 	log.Printf("Document indexed successfully in %s", index)
-// 	return nil
-// }
+	updateRes, err := s.openSearchClient.Update(
+		index, logID,
+		bytes.NewReader(jsonUpdateQuery), // Update payload
+		s.openSearchClient.Update.WithContext(context.Background()),
+	)
+	if err != nil {
+		log.Printf("Error updating document: %s", err)
+		return nil, err
+	}
+	defer updateRes.Body.Close()
+
+	return "Bookmark added successfully", nil
+}
