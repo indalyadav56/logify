@@ -12,7 +12,6 @@ import { TableView } from "./components/TableView";
 import { ListView } from "./components/ListView";
 import { CompactView } from "./components/CompactView";
 import { useLogStore } from "@/store/useLogStore";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, Label } from "@/components/ui/dialog";
 
 interface Log {
   id: string;
@@ -44,10 +43,6 @@ export default function LogSection({ selectedProject, isRefreshing }: LogSection
   const [visibleColumns, setVisibleColumns] = useState<Set<string>>(
     new Set(["level", "message", "timestamp", "service", "projectName"])
   );
-  const [sortConfig, setSortConfig] = useState<{ column: string; order: "asc" | "desc" }>({
-    column: "timestamp",
-    order: "desc"
-  });
 
   const ITEMS_PER_PAGE = 10;
   const { logs, isLoading, fetchLogs, setFilter, filters } = useLogStore();
@@ -75,16 +70,6 @@ export default function LogSection({ selectedProject, isRefreshing }: LogSection
       fetchLogs();
     }
   }, [isLoading, logs.length, filters.page, ITEMS_PER_PAGE, setFilter, fetchLogs]);
-
-  const handleSort = (column: string) => {
-    setSortConfig(prev => ({
-      column,
-      order: prev.column === column && prev.order === "asc" ? "desc" : "asc"
-    }));
-    setFilter("sortOrder", sortConfig.order);
-    setFilter("page", 1);
-    fetchLogs();
-  };
 
   const formatTimestamp = (timestamp: string) => {
     return new Date(timestamp).toLocaleString();
@@ -169,9 +154,8 @@ export default function LogSection({ selectedProject, isRefreshing }: LogSection
             <div className="p-4">
               <TableView
                 logs={logs}
-                formatTimestamp={formatTimestamp}
                 visibleColumns={visibleColumns}
-                onSort={handleSort}
+                formatTimestamp={formatTimestamp}
               />
             </div>
           </ScrollArea>
@@ -203,42 +187,6 @@ export default function LogSection({ selectedProject, isRefreshing }: LogSection
           </ScrollArea>
         )}
       </div>
-
-      {selectedLog && (
-        <Dialog open={!!selectedLog} onOpenChange={() => setSelectedLog(null)}>
-          <DialogContent className="max-w-3xl max-h-[80vh] overflow-auto">
-            <DialogHeader>
-              <DialogTitle>Log Details</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Level</Label>
-                  <div className="font-mono">{selectedLog.level}</div>
-                </div>
-                <div>
-                  <Label>Timestamp</Label>
-                  <div className="font-mono">{formatTimestamp(selectedLog.timestamp)}</div>
-                </div>
-                <div>
-                  <Label>Service</Label>
-                  <div className="font-mono">{selectedLog.service}</div>
-                </div>
-              </div>
-              <div>
-                <Label>Message</Label>
-                <div className="font-mono whitespace-pre-wrap">{selectedLog.message}</div>
-              </div>
-              <div>
-                <Label>Metadata</Label>
-                <pre className="bg-muted p-4 rounded-lg overflow-auto">
-                  {JSON.stringify(selectedLog.metadata, null, 2)}
-                </pre>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
     </div>
   );
 }

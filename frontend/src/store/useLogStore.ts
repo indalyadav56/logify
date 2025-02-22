@@ -165,7 +165,13 @@ export const useLogStore = create<LogStore>((set, get) => ({
   },
 
   clearFilters: () => {
-    set({ filters: initialFilters })
+    set((state) => ({
+      filters: {
+        ...initialFilters,
+        selectedService: state.filters.selectedService, // Preserve service selection
+      },
+      logs: [],
+    }));
   },
 
   fetchLogs: async () => {
@@ -208,7 +214,7 @@ export const useLogStore = create<LogStore>((set, get) => ({
           },
         }
       );
-      await new Promise((resolve) => setTimeout(resolve, 4000));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
       // For subsequent pages, append new logs
       if (filters.page > 1) {
