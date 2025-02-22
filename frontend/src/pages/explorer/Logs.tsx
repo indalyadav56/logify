@@ -10,7 +10,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { RefreshCcw, Search, X, Filter, Plus } from "lucide-react";
+import { RefreshCcw, Search, X, Filter, Plus, BookmarkCheck, Bookmark } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -93,6 +93,7 @@ export default function LogExplorer() {
   });
   const [selectedTimeRange, setSelectedTimeRange] = useState("15m");
   const [isCustomRange, setIsCustomRange] = useState(false);
+  const [showBookmarks, setShowBookmarks] = useState(false);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -179,6 +180,22 @@ export default function LogExplorer() {
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold">Log Explorer</h2>
           <div className="flex items-center gap-2">
+          <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowBookmarks(!showBookmarks)}
+              className={cn(
+                "gap-2",
+                showBookmarks && "bg-yellow-500/10 border-yellow-500/50"
+              )}
+            >
+              {showBookmarks ? (
+                <BookmarkCheck className="h-4 w-4 text-yellow-500" />
+              ) : (
+                <Bookmark className="h-4 w-4" />
+              )}
+              {showBookmarks ? "Show All Logs" : "Show Bookmarks"}
+            </Button>
             <Sheet open={isAdvancedFiltersOpen} onOpenChange={setIsAdvancedFiltersOpen}>
               <SheetTrigger asChild>
                 <Button variant="outline" size="sm" className="gap-2">
