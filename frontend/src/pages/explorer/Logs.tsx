@@ -5,20 +5,20 @@ import {
   SelectContent,
   SelectGroup,
   SelectItem,
-  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { RefreshCcw, Search, X, Filter, Plus, BookmarkCheck, Bookmark } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+  RefreshCcw,
+  Search,
+  X,
+  Filter,
+  Plus,
+  BookmarkCheck,
+  Bookmark,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { useLogStore } from "@/store/useLogStore";
 import {
   Sheet,
@@ -30,15 +30,17 @@ import {
   SheetFooter,
 } from "@/components/ui/sheet";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import LogSection from "./LogSection";
 
-const levelOptions = ["ERROR", "WARNING", "INFO", "DEBUG", "TRACE"];
 const serviceOptions = [
   { value: "all", label: "All Services" },
   { value: "auth-service", label: "Auth Service" },
@@ -75,7 +77,17 @@ const getLevelIcon = (level: string) => {
 };
 
 export default function LogExplorer() {
-  const { filters, logs, fetchLogs, setFilter, addSearchMessage, removeSearchMessage, addMetadata, removeMetadata, clearFilters } = useLogStore();
+  const {
+    filters,
+    logs,
+    fetchLogs,
+    setFilter,
+    addSearchMessage,
+    removeSearchMessage,
+    addMetadata,
+    removeMetadata,
+    clearFilters,
+  } = useLogStore();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedLevels, setSelectedLevels] = useState<string[]>([]);
   const [selectedService, setSelectedService] = useState("all");
@@ -105,7 +117,7 @@ export default function LogExplorer() {
   };
 
   const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && searchQuery.trim()) {
+    if (e.key === "Enter" && searchQuery.trim()) {
       const newTerm = searchQuery.trim();
       if (!filters.searchMessages.includes(newTerm)) {
         addSearchMessage(newTerm);
@@ -153,8 +165,11 @@ export default function LogExplorer() {
     }
   };
 
-  const handleCustomDateChange = (field: "from" | "to", date: Date | undefined) => {
-    setCustomDateRange(prev => ({ ...prev, [field]: date }));
+  const handleCustomDateChange = (
+    field: "from" | "to",
+    date: Date | undefined
+  ) => {
+    setCustomDateRange((prev) => ({ ...prev, [field]: date }));
     if (field === "to" && customDateRange.from && date) {
       setFilter("customDateRange", {
         from: customDateRange.from,
@@ -173,14 +188,48 @@ export default function LogExplorer() {
     fetchLogs();
   };
 
+  const projects = [
+    {
+      id: "project1",
+      title: "test-project",
+    },
+    {
+      id: "project4",
+      title: "Project-2",
+    },
+  ];
+
   return (
     <div className="flex flex-col h-full">
       {/* Filters Section */}
       <div className="flex-none p-4 space-y-4 border-b bg-background">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Log Explorer</h2>
+          <div className="flex gap-4">
+            <h2 className="text-lg font-semibold">Log Explorer</h2>
+            <Select value={selectedProject} onValueChange={setSelectedProject}>
+              <SelectTrigger className="w-[300px]">
+                <SelectValue placeholder="Select Project" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  {projects.map((project) => (
+                    <SelectItem
+                      key={project.id}
+                      value={project.id}
+                      className="py-2"
+                    >
+                      <div className="flex flex-col">
+                        <span className="font-medium">{project.title}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </div>
+
           <div className="flex items-center gap-2">
-          <Button
+            <Button
               variant="outline"
               size="sm"
               onClick={() => setShowBookmarks(!showBookmarks)}
@@ -196,7 +245,10 @@ export default function LogExplorer() {
               )}
               {showBookmarks ? "Show All Logs" : "Show Bookmarks"}
             </Button>
-            <Sheet open={isAdvancedFiltersOpen} onOpenChange={setIsAdvancedFiltersOpen}>
+            <Sheet
+              open={isAdvancedFiltersOpen}
+              onOpenChange={setIsAdvancedFiltersOpen}
+            >
               <SheetTrigger asChild>
                 <Button variant="outline" size="sm" className="gap-2">
                   <Filter className="h-4 w-4" />
@@ -210,19 +262,25 @@ export default function LogExplorer() {
                     Configure advanced filtering options for your logs
                   </SheetDescription>
                 </SheetHeader>
-                
+
                 <div className="py-6 space-y-6">
                   {/* Service Filter Section */}
                   <div className="space-y-4">
                     <Label>Service</Label>
-                    <Select value={selectedService} onValueChange={handleServiceChange}>
+                    <Select
+                      value={selectedService}
+                      onValueChange={handleServiceChange}
+                    >
                       <SelectTrigger className="w-full">
                         <SelectValue placeholder="Select service" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectGroup>
-                          {serviceOptions.map(service => (
-                            <SelectItem key={service.value} value={service.value}>
+                          {serviceOptions.map((service) => (
+                            <SelectItem
+                              key={service.value}
+                              value={service.value}
+                            >
                               {service.label}
                             </SelectItem>
                           ))}
@@ -236,11 +294,15 @@ export default function LogExplorer() {
                     <Label>Log Levels</Label>
                     <div className="flex flex-wrap gap-2">
                       <Badge
-                        variant={selectedLevels.includes("ERROR") ? "default" : "outline"}
+                        variant={
+                          selectedLevels.includes("ERROR")
+                            ? "default"
+                            : "outline"
+                        }
                         className="cursor-pointer flex items-center gap-2"
                         onClick={() => {
                           const newLevels = selectedLevels.includes("ERROR")
-                            ? selectedLevels.filter(l => l !== "ERROR")
+                            ? selectedLevels.filter((l) => l !== "ERROR")
                             : [...selectedLevels, "ERROR"];
                           setSelectedLevels(newLevels);
                           setFilter("selectedLevels", newLevels);
@@ -254,11 +316,15 @@ export default function LogExplorer() {
                       </Badge>
 
                       <Badge
-                        variant={selectedLevels.includes("WARNING") ? "default" : "outline"}
+                        variant={
+                          selectedLevels.includes("WARNING")
+                            ? "default"
+                            : "outline"
+                        }
                         className="cursor-pointer flex items-center gap-2"
                         onClick={() => {
                           const newLevels = selectedLevels.includes("WARNING")
-                            ? selectedLevels.filter(l => l !== "WARNING")
+                            ? selectedLevels.filter((l) => l !== "WARNING")
                             : [...selectedLevels, "WARNING"];
                           setSelectedLevels(newLevels);
                           setFilter("selectedLevels", newLevels);
@@ -272,11 +338,15 @@ export default function LogExplorer() {
                       </Badge>
 
                       <Badge
-                        variant={selectedLevels.includes("INFO") ? "default" : "outline"}
+                        variant={
+                          selectedLevels.includes("INFO")
+                            ? "default"
+                            : "outline"
+                        }
                         className="cursor-pointer flex items-center gap-2"
                         onClick={() => {
                           const newLevels = selectedLevels.includes("INFO")
-                            ? selectedLevels.filter(l => l !== "INFO")
+                            ? selectedLevels.filter((l) => l !== "INFO")
                             : [...selectedLevels, "INFO"];
                           setSelectedLevels(newLevels);
                           setFilter("selectedLevels", newLevels);
@@ -290,11 +360,15 @@ export default function LogExplorer() {
                       </Badge>
 
                       <Badge
-                        variant={selectedLevels.includes("DEBUG") ? "default" : "outline"}
+                        variant={
+                          selectedLevels.includes("DEBUG")
+                            ? "default"
+                            : "outline"
+                        }
                         className="cursor-pointer flex items-center gap-2"
                         onClick={() => {
                           const newLevels = selectedLevels.includes("DEBUG")
-                            ? selectedLevels.filter(l => l !== "DEBUG")
+                            ? selectedLevels.filter((l) => l !== "DEBUG")
                             : [...selectedLevels, "DEBUG"];
                           setSelectedLevels(newLevels);
                           setFilter("selectedLevels", newLevels);
@@ -308,11 +382,15 @@ export default function LogExplorer() {
                       </Badge>
 
                       <Badge
-                        variant={selectedLevels.includes("TRACE") ? "default" : "outline"}
+                        variant={
+                          selectedLevels.includes("TRACE")
+                            ? "default"
+                            : "outline"
+                        }
                         className="cursor-pointer flex items-center gap-2"
                         onClick={() => {
                           const newLevels = selectedLevels.includes("TRACE")
-                            ? selectedLevels.filter(l => l !== "TRACE")
+                            ? selectedLevels.filter((l) => l !== "TRACE")
                             : [...selectedLevels, "TRACE"];
                           setSelectedLevels(newLevels);
                           setFilter("selectedLevels", newLevels);
@@ -330,12 +408,15 @@ export default function LogExplorer() {
                   {/* Time Range Section */}
                   <div className="space-y-4">
                     <Label>Time Range</Label>
-                    <Select value={selectedTimeRange} onValueChange={handleTimeRangeChange}>
+                    <Select
+                      value={selectedTimeRange}
+                      onValueChange={handleTimeRangeChange}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Select time range" />
                       </SelectTrigger>
                       <SelectContent>
-                        {timeRangeOptions.map(option => (
+                        {timeRangeOptions.map((option) => (
                           <SelectItem key={option.value} value={option.value}>
                             {option.label}
                           </SelectItem>
@@ -353,18 +434,23 @@ export default function LogExplorer() {
                                 variant="outline"
                                 className={cn(
                                   "justify-start text-left font-normal",
-                                  !customDateRange.from && "text-muted-foreground"
+                                  !customDateRange.from &&
+                                    "text-muted-foreground"
                                 )}
                               >
                                 <CalendarIcon className="mr-2 h-4 w-4" />
-                                {customDateRange.from ? format(customDateRange.from, "PPP") : "Pick a date"}
+                                {customDateRange.from
+                                  ? format(customDateRange.from, "PPP")
+                                  : "Pick a date"}
                               </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0">
                               <Calendar
                                 mode="single"
                                 selected={customDateRange.from}
-                                onSelect={(date) => handleCustomDateChange("from", date)}
+                                onSelect={(date) =>
+                                  handleCustomDateChange("from", date)
+                                }
                               />
                             </PopoverContent>
                           </Popover>
@@ -381,14 +467,18 @@ export default function LogExplorer() {
                                 )}
                               >
                                 <CalendarIcon className="mr-2 h-4 w-4" />
-                                {customDateRange.to ? format(customDateRange.to, "PPP") : "Pick a date"}
+                                {customDateRange.to
+                                  ? format(customDateRange.to, "PPP")
+                                  : "Pick a date"}
                               </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0">
                               <Calendar
                                 mode="single"
                                 selected={customDateRange.to}
-                                onSelect={(date) => handleCustomDateChange("to", date)}
+                                onSelect={(date) =>
+                                  handleCustomDateChange("to", date)
+                                }
                               />
                             </PopoverContent>
                           </Popover>
@@ -422,34 +512,39 @@ export default function LogExplorer() {
                     {/* Metadata Tags */}
                     {Object.entries(filters.metadata).length > 0 && (
                       <div className="flex flex-wrap gap-2 mt-2">
-                        {Object.entries(filters.metadata).map(([key, value]) => (
-                          <Badge
-                            key={key}
-                            variant="secondary"
-                            className="flex items-center gap-1 px-2 py-1"
-                          >
-                            <span className="text-sm">
-                              {key}: {value}
-                            </span>
-                            <button
-                              onClick={() => {
-                                removeMetadata(key);
-                                setFilter("page", 1);
-                                fetchLogs();
-                              }}
-                              className="ml-1 hover:text-destructive focus:outline-none"
+                        {Object.entries(filters.metadata).map(
+                          ([key, value]) => (
+                            <Badge
+                              key={key}
+                              variant="secondary"
+                              className="flex items-center gap-1 px-2 py-1"
                             >
-                              <X className="h-3 w-3" />
-                            </button>
-                          </Badge>
-                        ))}
+                              <span className="text-sm">
+                                {key}: {value}
+                              </span>
+                              <button
+                                onClick={() => {
+                                  removeMetadata(key);
+                                  setFilter("page", 1);
+                                  fetchLogs();
+                                }}
+                                className="ml-1 hover:text-destructive focus:outline-none"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </Badge>
+                          )
+                        )}
                       </div>
                     )}
                   </div>
                 </div>
 
                 <SheetFooter>
-                  <Button variant="outline" onClick={() => setIsAdvancedFiltersOpen(false)}>
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsAdvancedFiltersOpen(false)}
+                  >
                     Done
                   </Button>
                 </SheetFooter>
@@ -496,12 +591,12 @@ export default function LogExplorer() {
           </div>
 
           {/* Active Filters Summary */}
-          {(filters.searchMessages.length > 0 ||
-            Object.keys(filters.metadata).length > 0 ||
-            selectedLevels.length > 0 ||
-            selectedService !== "all" ||
-            selectedTimeRange !== "15m" ||
-            isCustomRange) ? (
+          {filters.searchMessages.length > 0 ||
+          Object.keys(filters.metadata).length > 0 ||
+          selectedLevels.length > 0 ||
+          selectedService !== "all" ||
+          selectedTimeRange !== "15m" ||
+          isCustomRange ? (
             <div className="space-y-3 p-4 border rounded-lg bg-muted/30">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-medium">Active Filters</h3>
@@ -517,22 +612,40 @@ export default function LogExplorer() {
 
               <div className="flex flex-wrap gap-2">
                 {/* Time Range Filter */}
-                {(selectedTimeRange !== "15m" || (isCustomRange && customDateRange.from && customDateRange.to)) && (
-                  <Badge variant="outline" className="flex items-center gap-1 px-2 py-1">
+                {(selectedTimeRange !== "15m" ||
+                  (isCustomRange &&
+                    customDateRange.from &&
+                    customDateRange.to)) && (
+                  <Badge
+                    variant="outline"
+                    className="flex items-center gap-1 px-2 py-1"
+                  >
                     <CalendarIcon className="h-3 w-3 mr-1" />
                     <span className="text-sm">
                       {isCustomRange
-                        ? `${format(customDateRange.from!, "PP")} - ${format(customDateRange.to!, "PP")}`
-                        : timeRangeOptions.find(opt => opt.value === selectedTimeRange)?.label}
+                        ? `${format(customDateRange.from!, "PP")} - ${format(
+                            customDateRange.to!,
+                            "PP"
+                          )}`
+                        : timeRangeOptions.find(
+                            (opt) => opt.value === selectedTimeRange
+                          )?.label}
                     </span>
                   </Badge>
                 )}
 
                 {/* Service Filter */}
                 {selectedService !== "all" && (
-                  <Badge variant="outline" className="flex items-center gap-1 px-2 py-1">
+                  <Badge
+                    variant="outline"
+                    className="flex items-center gap-1 px-2 py-1"
+                  >
                     <span className="text-sm">
-                      Service: {serviceOptions.find(s => s.value === selectedService)?.label}
+                      Service:{" "}
+                      {
+                        serviceOptions.find((s) => s.value === selectedService)
+                          ?.label
+                      }
                     </span>
                   </Badge>
                 )}
@@ -562,7 +675,7 @@ export default function LogExplorer() {
 
                 {/* Search Terms */}
                 {filters.searchMessages.map((term) => (
-                  <Badge 
+                  <Badge
                     key={term}
                     variant="secondary"
                     className="flex items-center gap-1 px-2 py-1"
@@ -590,7 +703,9 @@ export default function LogExplorer() {
                     </span>
                     <button
                       onClick={() => {
-                        const newLevels = selectedLevels.filter(l => l !== level);
+                        const newLevels = selectedLevels.filter(
+                          (l) => l !== level
+                        );
                         setSelectedLevels(newLevels);
                         setFilter("selectedLevels", newLevels);
                         setFilter("page", 1);
