@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -9,194 +9,221 @@ import {
 } from "@/components/ui/select";
 import {
   Search,
-  X,
-  Filter,
-  ArrowUpDown,
-  AlertTriangle,
-  Calendar,
   Download,
-  Settings2,
+  RefreshCw,
+  AlertCircle,
+  Info,
+  AlertTriangle,
+  Bug,
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import DateTimePicker from "@/components/DateRangePicker";
 import LogSection from "./LogSection";
 import { useLogStore } from "@/store/useLogStore";
 
-const levelOptions = ["ERROR", "WARNING", "INFO", "DEBUG"];
-const serviceOptions = ["auth-service", "user-service", "payment-service"];
+const levelOptions = ["ERROR", "WARNING", "INFO", "DEBUG", "TRACE"];
+
+const getLevelIcon = (level: string) => {
+  switch (level) {
+    case "ERROR":
+      return <AlertCircle className="h-4 w-4" />;
+    case "WARNING":
+      return <AlertTriangle className="h-4 w-4" />;
+    case "INFO":
+      return <Info className="h-4 w-4" />;
+    case "DEBUG":
+      return <Bug className="h-4 w-4" />;
+    case "TRACE":
+      return <Bug className="h-4 w-4" />;
+    default:
+      return null;
+  }
+};
+
+const getLevelColor = (level: string) => {
+  switch (level) {
+    case "ERROR":
+      return "text-red-500";
+    case "WARNING":
+      return "text-yellow-500";
+    case "INFO":
+      return "text-blue-500";
+    case "TRACE":
+      return "text-blue-500";
+    case "DEBUG":
+      return "text-gray-500";
+    default:
+      return "";
+  }
+};
 
 export default function LogExplorer() {
-  const { logs, fetchLogs } = useLogStore();
+  const { logs, fetchLogs, setFilter } = useLogStore();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedLevels, setSelectedLevels] = useState<string[]>([]);
-  const [selectedServices, setSelectedServices] = useState<string[]>([]);
-  const [showFilters, setShowFilters] = useState(false);
+  const [selectedProject, setSelectedProject] = useState<string>("");
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [projects, setProjects] = useState([
+    { id: "1", name: "Project A" },
+    { id: "2", name: "Project B" },
+  ]);
 
-  useEffect(() => {
-    fetchLogs();
-  }, [fetchLogs]);
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    // Reset page to 1 and clear logs before fetching
+    setFilter("page", 1);
+    setFilter("selectedService", selectedProject);
+    await fetchLogs();
+    setIsRefreshing(false);
+    // Scroll to top after refresh
+    window.scrollTo(0, 0);
+  };
+
+  // Calculate log statistics
+  const stats = {
+    total: logs.length,
+    errors: logs.filter(log => log.level === "ERROR").length,
+    warnings: logs.filter(log => log.level === "WARNING").length,
+    info: logs.filter(log => log.level === "INFO").length,
+    debug: logs.filter(log => log.level === "DEBUG").length,
+  };
 
   return (
-    <div className="flex h-screen flex-col">
-      {/* Header */}
-      <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="flex h-14 items-center px-4 gap-4">
-          <div className="flex flex-1 items-center gap-2">
-            <h1 className="text-lg font-semibold">Log Explorer</h1>
-            <Badge variant="outline" className="text-xs">
-              {logs.length} entries
-            </Badge>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => setShowFilters(true)}>
-              <Filter className="mr-2 h-4 w-4" />
-              Filters
-            </Button>
-            <Button variant="outline" size="sm">
-              <Download className="mr-2 h-4 w-4" />
-              Export
-            </Button>
-            <Button variant="outline" size="icon" size="sm">
-              <Settings2 className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
+    <div className="flex flex-col h-screen">
+      {/* Header Section */}
+      <header className="flex-none bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
+        <div className="px-6 py-4 space-y-6">
+          {/* Top Bar */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div>
+                <h1 className="text-xl font-semibold tracking-tight mb-1">Log Explorer</h1>
+                <p className="text-sm text-muted-foreground">Monitor and analyze your application logs</p>
+              </div>
+              <Separator orientation="vertical" className="h-8" />
+              <Select value={selectedProject} onValueChange={setSelectedProject}>
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="Select Project" />
+                </SelectTrigger>
+                <SelectContent>
+                  {projects.map((project) => (
+                    <SelectItem key={project.id} value={project.id}>
+                      {project.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-        {/* Search and Filters Bar */}
-        <div className="border-t px-4 py-2">
-          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
+              <Button variant="outline" size="sm" onClick={handleRefresh}>
+                <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? "animate-spin" : ""}`} />
+                Refresh
+              </Button>
+              <Button variant="outline" size="sm">
+                <Download className="h-4 w-4 mr-2" />
+                Export
+              </Button>
+            </div>
+          </div>
+
+          {/* Stats Grid */}
+          <div className="grid grid-cols-5 gap-4">
+            <Card>
+              <CardHeader className="p-4">
+                <CardDescription>Total Logs</CardDescription>
+                <CardTitle>{stats.total.toLocaleString()}</CardTitle>
+              </CardHeader>
+            </Card>
+            <Card className="border-red-100">
+              <CardHeader className="p-4">
+                <CardDescription className="flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4 text-red-500" />
+                  Errors
+                </CardDescription>
+                <CardTitle className="text-red-500">{stats.errors}</CardTitle>
+              </CardHeader>
+            </Card>
+            <Card className="border-yellow-100">
+              <CardHeader className="p-4">
+                <CardDescription className="flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4 text-yellow-500" />
+                  Warnings
+                </CardDescription>
+                <CardTitle className="text-yellow-500">{stats.warnings}</CardTitle>
+              </CardHeader>
+            </Card>
+            <Card className="border-blue-100">
+              <CardHeader className="p-4">
+                <CardDescription className="flex items-center gap-2">
+                  <Info className="h-4 w-4 text-blue-500" />
+                  Info
+                </CardDescription>
+                <CardTitle className="text-blue-500">{stats.info}</CardTitle>
+              </CardHeader>
+            </Card>
+            <Card className="border-gray-100">
+              <CardHeader className="p-4">
+                <CardDescription className="flex items-center gap-2">
+                  <Bug className="h-4 w-4 text-gray-500" />
+                  Debug
+                </CardDescription>
+                <CardTitle className="text-gray-500">{stats.debug}</CardTitle>
+              </CardHeader>
+            </Card>
+          </div>
+
+          {/* Search and Filters */}
+          <div className="flex gap-4 items-center">
             <div className="relative flex-1">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search logs..."
+                placeholder="Search logs by message, service, or ID..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-8"
+                className="pl-9"
               />
             </div>
-            <DateTimePicker />
-          </div>
-
-          {/* Active Filters */}
-          {(selectedLevels.length > 0 || selectedServices.length > 0) && (
-            <div className="mt-2 flex flex-wrap gap-2">
-              {selectedLevels.map((level) => (
-                <Badge
+            <div className="flex gap-2">
+              {levelOptions.map((level) => (
+                <Button
                   key={level}
-                  variant="secondary"
-                  className="flex items-center gap-1"
+                  variant={selectedLevels.includes(level) ? "default" : "outline"}
+                  size="sm"
+                  className={`flex items-center gap-2 ${
+                    selectedLevels.includes(level) ? "" : getLevelColor(level)
+                  }`}
+                  onClick={() =>
+                    setSelectedLevels(
+                      selectedLevels.includes(level)
+                        ? selectedLevels.filter((l) => l !== level)
+                        : [...selectedLevels, level]
+                    )
+                  }
                 >
+                  {getLevelIcon(level)}
                   {level}
-                  <X
-                    className="h-3 w-3 cursor-pointer"
-                    onClick={() =>
-                      setSelectedLevels(selectedLevels.filter((l) => l !== level))
-                    }
-                  />
-                </Badge>
-              ))}
-              {selectedServices.map((service) => (
-                <Badge
-                  key={service}
-                  variant="secondary"
-                  className="flex items-center gap-1"
-                >
-                  {service}
-                  <X
-                    className="h-3 w-3 cursor-pointer"
-                    onClick={() =>
-                      setSelectedServices(
-                        selectedServices.filter((s) => s !== service)
-                      )
-                    }
-                  />
-                </Badge>
+                </Button>
               ))}
             </div>
-          )}
+          </div>
         </div>
-      </div>
+      </header>
 
       {/* Main Content */}
-      <div className="flex-1 overflow-hidden">
-        <LogSection logs={logs} />
-      </div>
-
-      {/* Filters Sheet */}
-      <Sheet open={showFilters} onOpenChange={setShowFilters}>
-        <SheetContent side="right" className="w-[400px]">
-          <SheetHeader>
-            <SheetTitle>Filters</SheetTitle>
-          </SheetHeader>
-          <Separator className="my-4" />
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <h3 className="text-sm font-medium">Log Level</h3>
-              <div className="flex flex-wrap gap-2">
-                {levelOptions.map((level) => (
-                  <Button
-                    key={level}
-                    variant={
-                      selectedLevels.includes(level) ? "default" : "outline"
-                    }
-                    size="sm"
-                    onClick={() =>
-                      setSelectedLevels(
-                        selectedLevels.includes(level)
-                          ? selectedLevels.filter((l) => l !== level)
-                          : [...selectedLevels, level]
-                      )
-                    }
-                  >
-                    {level}
-                  </Button>
-                ))}
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <h3 className="text-sm font-medium">Service</h3>
-              <div className="flex flex-wrap gap-2">
-                {serviceOptions.map((service) => (
-                  <Button
-                    key={service}
-                    variant={
-                      selectedServices.includes(service) ? "default" : "outline"
-                    }
-                    size="sm"
-                    onClick={() =>
-                      setSelectedServices(
-                        selectedServices.includes(service)
-                          ? selectedServices.filter((s) => s !== service)
-                          : [...selectedServices, service]
-                      )
-                    }
-                  >
-                    {service}
-                  </Button>
-                ))}
-              </div>
-            </div>
-          </div>
-        </SheetContent>
-      </Sheet>
+      <main className="flex-1 overflow-hidden">
+        <LogSection
+          logs={logs}
+          selectedProject={selectedProject}
+          isRefreshing={isRefreshing}
+        />
+      </main>
     </div>
   );
 }

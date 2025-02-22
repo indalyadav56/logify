@@ -57,7 +57,7 @@ const initialFilters: LogFilters = {
   metadata: {},
   sortOrder: 'desc',
   page: 1,
-  limit: 50,
+  limit: 20,
 }
 
 const calculateTimeRange = (range: string) => {
@@ -98,12 +98,27 @@ export const useLogStore = create<LogStore>((set, get) => ({
   error: null,
 
   setFilter: (key, value) => {
-    set((state) => ({
-      filters: {
-        ...state.filters,
-        [key]: value,
-      },
-    }))
+    set((state) => {
+      // If we're changing the page number, just update it
+      if (key === 'page') {
+        return {
+          filters: {
+            ...state.filters,
+            [key]: value,
+          }
+        };
+      }
+      
+      // For other filter changes, reset the page to 1 and clear logs
+      return {
+        logs: [], // Clear logs when filters change
+        filters: {
+          ...state.filters,
+          [key]: value,
+          page: 1,
+        },
+      };
+    });
   },
 
   addSearchMessage: (message) => {
@@ -154,16 +169,22 @@ export const useLogStore = create<LogStore>((set, get) => ({
   },
 
   fetchLogs: async () => {
-    const { filters } = get()
-    set({ isLoading: true, error: null })
+    const { filters, logs: currentLogs } = get();
     
+    // Don't set loading state for subsequent pages to prevent flicker
+    if (filters.page === 1) {
+      set({ isLoading: true, logs: [], error: null });
+    } else {
+      set({ isLoading: true, error: null });
+    }
+
     try {
       const timeRange = filters.isCustomRange
         ? {
             from: filters.customDateRange.from.toISOString(),
             to: filters.customDateRange.to.toISOString(),
           }
-        : calculateTimeRange(filters.timeRange)
+        : calculateTimeRange(filters.timeRange);
 
       const requestBody = {
         service: filters.selectedService === "all" ? undefined : filters.selectedService,
@@ -175,7 +196,7 @@ export const useLogStore = create<LogStore>((set, get) => ({
         order: filters.sortOrder,
         page: filters.page,
         limit: filters.limit
-      }
+      };
 
       const response = await axios.post(
         'http://localhost:8080/v1/logs/search',
@@ -186,12 +207,30 @@ export const useLogStore = create<LogStore>((set, get) => ({
             Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwcm9qZWN0X2lkIjoiYTdjMDI4MjYtMDA1YS00Y2MxLWE0ZWYtYmMxNjJjY2ZjYWFhIiwidGVuYW50X2lkIjoiZDliZGZjMDYtYWMxYi00MTU5LTg1ZWEtMTNmODVhNjJiNzQ0IiwidXNlcl9pZCI6ImRjZmYxNjFjLWI4YmUtNGRiNS1iYjMzLWFjNjBlMTVmNDM4MiJ9.zlrqHhCe0KErS_-8QOQgla3WWP528G2YjooeU2jIsYk`,
           },
         }
-      )
+      );
+      await new Promise((resolve) => setTimeout(resolve, 4000));
 
-      set({ logs: response.data.data, isLoading: false })
+      // For subsequent pages, append new logs
+      if (filters.page > 1) {
+        set({
+          logs: [...currentLogs, ...(response.data.data || [])],
+          isLoading: false
+        });
+      } else {
+        // For first page, replace all logs
+        set({
+          logs: response.data.data || [],
+          isLoading: false 
+        });
+      }
     } catch (error) {
-      console.error('Error fetching logs:', error)
-      set({ error: 'Failed to fetch logs', isLoading: false })
+      console.error('Error fetching logs:', error);
+      set({ 
+        error: 'Failed to fetch logs',
+        isLoading: false,
+        // Keep existing logs on error
+        logs: currentLogs
+      });
     }
   },
 }))

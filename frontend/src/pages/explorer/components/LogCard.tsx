@@ -44,10 +44,9 @@ export function LogCard({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.95 }}
-      transition={{ delay: index * 0.05 }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.2 }}
     >
       <Card
         className="group relative hover:shadow-md transition-all duration-200 border-l-4  mb-2 w-full cursor-pointer"

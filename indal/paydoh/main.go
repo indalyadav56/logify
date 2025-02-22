@@ -159,7 +159,7 @@ func GetLatestLogFile(logsFolder string) (string, error) {
 
 func main() {
 	for {
-		logsFolder := "log-new"
+		logsFolder := "logs-test"
 
 		// Step 1: Get latest log file
 		latestLogFile, err := GetLatestLogFile(logsFolder)

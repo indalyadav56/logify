@@ -85,19 +85,6 @@ services:
     networks:
       - logging-network
 
-  elasticsearch:
-    image: elasticsearch:7.14.2
-    container_name: elasticsearch
-    ports:
-      - "9200:9200"
-    environment:
-      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
-      - discovery.type=single-node
-    volumes:
-      - elasticsearch_data:/usr/share/elasticsearch/data
-    networks:
-      - logging-network
-  
   opensearch:
     image: opensearchproject/opensearch:2.11.1
     container_name: opensearch-node1
@@ -129,7 +116,6 @@ networks:
     driver: bridge
 
 volumes:
-  elasticsearch_data:
   kafka_data:
   postgres_data:
   redis_data:

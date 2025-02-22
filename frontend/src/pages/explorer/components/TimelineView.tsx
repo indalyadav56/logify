@@ -68,7 +68,7 @@ export function TimelineView({
                 key={log.id}
                 log={log}
                 index={index}
-                isBookmarked={bookmarkedLogs.has(log.id)}
+                // isBookmarked={bookmarkedLogs.has(log.id)}
                 formatTimestamp={formatTimestamp}
                 onBookmark={toggleBookmark}
                 onShare={handleShare}
