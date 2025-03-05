@@ -20,7 +20,7 @@ export default function ProjectsPage() {
   const [isCreating, setIsCreating] = useState(false);
 
   return (
-    <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
+    <div className="flex-1 space-y-4 p-2 md:p-8 pt-6">
       <div className="flex items-center justify-between space-y-2">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Projects</h2>
@@ -71,24 +71,11 @@ export default function ProjectsPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue="active" className="space-y-4">
-              <TabsList>
-                <TabsTrigger value="active">Active</TabsTrigger>
-                <TabsTrigger value="archived">Archived</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="active" className="space-y-4">
-                {view === "grid" ? <ProjectGrid /> : <ProjectList />}
-              </TabsContent>
-
-              <TabsContent value="archived" className="space-y-4">
-                {view === "grid" ? (
-                  <ProjectGrid showArchived />
-                ) : (
-                  <ProjectList showArchived />
-                )}
-              </TabsContent>
-            </Tabs>
+            {view === "grid" ? (
+              <ProjectGrid showArchived={searchQuery !== ""} />
+            ) : (
+              <ProjectList showArchived={searchQuery !== ""} />
+            )}
           </CardContent>
         </Card>
       </div>

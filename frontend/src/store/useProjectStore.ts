@@ -1,5 +1,4 @@
 import { create } from "zustand";
-import { devtools } from "zustand/middleware";
 
 interface Project {
   id: string;
@@ -31,131 +30,128 @@ interface ProjectState {
   clearError: () => void;
 }
 
-export const useProjectStore = create<ProjectState>()(
-  devtools((set, get) => ({
-    projects: [],
-    selectedProject: null,
-    isLoading: false,
-    error: null,
+export const useProjectStore = create<ProjectState>((set, get) => ({
+  projects: [],
+  selectedProject: null,
+  isLoading: false,
+  error: null,
 
-    fetchProjects: async () => {
-      set({ isLoading: true, error: null });
-      try {
-        const response = await fetch("http://localhost:8080/v1/projects", {
-          headers: {
-            Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDAwNjQ5NzUsInRlbmFudF9pZCI6ImQ5YmRmYzA2LWFjMWItNDE1OS04NWVhLTEzZjg1YTYyYjc0NCIsInVzZXJfaWQiOiJkY2ZmMTYxYy1iOGJlLTRkYjUtYmIzMy1hYzYwZTE1ZjQzODIifQ.-Ugxo4glOOA1x6fgxxUsC6htDu2h-J9GXwqPzswtIBA`,
-            // Authorization: `Bearer ${localStorage.getItem("token")}`,
-            "Content-Type": "application/json",
-          },
-        });
+  fetchProjects: async () => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await fetch("http://localhost:8080/v1/projects", {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          "Content-Type": "application/json",
+        },
+      });
 
-        if (!response.ok) {
-          throw new Error("Failed to fetch projects");
-        }
-
-        const data: ProjectResponse = await response.json();
-        set({ projects: data.data, isLoading: false });
-      } catch (error) {
-        set({
-          error: (error as Error).message,
-          isLoading: false,
-        });
+      if (!response.ok) {
+        throw new Error("Failed to fetch projects");
       }
-    },
 
-    setSelectedProject: (project) => {
-      set({ selectedProject: project });
-    },
+      const data: ProjectResponse = await response.json();
+      set({ projects: data.data, isLoading: false });
+    } catch (error) {
+      set({
+        error: (error as Error).message,
+        isLoading: false,
+      });
+    }
+  },
 
-    createProject: async (project) => {
-      set({ isLoading: true, error: null });
-      try {
-        const response = await fetch("http://localhost:8080/v1/projects", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(project),
-        });
+  setSelectedProject: (project) => {
+    set({ selectedProject: project });
+  },
 
-        if (!response.ok) {
-          throw new Error("Failed to create project");
-        }
+  createProject: async (project) => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await fetch("http://localhost:8080/v1/projects", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(project),
+      });
 
-        const data = await response.json();
-        set((state) => ({
-          projects: [...state.projects, data.data],
-          isLoading: false,
-        }));
-      } catch (error) {
-        set({
-          error: (error as Error).message,
-          isLoading: false,
-        });
+      if (!response.ok) {
+        throw new Error("Failed to create project");
       }
-    },
 
-    updateProject: async (id, project) => {
-      set({ isLoading: true, error: null });
-      try {
-        const response = await fetch(`http://localhost:8080/v1/projects/${id}`, {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(project),
-        });
+      const data = await response.json();
+      set((state) => ({
+        projects: [...state.projects, data.data],
+        isLoading: false,
+      }));
+    } catch (error) {
+      set({
+        error: (error as Error).message,
+        isLoading: false,
+      });
+    }
+  },
 
-        if (!response.ok) {
-          throw new Error("Failed to update project");
-        }
+  updateProject: async (id, project) => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await fetch(`http://localhost:8080/v1/projects/${id}`, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(project),
+      });
 
-        const data = await response.json();
-        set((state) => ({
-          projects: state.projects.map((p) =>
-            p.id === id ? { ...p, ...data.data } : p
-          ),
-          isLoading: false,
-        }));
-      } catch (error) {
-        set({
-          error: (error as Error).message,
-          isLoading: false,
-        });
+      if (!response.ok) {
+        throw new Error("Failed to update project");
       }
-    },
 
-    deleteProject: async (id) => {
-      set({ isLoading: true, error: null });
-      try {
-        const response = await fetch(`http://localhost:8080/v1/projects/${id}`, {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-            "Content-Type": "application/json",
-          },
-        });
+      const data = await response.json();
+      set((state) => ({
+        projects: state.projects.map((p) =>
+          p.id === id ? { ...p, ...data.data } : p
+        ),
+        isLoading: false,
+      }));
+    } catch (error) {
+      set({
+        error: (error as Error).message,
+        isLoading: false,
+      });
+    }
+  },
 
-        if (!response.ok) {
-          throw new Error("Failed to delete project");
-        }
+  deleteProject: async (id) => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await fetch(`http://localhost:8080/v1/projects/${id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          "Content-Type": "application/json",
+        },
+      });
 
-        set((state) => ({
-          projects: state.projects.filter((p) => p.id !== id),
-          isLoading: false,
-        }));
-      } catch (error) {
-        set({
-          error: (error as Error).message,
-          isLoading: false,
-        });
+      if (!response.ok) {
+        throw new Error("Failed to delete project");
       }
-    },
 
-    clearError: () => {
-      set({ error: null });
-    },
-  }))
-);
+      set((state) => ({
+        projects: state.projects.filter((p) => p.id !== id),
+        isLoading: false,
+      }));
+    } catch (error) {
+      set({
+        error: (error as Error).message,
+        isLoading: false,
+      });
+    }
+  },
+
+  clearError: () => {
+    set({ error: null });
+  },
+}));

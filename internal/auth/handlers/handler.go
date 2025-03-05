@@ -75,7 +75,7 @@ func (h *authHandler) Login(c *gin.Context) {
 
 	resp, err := h.service.Login(c.Request.Context(), &req)
 	if err != nil {
-		response.SendError(c, http.StatusBadRequest, "Failed to login user", err)
+		response.SendError(c, http.StatusInternalServerError, "Failed to login user", err)
 		return
 	}
 

@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import axios from 'axios'
+import { ParsedQuery } from '@/pages/explorer/utils/cloudwatch-query-parser'
 
 interface Log {
   id: string
@@ -41,6 +42,7 @@ interface LogStore {
   addMetadata: (key: string, value: string) => void
   removeMetadata: (key: string) => void
   fetchLogs: () => Promise<void>
+  executeCloudWatchQuery: (parsedQuery: ParsedQuery) => Promise<void>
   clearFilters: () => void
 }
 
@@ -172,6 +174,111 @@ export const useLogStore = create<LogStore>((set, get) => ({
       },
       logs: [],
     }));
+  },
+
+  executeCloudWatchQuery: async (parsedQuery: ParsedQuery) => {
+    if (parsedQuery.error || parsedQuery.commands.length === 0) {
+      set({ error: parsedQuery.error || 'Invalid query' });
+      return;
+    }
+
+    set({ isLoading: true, logs: [], error: null });
+
+    try {
+      // Extract commands by type
+      const fieldsCmd = parsedQuery.commands.find(cmd => cmd.type === 'fields');
+      const filterCmds = parsedQuery.commands.filter(cmd => cmd.type === 'filter');
+      const sortCmd = parsedQuery.commands.find(cmd => cmd.type === 'sort');
+      const limitCmd = parsedQuery.commands.find(cmd => cmd.type === 'limit');
+
+      // Build request body
+      const requestBody: Record<string, any> = {
+        page: 1,
+        limit: limitCmd?.params.limit || 20,
+      };
+
+      // Handle filters
+      const serviceFilter = filterCmds.find(cmd => 
+        cmd.params.field === 'service' && cmd.params.operator === '='
+      );
+      if (serviceFilter) {
+        requestBody.service = serviceFilter.params.value;
+      }
+
+      // Handle level filters
+      const levelFilters = filterCmds.filter(cmd => 
+        cmd.params.field === 'level' && cmd.params.operator === '='
+      );
+      if (levelFilters.length > 0) {
+        requestBody.levels = levelFilters.map(cmd => cmd.params.value);
+      }
+
+      // Handle message search
+      const messageFilters = filterCmds.filter(cmd => 
+        (cmd.params.field === 'message' || cmd.params.field === '@message') && 
+        (cmd.params.operator === '=' || cmd.params.operator === 'like')
+      );
+      if (messageFilters.length > 0) {
+        requestBody.message_contains = messageFilters.map(cmd => cmd.params.value);
+      }
+
+      // Handle metadata filters
+      const metadataFilters = filterCmds.filter(cmd => 
+        !cmd.params.field.startsWith('@') && 
+        cmd.params.field !== 'level' && 
+        cmd.params.field !== 'service' && 
+        cmd.params.field !== 'message'
+      );
+      if (metadataFilters.length > 0) {
+        requestBody.metadata = {};
+        metadataFilters.forEach(cmd => {
+          requestBody.metadata[cmd.params.field] = cmd.params.value;
+        });
+      }
+
+      // Handle sort
+      if (sortCmd) {
+        const { field, direction } = sortCmd.params;
+        if (field === '@timestamp' || field === 'timestamp') {
+          requestBody.sort = 'timestamp';
+          requestBody.order = direction;
+        }
+      } else {
+        // Default sort
+        requestBody.sort = 'timestamp';
+        requestBody.order = 'desc';
+      }
+
+      const response = await axios.post(
+        'http://localhost:8080/v1/logs/search',
+        requestBody,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwcm9qZWN0X2lkIjoiYTdjMDI4MjYtMDA1YS00Y2MxLWE0ZWYtYmMxNjJjY2ZjYWFhIiwidGVuYW50X2lkIjoiZDliZGZjMDYtYWMxYi00MTU5LTg1ZWEtMTNmODVhNjJiNzQ0IiwidXNlcl9pZCI6ImRjZmYxNjFjLWI4YmUtNGRiNS1iYjMzLWFjNjBlMTVmNDM4MiJ9.zlrqHhCe0KErS_-8QOQgla3WWP528G2YjooeU2jIsYk`,
+          },
+        }
+      );
+
+      set({
+        logs: response.data.data || [],
+        isLoading: false,
+        // Update filters to match the query
+        filters: {
+          ...get().filters,
+          page: 1,
+          limit: limitCmd?.params.limit || 20,
+          sortOrder: (sortCmd?.params.direction === 'desc' ? 'desc' : 'asc') as 'asc' | 'desc',
+        }
+      });
+    } catch (error) {
+      console.error('Error executing CloudWatch query:', error);
+      set({ 
+        error: 'Failed to execute CloudWatch query',
+        isLoading: false,
+        logs: []
+      });
+    }
   },
 
   fetchLogs: async () => {

@@ -198,6 +198,16 @@ func (a *App) registerRoutes() {
 		c.HTML(http.StatusOK, "index.html", gin.H{})
 	})
 
+	a.deps.Server.GET("/health", func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"status": "ok",
+		})
+	})
+
+	a.deps.Server.GET("/menus", func(c *gin.Context) {
+		c.JSON(200, GetNavigationConfig())
+	})
+
 }
 
 func (a *App) Shutdown() error {
@@ -205,4 +215,53 @@ func (a *App) Shutdown() error {
 		a.deps.Logger.Error("failed to close database connection")
 	}
 	return nil
+}
+
+type NavigationItem struct {
+	Title    string           `json:"title"`
+	Icon     string           `json:"icon"`
+	Route    string           `json:"route"`
+	Roles    []string         `json:"-"`
+	Children []NavigationItem `json:"-"`
+}
+
+// GetNavigationConfig returns the navigation configuration for the application
+func GetNavigationConfig() []NavigationItem {
+	return []NavigationItem{
+		{
+			Title: "Dashboard",
+			Icon:  "dashboard",
+			Route: "/dashboard",
+			Roles: []string{"admin", "manager", "user", "read-only"},
+		},
+		{
+			Title: "Logs",
+			Icon:  "logs",
+			Route: "/logs",
+			Roles: []string{"admin", "manager", "user", "read-only"},
+			Children: []NavigationItem{
+				{
+					Title: "View Logs",
+					Route: "/logs/view",
+					Roles: []string{"admin", "manager", "user", "read-only"},
+				},
+				{
+					Title: "Export Logs",
+					Route: "/logs/export",
+					Roles: []string{"admin", "manager"},
+				},
+				{
+					Title: "Bookmark Logs",
+					Route: "/logs/bookmark",
+					Roles: []string{"admin", "user"},
+				},
+			},
+		},
+		{
+			Title: "Settings",
+			Icon:  "settings",
+			Route: "/settings",
+			Roles: []string{"admin", "manager"},
+		},
+	}
 }

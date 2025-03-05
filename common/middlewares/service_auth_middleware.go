@@ -3,7 +3,9 @@ package middlewares
 import (
 	"common/pkg/jwt"
 	"common/pkg/logger"
+	"common/pkg/response"
 	"crypto/subtle"
+	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -17,14 +19,14 @@ func ServiceAuthMiddleware(logger logger.Logger, jwt jwt.JWT) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		apiKey := c.GetHeader(ServiceAuthHeader)
 		if apiKey == "" {
-			// response.HandleUnAuthorizedErrorWithAbort(c, "missing service authentication header")
+			response.SendError(c, http.StatusBadRequest, "missing service authentication header", nil)
 			return
 		}
 
 		// expectedAPIKey := os.Getenv("SERVICE_API_KEY")
 		expectedAPIKey := "SERVICE_API_KEY"
 		if subtle.ConstantTimeCompare([]byte(apiKey), []byte(expectedAPIKey)) != 1 {
-			// response.HandleErrorWithAbort(c, http.StatusBadRequest, "invalid service authentication token")
+			response.SendError(c, http.StatusBadRequest, "invalid service authentication token", nil)
 			return
 		}
 
@@ -34,7 +36,7 @@ func ServiceAuthMiddleware(logger logger.Logger, jwt jwt.JWT) gin.HandlerFunc {
 			"exp":     time.Now().Add(time.Hour * 1).Unix(),
 		})
 		if err != nil {
-			// response.HandleServerErrorWithAbort(c, "failed to generate token")
+			response.SendError(c, http.StatusInternalServerError, "failed to generate token", err)
 			return
 		}
 

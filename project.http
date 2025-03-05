@@ -1,10 +1,10 @@
 POST http://localhost:8080/v1/projects
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDAwNjQ5NzUsInRlbmFudF9pZCI6ImQ5YmRmYzA2LWFjMWItNDE1OS04NWVhLTEzZjg1YTYyYjc0NCIsInVzZXJfaWQiOiJkY2ZmMTYxYy1iOGJlLTRkYjUtYmIzMy1hYzYwZTE1ZjQzODIifQ.-Ugxo4glOOA1x6fgxxUsC6htDu2h-J9GXwqPzswtIBA
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDA4ODY1NTksInRlbmFudF9pZCI6IjNiNzc5N2FlLTA1YmEtNDhkOS1hYmJlLTBiOTdlODdkZmJmNCIsInVzZXJfaWQiOiI4NzYyNzY3OC1hYzExLTQ3MzQtYTg4NS1mOWEwM2U3NTk5NWUifQ.BXaafvgZGlhSzv6O9BPZxmA4ynd_yycqA-F3cue766U
 Content-Type: application/json
 
 {
-    "title": "Project 1",
-    "environment": "dev",
+    "title": "Project 3",
+    "environment": "local"
 }
 
 

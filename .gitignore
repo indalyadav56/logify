@@ -1,2 +1,4 @@
 *.log
 .vscode
+kafka-data
+logs-test

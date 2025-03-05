@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,29 +13,68 @@ import {
 } from "@/components/ui/card";
 import { Shield, Github } from 'lucide-react';
 import { Separator } from "@/components/ui/separator";
+import { useAuthStore } from '@/store/useAuthStore';
+import { toast } from 'sonner';
+
+interface LoginFormData {
+  email: string;
+  password: string;
+}
 
 const Login = () => {
   const navigate = useNavigate();
-  const [loading, setLoading] = React.useState(false);
+  const { login, isAuthenticated, error } = useAuthStore();
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState<LoginFormData>({
+    email: '',
+    password: '',
+  });
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    // Simulate login
-    setTimeout(() => {
+    try {
+      console.log('Login attempt with:', formData);
+      await login(formData.email, formData.password);
+      console.log('Login successful');
+    } catch (error) {
+      console.error('Login error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to sign in';
+      toast.error(errorMessage);
+    } finally {
       setLoading(false);
-      // Store auth token
-      localStorage.setItem('logify_auth', 'dummy_token');
-      // Redirect to dashboard
-      navigate('/dashboard');
-    }, 1000);
+    }
   };
+
+  useEffect(() => {
+    if (error) {
+      toast.error(error);
+    }
+  }, [error]);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      toast.success('Successfully signed in!');
+      navigate('/dashboard');
+    }
+  }, [isAuthenticated, navigate]);
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <div className="w-full max-w-[400px]">
-        <div className="text-center mb-8">
-          <Link to="/" className="inline-flex items-center gap-2">
+      <div className="w-full max-w-[400px] space-y-6">
+        <div className="text-center">
+          <Link 
+            to="/" 
+            className="inline-flex items-center gap-2 hover:opacity-80 transition-opacity"
+          >
             <Shield className="h-6 w-6" />
             <span className="font-bold text-xl">Logify</span>
           </Link>
@@ -54,9 +93,15 @@ const Login = () => {
                 <Label htmlFor="email">Email</Label>
                 <Input
                   id="email"
+                  name="email"
                   type="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
                   placeholder="name@company.com"
                   required
+                  autoComplete="email"
+                  autoFocus
+                  disabled={loading}
                 />
               </div>
               <div className="space-y-2">
@@ -65,18 +110,28 @@ const Login = () => {
                   <Link
                     to="/forgot-password"
                     className="text-sm text-primary hover:underline"
+                    tabIndex={0}
                   >
                     Forgot password?
                   </Link>
                 </div>
                 <Input
                   id="password"
+                  name="password"
                   type="password"
+                  value={formData.password}
+                  onChange={handleInputChange}
                   placeholder="••••••••"
                   required
+                  autoComplete="current-password"
+                  disabled={loading}
                 />
               </div>
-              <Button className="w-full" type="submit" disabled={loading}>
+              <Button 
+                className="w-full" 
+                type="submit" 
+                disabled={loading || !formData.email || !formData.password}
+              >
                 {loading ? "Signing in..." : "Sign in"}
               </Button>
             </form>
@@ -92,14 +147,20 @@ const Login = () => {
               </div>
             </div>
 
-            <Button variant="outline" className="w-full" type="button">
+            <Button 
+              variant="outline" 
+              className="w-full" 
+              type="button"
+              onClick={() => toast.info('GitHub authentication coming soon!')}
+              disabled={loading}
+            >
               <Github className="mr-2 h-4 w-4" />
               GitHub
             </Button>
           </CardContent>
-          <CardFooter>
-            <p className="text-center text-sm text-muted-foreground w-full">
-              Don't have an account?{" "}
+          <CardFooter className="justify-center">
+            <p className="text-sm text-muted-foreground">
+              Don't have an account?{' '}
               <Link to="/auth/register" className="text-primary hover:underline">
                 Sign up
               </Link>

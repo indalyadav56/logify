@@ -2,8 +2,8 @@ POST http://localhost:8080/v1/auth/login
 Content-Type: application/json
 
 {
-    "email": "admin123@admin.com",
-    "password": "admin"
+    "email": "indal@example.com",
+    "password": "Indal@123"
 }
 
 ### register

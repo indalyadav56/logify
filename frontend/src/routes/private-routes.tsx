@@ -1,7 +1,6 @@
+import { lazy } from "react";
 import { Route } from "react-router-dom";
 import { ProtectedRoute } from "@/components/auth/protected-route";
-// import { Layout } from "@/components/layout";
-import { lazy } from "react";
 
 const DashboardPage = lazy(() => import("@/pages/dashboard"));
 const LogsPage = lazy(() => import("@/pages/explorer/Logs"));
@@ -25,7 +24,7 @@ export const privateRoutes = [
     path="/dashboard"
     element={
       <ProtectedRoute>
-          <DashboardPage />
+        <DashboardPage />
       </ProtectedRoute>
     }
   />,
@@ -34,7 +33,7 @@ export const privateRoutes = [
     path="/logs"
     element={
       <ProtectedRoute>
-          <LogsPage />
+        <LogsPage />
       </ProtectedRoute>
     }
   />,
@@ -43,7 +42,7 @@ export const privateRoutes = [
     path="/import"
     element={
       <ProtectedRoute>
-          <ImportPage />
+        <ImportPage />
       </ProtectedRoute>
     }
   />,
@@ -52,7 +51,7 @@ export const privateRoutes = [
     path="/export"
     element={
       <ProtectedRoute>
-          <ExportPage />
+        <ExportPage />
       </ProtectedRoute>
     }
   />,
@@ -61,7 +60,7 @@ export const privateRoutes = [
     path="/projects"
     element={
       <ProtectedRoute>
-          <ProjectsPage />
+        <ProjectsPage />
       </ProtectedRoute>
     }
   />,
@@ -70,7 +69,7 @@ export const privateRoutes = [
     path="/projects/:id"
     element={
       <ProtectedRoute>
-          <ProjectDetailsPage />
+        <ProjectDetailsPage />
       </ProtectedRoute>
     }
   />,
@@ -79,7 +78,7 @@ export const privateRoutes = [
     path="/notifications"
     element={
       <ProtectedRoute>
-          <NotificationsPage />
+        <NotificationsPage />
       </ProtectedRoute>
     }
   />,
@@ -88,7 +87,7 @@ export const privateRoutes = [
     path="/webhooks"
     element={
       <ProtectedRoute>
-          <WebhooksPage />
+        <WebhooksPage />
       </ProtectedRoute>
     }
   />,
@@ -97,7 +96,7 @@ export const privateRoutes = [
     path="/teams"
     element={
       <ProtectedRoute>
-          <TeamsPage />
+        <TeamsPage />
       </ProtectedRoute>
     }
   />,
@@ -106,7 +105,7 @@ export const privateRoutes = [
     path="/audit"
     element={
       <ProtectedRoute>
-          <AuditPage />
+        <AuditPage />
       </ProtectedRoute>
     }
   />,
@@ -115,7 +114,7 @@ export const privateRoutes = [
     path="/settings"
     element={
       <ProtectedRoute>
-          <SettingsPage />
+        <SettingsPage />
       </ProtectedRoute>
     }
   />,
@@ -124,7 +123,7 @@ export const privateRoutes = [
     path="/bookmarks"
     element={
       <ProtectedRoute>
-          <BookmarksPage />
+        <BookmarksPage />
       </ProtectedRoute>
     }
   />,

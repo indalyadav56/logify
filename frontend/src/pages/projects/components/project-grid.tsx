@@ -19,12 +19,12 @@ interface ProjectGridProps {
 }
 
 export function ProjectGrid({ showArchived = false }: ProjectGridProps) {
-  const { projects, deleteProject, archiveProject } = useProjectStore();
+  const { projects, deleteProject } = useProjectStore();
   const navigate = useNavigate();
 
-  const filteredProjects = projects.filter(
-    (project) => (project.status === "archived") === showArchived
-  );
+  // const filteredProjects = projects.filter(
+  //   (project) => (project?.status === "archived") === showArchived
+  // );
 
   const handleArchive = async (id: string) => {
     try {
@@ -45,13 +45,13 @@ export function ProjectGrid({ showArchived = false }: ProjectGridProps) {
   return (
     <ScrollArea className="h-[600px]">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-1">
-        {filteredProjects.map((project) => (
+        {projects.map((project) => (
           <Card key={project.id} className="group cursor-pointer" onClick={() => navigate(`/projects/${project.id}`)}>
             <CardHeader className="space-y-0 pb-2">
               <div className="flex items-center justify-between">
                 <div className="space-y-1">
                   <h3 className="font-semibold leading-none">
-                    {project.title}
+                    {project.name}
                   </h3>
                   <p className="text-sm text-muted-foreground">
                     {project.environment}

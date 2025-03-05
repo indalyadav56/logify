@@ -18,59 +18,45 @@ func AuthMiddleware(logger logger.Logger, jwt jwt.JWT) gin.HandlerFunc {
 		token, err := extractBearerToken(c)
 		if err != nil {
 			logger.Error(fmt.Sprintf("Authorization error: %s | IP: %s", err.Error(), c.ClientIP()))
-			resp := response.Unauthorized(fmt.Sprintf("Authorization error:-%s", err.Error()))
-			c.JSON(http.StatusBadGateway, resp)
-			c.Abort()
+			response.SendError(c, http.StatusUnauthorized, "Authorization error", err.Error())
 			return
 		}
 
 		claims, err := jwt.ValidateToken(token)
 		if err != nil {
 			logger.Error(fmt.Sprintf("Invalid token: %v | IP: %s", err, c.ClientIP()))
-			resp := response.Error(http.StatusBadRequest, "Invalid token", err.Error())
-			c.JSON(http.StatusBadGateway, resp)
-			c.Abort()
+			response.SendError(c, http.StatusUnauthorized, "Invalid token", err.Error())
 			return
 		}
 
 		tokenData, err := jwt.GetClaims(claims)
 		if err != nil {
 			logger.Error(fmt.Sprintf("Invalid token: %v | IP: %s", err, c.ClientIP()))
-			resp := response.Error(http.StatusBadRequest, "Invalid token", err.Error())
-			c.JSON(http.StatusBadGateway, resp)
-			c.Abort()
+			response.SendError(c, http.StatusBadRequest, "Invalid token", err.Error())
 			return
 		}
 
 		userId, ok := tokenData["user_id"].(string)
 		if !ok {
-			resp := response.Error(http.StatusBadRequest, "user id does not available in token", nil)
-			c.JSON(http.StatusBadGateway, resp)
-			c.Abort()
+			response.SendError(c, http.StatusBadRequest, "user id does not available in token", nil)
 			return
 		}
 
 		tenantID, ok := tokenData["tenant_id"].(string)
 		if !ok {
-			resp := response.Error(http.StatusBadRequest, "tenant id does not available in token", nil)
-			c.JSON(http.StatusBadGateway, resp)
-			c.Abort()
+			response.SendError(c, http.StatusBadRequest, "tenant id does not available in token", nil)
 			return
 		}
 
 		// projectID, ok := tokenData["project_id"].(string)
 		// if !ok {
-		// 	resp := response.Error(http.StatusBadRequest, "project id does not available in token", nil)
-		// 	c.JSON(http.StatusBadGateway, resp)
-		// 	c.Abort()
+		// 	response.SendError(c, http.StatusBadRequest, "project id does not available in token", nil)
 		// 	return
 		// }
 
-		fmt.Println("tokenData=====>", tokenData)
-
 		c.Set("user_id", userId)
 		c.Set("tenant_id", tenantID)
-		c.Set("project_id", "projectID")
+		// c.Set("project_id", projectID)
 
 		c.Next()
 	}

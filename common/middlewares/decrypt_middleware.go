@@ -3,7 +3,9 @@ package middlewares
 import (
 	"common/dto"
 	"common/pkg/logger"
+	"common/pkg/response"
 	"common/pkg/utils/encryption"
+	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -23,13 +25,13 @@ func DecryptMiddleware(logger logger.Logger) gin.HandlerFunc {
 		req := new(dto.EncryptedRequest)
 
 		if err := c.ShouldBindJSON(req); err != nil {
-			// response.HandleErrorWithAbort(c, http.StatusBadRequest, "Invalid request payload", err)
+			response.SendError(c, http.StatusBadRequest, "Invalid request payload", err)
 			return
 		}
 
 		decrypted, err := encryption.Decrypt(req.Data, []byte(signingKey))
 		if err != nil {
-			// response.HandleErrorWithAbort(c, http.StatusBadRequest, "Invalid request payload data", err)
+			response.SendError(c, http.StatusBadRequest, "Invalid request payload data", err)
 			return
 		}
 

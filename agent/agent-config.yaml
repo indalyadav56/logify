@@ -1,0 +1,8 @@
+logs:
+  - path: "/var/log/app.log"
+    tag: "app"
+  - path: "/var/log/syslog"
+    tag: "system"
+ingestion_endpoint: "http://yourplatform.com/api/ingest"
+auth_token: "your-auth-token"
+buffer_size: 1000

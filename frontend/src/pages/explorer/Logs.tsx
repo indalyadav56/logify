@@ -17,6 +17,7 @@ import {
   Plus,
   BookmarkCheck,
   Bookmark,
+  Code,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLogStore } from "@/store/useLogStore";
@@ -40,6 +41,9 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import LogSection from "./LogSection";
+import { CloudWatchQueryInput } from "./components/CloudWatchQueryInput";
+import { parseCloudWatchQuery } from "./utils/cloudwatch-query-parser";
+import { toast } from "sonner";
 
 const serviceOptions = [
   { value: "all", label: "All Services" },
@@ -87,6 +91,7 @@ export default function LogExplorer() {
     addMetadata,
     removeMetadata,
     clearFilters,
+    executeCloudWatchQuery,
   } = useLogStore();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedLevels, setSelectedLevels] = useState<string[]>([]);
@@ -106,6 +111,7 @@ export default function LogExplorer() {
   const [selectedTimeRange, setSelectedTimeRange] = useState("15m");
   const [isCustomRange, setIsCustomRange] = useState(false);
   const [showBookmarks, setShowBookmarks] = useState(false);
+  const [showCloudWatchQuery, setShowCloudWatchQuery] = useState(false);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -199,6 +205,31 @@ export default function LogExplorer() {
     },
   ];
 
+  const handleRunCloudWatchQuery = async (query: string) => {
+    try {
+      setIsRefreshing(true);
+      
+      // Parse the CloudWatch query
+      const parsedQuery = parseCloudWatchQuery(query);
+      
+      if (parsedQuery.error) {
+        toast.error(`Query error: ${parsedQuery.error}`);
+        setIsRefreshing(false);
+        return;
+      }
+      
+      // Execute the query using the store method
+      await executeCloudWatchQuery(parsedQuery);
+      setIsRefreshing(false);
+      
+      toast.success('Query executed successfully');
+    } catch (error) {
+      console.error('Error executing CloudWatch query:', error);
+      toast.error('Failed to execute query');
+      setIsRefreshing(false);
+    }
+  };
+
   return (
     <div className="flex flex-col h-full">
       {/* Filters Section */}
@@ -245,6 +276,20 @@ export default function LogExplorer() {
               )}
               {showBookmarks ? "Show All Logs" : "Show Bookmarks"}
             </Button>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowCloudWatchQuery(!showCloudWatchQuery)}
+              className={cn(
+                "gap-2",
+                showCloudWatchQuery && "bg-blue-500/10 border-blue-500/50"
+              )}
+            >
+              <Code className="h-4 w-4" />
+              {showCloudWatchQuery ? "Hide Query" : "CloudWatch Query"}
+            </Button>
+            
             <Sheet
               open={isAdvancedFiltersOpen}
               onOpenChange={setIsAdvancedFiltersOpen}
@@ -560,6 +605,16 @@ export default function LogExplorer() {
             </Button>
           </div>
         </div>
+
+        {/* CloudWatch Query Input */}
+        {showCloudWatchQuery && (
+          <div className="border rounded-md p-4 bg-card">
+            <CloudWatchQueryInput 
+              onRunQuery={handleRunCloudWatchQuery}
+              isLoading={isRefreshing}
+            />
+          </div>
+        )}
 
         {/* Search and Filters Row */}
         <div className="flex flex-col gap-4">

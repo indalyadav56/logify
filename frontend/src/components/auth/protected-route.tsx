@@ -1,24 +1,27 @@
-import { useAuthStore } from "@/store/useAuthStore";
 import { Navigate, useLocation } from "react-router-dom";
+import { Suspense } from "react";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { useAuth } from "@/hooks/useAuth";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  allowedRoles?: string[];
+  redirectPath?: string;
 }
 
-export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) {
-  const { isAuthenticated, user } = useAuthStore();
+export function ProtectedRoute({ 
+  children, 
+  redirectPath = "/auth/login" 
+}: ProtectedRouteProps) {
+  const { isAuthenticated, isLoading } = useAuth();
   const location = useLocation();
 
-  // Not authenticated, redirect to login
-  if (!isAuthenticated) {
-    return <Navigate to="/auth/login" state={{ from: location }} replace />;
+  if (isLoading) {
+    return <LoadingSpinner />;
   }
 
-  // // Check for role-based access if roles are specified
-  // if (allowedRoles && user?.role && !allowedRoles.includes(user.role)) {
-  //   return <Navigate to="/unauthorized" replace />;
-  // }
+  if (!isAuthenticated) {
+    return <Navigate to={redirectPath} state={{ from: location }} replace />;
+  }
 
-  return <>{children}</>;
+  return <Suspense fallback={<LoadingSpinner />}>{children}</Suspense>;
 }

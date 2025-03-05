@@ -66,8 +66,10 @@ services:
       KAFKA_LOG_RETENTION_BYTES: 10737418240  # 10GB max retention per topic
       KAFKA_REPLICA_FETCH_MAX_BYTES: 104857600  # 100MB
       KAFKA_FETCH_MESSAGE_MAX_BYTES: 104857600  # 100MB
+      # Set the log directory explicitly
+      KAFKA_LOG_DIRS: "/kafka-data"
     volumes:
-      - kafka_data:/var/lib/kafka/data
+      - ./kafka-data:/kafka-data
     networks:
       - logging-network
   
@@ -76,10 +78,12 @@ services:
     container_name: kafka-ui
     ports:
       - "8081:8080"
+    restart: always
     environment:
       KAFKA_CLUSTERS_0_NAME: local
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
       DYNAMIC_CONFIG_ENABLED: "true"
+      SERVER_SERVLET_CONTEXT_PATH: /
     depends_on:
       - kafka
     networks:
@@ -116,6 +120,5 @@ networks:
     driver: bridge
 
 volumes:
-  kafka_data:
   postgres_data:
   redis_data:
