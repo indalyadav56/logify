@@ -1,0 +1,55 @@
+{
+  "query": {
+    "bool": {
+      "must": [
+        {
+          "query_string": {
+            "query": "(?i)*3001* OR (?i)*SUCCESS* OR (?i)*ERROR*",
+            "analyze_wildcard": true
+          }
+        },
+        {
+          "bool": {
+            "should": [
+              { "match": { "service": "bank_service" } },
+              { "match": { "service": "user_service" } }
+            ],
+            "minimum_should_match": 1
+          }
+        },
+        {
+          "bool": {
+            "should": [
+              { "match": { "level": "info" } },
+              { "match": { "level": "warning" } }
+            ],
+            "minimum_should_match": 1
+          }
+        },
+        {
+          "range": {
+            "timestamp": {
+              "gte": "2025-02-11T00:00:00Z",
+              "lte": "2025-02-11T23:59:59Z"
+            }
+          }
+        },
+        {
+          "term": { "project_id.keyword": "a7c02826-005a-4cc1-a4ef-bc162ccfcaaa" }
+        },
+        {
+          "term": { "tenant_id.keyword": "d9bdfc06-ac1b-4159-85ea-13f85a62b744" }
+        }
+      ]
+    }
+  },
+  "sort": [
+    {
+      "timestamp": {
+        "order": "desc"
+      }
+    }
+  ],
+  "from": 0,
+  "size": 10
+}

@@ -27,7 +27,7 @@ func NewUserRepository(db *sql.DB, log logger.Logger) *userRepository {
 	}
 }
 
-// Insert inserts a new record into the database
+// Insert inserts a new record into the database.
 func (r *userRepository) Insert(user *models.User) (*models.User, error) {
 
 	query := "INSERT INTO users (first_name, last_name, email, password) VALUES ($1, $2, $3, $4) RETURNING id"
@@ -41,20 +41,15 @@ func (r *userRepository) Insert(user *models.User) (*models.User, error) {
 
 // FindByID retrieves a record by its ID from the database
 func (r *userRepository) FindByID(id string) (*models.User, error) {
-	// Execute SELECT query to find a record by ID
-	// query := "SELECT id, field1, field2 FROM users WHERE id = ?"
-	// row := r.db.QueryRow(query, id)
+	query := "SELECT id, first_name, last_name, email, password FROM users WHERE id = $1"
+	row := r.db.QueryRow(query, id)
 
-	// var user models.User
-	// if err := row.Scan(&user.ID, &user.Field1, &user.Field2); err != nil {
-	// 	if err == sql.ErrNoRows {
-	// 		return nil, nil // No record found
-	// 	}
-	// 	return nil, err // Other error occurred
-	// }
+	var user models.User
+	if err := row.Scan(&user.ID, &user.FirstName, &user.LastName, &user.Email, &user.Password); err != nil {
+		return nil, err
+	}
 
-	// return &user, nil // Return the found record
-	return nil, nil
+	return &user, nil
 }
 
 // List retrieves a paginated list of records from the database
@@ -107,10 +102,10 @@ func (r *userRepository) Delete(id string) error {
 
 func (r *userRepository) FindByEmail(email string) (*models.User, error) {
 	query := `
-		SELECT id, first_name, middle_name, last_name, email, password from users where email = $1;
+		SELECT id, tenant_id, first_name, middle_name, last_name, email, password from users where email = $1;
 	`
 	var user models.User
-	err := r.db.QueryRow(query, email).Scan(&user.ID, &user.FirstName, &user.MiddleName, &user.LastName, &user.Email, &user.Password)
+	err := r.db.QueryRow(query, email).Scan(&user.ID, &user.TenantID, &user.FirstName, &user.MiddleName, &user.LastName, &user.Email, &user.Password)
 	if err != nil {
 		return nil, err
 	}

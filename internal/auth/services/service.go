@@ -3,13 +3,15 @@ package services
 import (
 	"common/pkg/jwt"
 	"common/pkg/logger"
+	"common/types"
 	"context"
 	"errors"
-	"github.com/google/uuid"
-	"golang.org/x/crypto/bcrypt"
 	"logify/internal/auth/dto"
 	"logify/internal/user/models"
 	"logify/internal/user/services"
+
+	"github.com/google/uuid"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type AuthService interface {
@@ -35,9 +37,9 @@ func NewAuthService(log logger.Logger, jwt jwt.JWT, userSrv services.UserService
 func (s *authService) Register(ctx context.Context, req *dto.RegisterRequest) (interface{}, error) {
 	user := &models.User{
 		ID:         uuid.New(),
-		FirstName:  req.FirstName,
-		MiddleName: req.MiddleName,
-		LastName:   req.LastName,
+		FirstName:  types.FromString(req.FirstName),
+		MiddleName: types.FromString(req.MiddleName),
+		LastName:   types.FromString(req.LastName),
 		Email:      req.Email,
 		Password:   s.hashPassword(req.Password),
 	}
@@ -47,7 +49,8 @@ func (s *authService) Register(ctx context.Context, req *dto.RegisterRequest) (i
 	}
 
 	token, err := s.jwt.GenerateToken(map[string]interface{}{
-		"user_id": newUser.ID.String(),
+		"user_id":   newUser.ID.String(),
+		"tenant_id": newUser.ID.String(),
 	})
 	if err != nil {
 		return nil, err
@@ -55,9 +58,9 @@ func (s *authService) Register(ctx context.Context, req *dto.RegisterRequest) (i
 
 	resp := &dto.RegisterResponse{
 		UserID:     newUser.ID.String(),
-		FirstName:  newUser.FirstName,
-		MiddleName: newUser.MiddleName,
-		LastName:   newUser.LastName,
+		FirstName:  newUser.FirstName.GetValue(),
+		MiddleName: newUser.MiddleName.GetValue(),
+		LastName:   newUser.LastName.GetValue(),
 		Email:      newUser.Email,
 		Token: dto.Token{
 			AccessToken: token,
@@ -72,12 +75,17 @@ func (s *authService) Login(ctx context.Context, req *dto.LoginRequest) (interfa
 		return nil, err
 	}
 
+	if user == nil {
+		return nil, errors.New("invalid credentials")
+	}
+
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)); err != nil {
 		return nil, errors.New("invalid credentials")
 	}
 
 	token, err := s.jwt.GenerateToken(map[string]interface{}{
-		"user_id": user.ID,
+		"user_id":   user.ID.String(),
+		"tenant_id": user.TenantID.String(),
 	})
 	if err != nil {
 		return nil, err

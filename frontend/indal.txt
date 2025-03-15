@@ -1,0 +1,1 @@
+fields @timestamp, level, message | filter level = "ERROR" | sort @timestamp desc | limit 20

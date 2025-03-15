@@ -1,0 +1,17 @@
+[Unit]
+Description=Background Agent Service (Go)
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/background-agent-go
+ExecStart=/opt/background-agent-go/agent
+Restart=always
+RestartSec=10
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=background-agent-go
+
+[Install]
+WantedBy=multi-user.target

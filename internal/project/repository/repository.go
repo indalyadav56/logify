@@ -28,8 +28,8 @@ func NewProjectRepository(db *sql.DB, log logger.Logger) *projectRepository {
 
 // Insert inserts a new record into the database
 func (r *projectRepository) Insert(project *models.Project) (*models.Project, error) {
-	query := "INSERT INTO projects (name, user_id, environment, api_key) VALUES ($1, $2, $3, $4) RETURNING id"
-	err := r.db.QueryRow(query, project.Name, project.UserID, project.Environment, project.ApiKey).Scan(&project.ID)
+	query := "INSERT INTO projects (name, user_id, tenant_id, environment, api_key) VALUES ($1, $2, $3, $4, $5) RETURNING id"
+	err := r.db.QueryRow(query, project.Name, project.UserID, project.TenantID, project.Environment, project.ApiKey).Scan(&project.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -38,47 +38,44 @@ func (r *projectRepository) Insert(project *models.Project) (*models.Project, er
 
 // FindByID retrieves a record by its ID from the database
 func (r *projectRepository) FindByID(id string) (*models.Project, error) {
-	// Execute SELECT query to find a record by ID
-	// query := "SELECT id, field1, field2 FROM projects WHERE id = ?"
-	// row := r.db.QueryRow(query, id)
+	query := "SELECT id, name, environment FROM projects WHERE id = $1"
+	row := r.db.QueryRow(query, id)
 
-	// var project models.Project
-	// if err := row.Scan(&project.ID, &project.Field1, &project.Field2); err != nil {
-	// 	if err == sql.ErrNoRows {
-	// 		return nil, nil // No record found
-	// 	}
-	// 	return nil, err // Other error occurred
-	// }
+	var project models.Project
+	if err := row.Scan(&project.ID, &project.Name, &project.Environment); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, err
+		}
+		return nil, err
+	}
 
-	// return &project, nil // Return the found record
-	return nil, nil
+	return &project, nil
 }
 
 // List retrieves a paginated list of records from the database
 func (r *projectRepository) List(page, pageSize int) ([]models.Project, error) {
-	// offset := (page - 1) * pageSize
-	// query := "SELECT id, field1, field2 FROM projects LIMIT ? OFFSET ?"
-	// rows, err := r.db.Query(query, pageSize, offset)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// defer rows.Close()
+	offset := (page - 1) * pageSize
+	query := "SELECT id, name, environment FROM projects LIMIT $1 OFFSET $2"
+	rows, err := r.db.Query(query, pageSize, offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
 
-	// var projects []models.Project
-	// for rows.Next() {
-	// 	var project models.Project
-	// 	if err := rows.Scan(&project.ID, &project.Field1, &project.Field2); err != nil {
-	// 		return nil, err
-	// 	}
-	// 	projects = append(projects, project)
-	// }
+	var projects []models.Project
+	for rows.Next() {
+		var project models.Project
+		if err := rows.Scan(&project.ID, &project.Name, &project.Environment); err != nil {
+			return nil, err
+		}
+		projects = append(projects, project)
+	}
 
-	// if err := rows.Err(); err != nil {
-	// 	return nil, err
-	// }
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
 
-	// return projects, nil
-	return nil, nil
+	return projects, nil
 }
 
 // Update updates an existing record in the database

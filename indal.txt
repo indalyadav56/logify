@@ -21,8 +21,7 @@ create library to push/stream in logging dashboard
 
 
 
-
-
+priority base logging :- https://leapcell.io/blog/zap-logging-go-potential?ref=dailydev
 
 
 log search api integration 
@@ -48,6 +47,12 @@ log search api integration
   }
 }
 
+logger.log({
+  level: 'info',
+  message: 'Hello distributed log files!'
+});
+
+
 
 encryption integration 
 auth integration
@@ -56,4 +61,259 @@ an agent to pull data of cpu, netork, ram, processor, disk usage of a server
 
 share logs within teams
 
-or user journey visulaize( of the user in 3d)
+or user journey visulaize( of the user in 3d) 
+user journey should be with time user has visited 4 services (auth, payment, user, notification) it should show the journey logs as per it.
+
+
+
+feature add:- user coming from web, mobile, as per user agent header
+
+
+
+custom func invoke on level (webhook functionality)
+
+
+
+make sensitive data masking engine with custom configrable as per user need also
+
+
+list down each every feature documentation for this
+
+search text highlights feature add
+
+
+input and output builder tool for custom data param binding for unstructure logs 
+
+
+
+POST http://localhost:8080/v1/logs
+Content-Type: application/json
+Authorization: Bearer <your-token>
+
+[
+  {
+    "level": "error",
+    "message": "User login failed",
+    "service": "user-service",
+    "timestamp": "2025-02-11T15:11:57+05:30",
+    "metadata": { "test": "test" }
+  },
+  {
+    "level": "info",
+    "message": "User logged in",
+    "service": "auth-service",
+    "timestamp": "2025-02-11T16:00:00+05:30"
+  }
+]
+
+
+📌 4️⃣ Log Forwarding (Send Logs to External Services)
+Why? Some companies want to forward logs to their own SIEMs or monitoring tools.
+
+🔹 Features to Add:
+✅ Forward logs to Splunk, Datadog, Elasticsearch, Kafka, Prometheus
+✅ Support Webhooks to send logs to any 
+
+
+
+✅ Recommended Folder Structure for Tests in Go (Best Practices)
+Your suggested structure (test/e2e, test/unit, test/integration) is good, but it can be improved based on industry best practices for better maintainability and scalability.
+project-root/
+│── internal/             # Business logic, services, repositories
+│── cmd/                 # Application entry points
+│── pkg/                 # Shared utilities
+│── api/                 # API handlers (if following clean architecture)
+│── test/                # All test-related files
+│   │── e2e/             # End-to-End tests (Real services, DBs)
+│   │   ├── user_flow_test.go
+│   │   ├── payment_test.go
+│   │── integration/     # API + DB + External Service tests
+│   │   ├── user_repository_test.go
+│   │   ├── auth_service_test.go
+│   │── unit/            # Unit tests (Mock dependencies)
+│   │   ├── auth_handler_test.go
+│   │   ├── user_service_test.go
+│   │── mocks/           # Mock files for testing
+│   │   ├── mock_auth_service.go
+│   │   ├── mock_user_repo.go
+│   │── fixtures/        # Sample JSON, YAML test data
+│   │   ├── user_signup.json
+│   │   ├── payment_response.json
+│── docker-compose.test.yml # Docker setup for testing
+│── Makefile             # Commands to run tests easily
+│── go.mod               # Dependencies
+│── go.sum               # Dependency checksums
+
+
+test-unit:
+    go test ./test/unit/... -v
+
+test-integration:
+    go test ./test/integration/... -v
+
+test-e2e:
+    go test ./test/e2e/... -v
+
+test-all:
+    go test ./test/... -v
+
+// Navigation items
+const navigationItems = [
+  {
+    title: "Dashboard",
+    icon: LayoutDashboard,
+    href: "/dashboard",
+  },
+  {
+    title: "Logs",
+    icon: Logs,
+    href: "/logs",
+  },
+  {
+    title: "Projects",
+    icon: GalleryVerticalEnd,
+    href: "/projects",
+  },
+  {
+    title: "Alerts",
+    icon: Bell,
+    href: "/alerts",
+  },
+  {
+    title: "Billing",
+    icon: CreditCard,
+    href: "/billing",
+  },
+  {
+    title: "Documentation",
+    icon: BookOpen,
+    href: "/docs",
+  },
+  {
+    title: "Analytics",
+    icon: BarChart,
+    href: "/analytics",
+  },
+  {
+    title: "Import",
+    icon: Upload,
+    href: "/import",
+  },
+  {
+    title: "Export",
+    icon: Download,
+    href: "/export",
+  },
+  {
+    title: "Bookmarks",
+    icon: Bookmark,
+    href: "/bookmarks",
+  },
+  {
+    title: "Notifications",
+    icon: Bell,
+    href: "/notifications",
+  },
+  {
+    title: "Webhooks",
+    icon: Webhook,
+    href: "/webhooks",
+  },
+  {
+    title: "Teams & Members",
+    icon: Users,
+    href: "/teams",
+  },
+  {
+    title: "Audit Logs",
+    icon: ScrollText,
+    href: "/audit",
+  },
+  {
+    title: "Settings",
+    icon: Settings2,
+    href: "/settings",
+  },
+];
+
+
+
+Code review :====>
+
+1. Error Handling Review
+- Prompt: "Check if all functions in this Go microservice handle errors appropriately. Ensure that errors are not just logged but also returned to the caller when necessary."
+
+2. Error Propagation
+- Prompt: "Review how errors are propagated throughout this microservice. Ensure that the error messages are clear and meaningful for debugging purposes and that they are correctly passed up the call chain."
+
+3. Error Wrapping and Context
+- Prompt: "Inspect the error handling in this codebase. Check if the errors are wrapped with context (using `fmt.Errorf` or `errors.Wrap`) to provide more useful information for debugging."
+
+4. Nil Pointer Dereferencing
+- Prompt: "Review the code for potential nil pointer dereferencing issues in the microservice. Make sure proper nil checks are in place before accessing any pointers."
+
+5. Null or Empty String Handling
+- Prompt: "Check for proper handling of null or empty strings in function parameters and return values. Ensure that any edge cases are covered and prevent potential null pointer exceptions."
+
+6. Logging Consistency
+- Prompt: "Review the logging mechanisms in the microservice. Ensure that log levels (INFO, ERROR, DEBUG) are used correctly and consistently. Add log statements where appropriate to aid debugging."
+
+7. Logging Error Details
+- Prompt: "Review how errors are logged in the service. Ensure that detailed information such as stack traces, error codes, and request IDs are logged for easy debugging."
+
+8. Duplicate Code Review
+- Prompt: "Scan for and identify any areas where code duplication exists within the microservice. Suggest refactoring to reduce redundancy and improve maintainability."
+
+9. Redundant Code Removal
+- Prompt: "Check the code for any redundant or unnecessary functions, methods, or variables that can be removed to make the code cleaner and more efficient."
+
+10. Security Vulnerabilities
+- Prompt: "Review the codebase for potential security issues like SQL injection, improper input sanitization, and incorrect use of cryptographic functions. Suggest improvements where necessary."
+
+11. Sensitive Data Exposure
+- Prompt: "Inspect the code for any places where sensitive data (passwords, API keys, etc.) might be exposed in logs, error messages, or responses. Ensure they are masked or excluded from logs."
+
+12. Data Validation
+- Prompt: "Review how user input and API requests are validated. Ensure that all user input is sanitized to prevent injection attacks and invalid data from being processed."
+
+13. Concurrency and Race Conditions
+- Prompt: "Examine the code for potential race conditions, especially in functions that access shared resources concurrently. Suggest the use of locks or channels where appropriate."
+
+14. Performance Optimization
+- Prompt: "Review the code for any potential performance bottlenecks such as unnecessary loops, inefficient algorithms, or blocking I/O operations. Suggest improvements for optimizing performance."
+
+15. Database Connection Handling
+- Prompt: "Inspect how the microservice handles database connections. Ensure that connections are closed properly to avoid potential memory leaks and connection pool exhaustion."
+
+16. HTTP Request/Response Optimization
+- Prompt: "Review the HTTP request handling and response generation. Ensure that response status codes are used correctly and that responses are sent with proper headers (e.g., CORS, Content-Type)."
+
+17. API Rate Limiting
+- Prompt: "Check for any API rate-limiting mechanisms in place to prevent abuse of the service. Suggest implementing throttling or circuit breakers to protect the system under high load."
+
+18. Dependency Injection
+- Prompt: "Inspect how dependencies are managed within the service. Suggest implementing dependency injection if it's not already being used to improve testability and decouple components."
+
+Add
+
+
+
+tests/
+├── bdd/                  # Behavior-Driven Development tests
+│   ├── suites/          # Organized BDD test suites
+│   │   └── task_suite_test.go  # Feature-level BDD tests
+│   └── bootstrap_test.go       # Ginkgo bootstrap file
+├── e2e/                  # End-to-End tests
+│   ├── api/             # E2E tests for API endpoints
+│   │   └── task_api_test.go   # API-level E2E tests
+│   └── bootstrap_test.go      # E2E test setup
+├── integration/          # Integration tests
+│   ├── repository/      # Integration tests for persistence layer
+│   │   └── memory_test.go    # Memory repository tests
+│   └── bootstrap_test.go     # Integration test setup
+└── mocks/                # Optional: Mock implementations (if needed)
+    └── repository_mock.go  # Mock for TaskRepository
+  
+
+TDD:- for unit-level confidence (e.g., "Does this function work?").
+BDD:- for feature-level validation (e.g., "Does this feature meet the user’s needs?").

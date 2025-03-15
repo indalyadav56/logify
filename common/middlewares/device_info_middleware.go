@@ -2,8 +2,6 @@ package middlewares
 
 import (
 	"common/dto"
-	"common/pkg/utils/response"
-	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
@@ -14,25 +12,25 @@ func DeviceInfoMiddleware() gin.HandlerFunc {
 
 		os := ctx.GetHeader("X-OS")
 		if os == "" {
-			response.HandleErrorWithAbort(ctx, http.StatusBadRequest, "Missing OS header", nil)
+			// response.HandleErrorWithAbort(ctx, http.StatusBadRequest, "Missing OS header", nil)
 			return
 		}
 
 		osVersion := ctx.GetHeader("X-OS-Version")
 		if osVersion == "" {
-			response.HandleErrorWithAbort(ctx, http.StatusBadRequest, "Missing OS version header", nil)
+			// response.HandleErrorWithAbort(ctx, http.StatusBadRequest, "Missing OS version header", nil)
 			return
 		}
 
 		deviceIP := ctx.GetHeader("X-Device-Ip")
 		if deviceIP == "" {
-			response.HandleErrorWithAbort(ctx, http.StatusBadRequest, "Missing Device IP header", nil)
+			// response.HandleErrorWithAbort(ctx, http.StatusBadRequest, "Missing Device IP header", nil)
 			return
 		}
 
 		latLong := ctx.GetHeader("X-Lat-Long")
 		if latLong == "" {
-			response.HandleErrorWithAbort(ctx, http.StatusBadRequest, "Missing Latitude/Longitude header", nil)
+			//	response.HandleErrorWithAbort(ctx, http.StatusBadRequest, "Missing Latitude/Longitude header", nil)
 			return
 		}
 

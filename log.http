@@ -1,37 +1,95 @@
+GET http://localhost:8080/v1/logs/services
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwcm9qZWN0X2lkIjoiYTdjMDI4MjYtMDA1YS00Y2MxLWE0ZWYtYmMxNjJjY2ZjYWFhIiwidGVuYW50X2lkIjoiZDliZGZjMDYtYWMxYi00MTU5LTg1ZWEtMTNmODVhNjJiNzQ0IiwidXNlcl9pZCI6ImRjZmYxNjFjLWI4YmUtNGRiNS1iYjMzLWFjNjBlMTVmNDM4MiJ9.zlrqHhCe0KErS_-8QOQgla3WWP528G2YjooeU2jIsYk
+Content-Type: application/json
+
+
+### search logs 
 POST http://localhost:8080/v1/logs/search HTTP/1.1
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwcm9qZWN0X2lkIjoiYTdjMDI4MjYtMDA1YS00Y2MxLWE0ZWYtYmMxNjJjY2ZjYWFhIiwidGVuYW50X2lkIjoiZDliZGZjMDYtYWMxYi00MTU5LTg1ZWEtMTNmODVhNjJiNzQ0IiwidXNlcl9pZCI6ImRjZmYxNjFjLWI4YmUtNGRiNS1iYjMzLWFjNjBlMTVmNDM4MiJ9.zlrqHhCe0KErS_-8QOQgla3WWP528G2YjooeU2jIsYk
 Content-Type: application/json
 
 {
-  "project_id": "123",
-  "service": "auth-service",
-  "level": ["ERROR", "WARNING"],
-  "message_contains": "failed",
-  "timestamp_range": {
-    "from": "2025-02-01T00:00:00Z",
-    "to": "2025-02-01T23:59:59Z"
-  },
-  "metadata": {
-    "user_ip": "192.168.1.1"
-  },
-  "sort": "timestamp",
-  "order": "desc",
-  "page": 1,
-  "limit": 50
+    "message_contains": [],
+    "timestamp_range": {
+        "from": "2025-02-10T15:40:36.432Z",
+        "to": "2025-02-18T15:55:36.432Z"
+    },
+    "sort": "timestamp",
+    "order": "desc",
+    "page": 1,
+    "limit": 50
 }
+# "metadata": {
+#       "request_id": "9ee6fe9b-6f99-477d-b163-8da0640669e4"
+#    },
+# {
+#   "project_id": "123",
+#   "services": ["bank_service"],
+#   "levels": ["ERROR", "WARNING"],
+#   "message_contains": ["indal"],
+#   "timestamp_range": {
+#     "from": "2025-02-01T00:00:00Z",
+#     "to": "2025-02-01T23:59:59Z"
+#   },
+#   "metadata": {
+#     "user_ip": "192.168.1.1"
+#   },
+#   "sort": "timestamp",
+#   "order": "desc",
+#   "page": 1,
+#   "limit": 50
+# }
+
 
 
 ### publish log
 POST http://localhost:8080/v1/logs
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwcm9qZWN0X2lkIjoiYTdjMDI4MjYtMDA1YS00Y2MxLWE0ZWYtYmMxNjJjY2ZjYWFhIiwidGVuYW50X2lkIjoiZDliZGZjMDYtYWMxYi00MTU5LTg1ZWEtMTNmODVhNjJiNzQ0IiwidXNlcl9pZCI6ImRjZmYxNjFjLWI4YmUtNGRiNS1iYjMzLWFjNjBlMTVmNDM4MiJ9.zlrqHhCe0KErS_-8QOQgla3WWP528G2YjooeU2jIsYk
 Content-Type: application/json
 
 {
-  "level": "info",
-  "message": "User login success test",
-  "service": "user_service",
-  "project_id":"test",
+  "level": "error",
+  "message": "User login failed",
+  "service": "user-service",
+  "timestamp": "2025-02-11T15:11:57+05:30",
   "metadata": {
-    "hello": "test"
+    "test": "test"
   }
 }
 
 
+# for third-party client
+# {
+#   "level": "warning",
+#   "message": "User login success test",
+#   "service": "user_service",
+#   "project_id":"test",
+#   "tenant_id":"test",
+#   "metadata": {
+#     "action": "INTERCEPTOR",
+#     "file": "/Users/indal/Desktop/Workspace/paydoh/deployment/bank-api/paydoh-commons/services/logger_service.go",
+#     "func_name": "bitbucket.org/paydoh/paydoh-commons/services.(*LoggerService).LogInfo",
+#     "level": "info",
+#     "line": 246,
+#     "msg": "Decrypted response body: {\"Response\":{\"ResponseCode\":\"0\",\"ResponseMessage\":\"SUCCESS\",\"TransID\":\"GITXN201135404\",\"LongCodeMobileNo\":\"9876543210\",\"VMN\":\"9876543210\"}}",
+#     "request_body": "{\"encryptReq\":\"bt3IwUo9hu+T9M/BXPKe13Ze1ueapHo71via0NveWpVWkmnDHE17BVCiwRUZm5QSGJTOwkR2cNvqpcXpbf01d+M5c3WnEypjehjM9vk3UTJJ8cIIIDLA6SRorOUXxXXz\"}",
+#     "request_host": "localhost:3001",
+#     "request_id": "9ee6fe9b-6f99-477d-b163-8da0640669e4",
+#     "request_uri": "/fintech/upi/mobile-mapping",
+#     "response_body": "{\"encryptRes\":\"UWh0gZ8io4SJ7tKTUysdneEXfboxZ7IwkDa/FSqdtcaaUsDEzGYsYaKJgFi2Cwa7lj9dc6mhS9fnV1P7vDAM1zjiiMFXFFCzmf3NRflxe5A4o9p2NRGPCWPpxb7A1mqn3UmKvNV9AcXX4ctJBLOVW1mTW+V3OylgX2u7+senye8KfvZ4P63fmnL0bjOtbqcn\"}",
+#     "response_status_code": 200,
+#     "time": "2025-02-11T15:11:57+05:30",
+#     "user_id": "77e7924e-ced8-4"
+#   }
+# }
+
+
+
+### bookmark a log by id
+POST http://localhost:8080/v1/bookmarks
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwcm9qZWN0X2lkIjoiYTdjMDI4MjYtMDA1YS00Y2MxLWE0ZWYtYmMxNjJjY2ZjYWFhIiwidGVuYW50X2lkIjoiZDliZGZjMDYtYWMxYi00MTU5LTg1ZWEtMTNmODVhNjJiNzQ0IiwidXNlcl9pZCI6ImRjZmYxNjFjLWI4YmUtNGRiNS1iYjMzLWFjNjBlMTVmNDM4MiJ9.zlrqHhCe0KErS_-8QOQgla3WWP528G2YjooeU2jIsYk
+Content-Type: application/json
+
+{
+  "log_id": "Kr3IGZUBP7OFzU5_y6OW"
+}

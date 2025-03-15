@@ -16,6 +16,8 @@ type JWT interface {
 	GenerateToken(claims map[string]interface{}) (string, error)
 	ValidateToken(tokenString string) (*jwt.Token, error)
 	GetClaims(token *jwt.Token) (map[string]interface{}, error)
+
+	GenerateTokenWithoutExpiration(claims map[string]interface{}) (string, error)
 }
 
 type jwtHandler struct {
@@ -33,6 +35,14 @@ func (j *jwtHandler) GenerateToken(claims map[string]interface{}) (string, error
 	jwtClaims := jwt.MapClaims(claims)
 
 	jwtClaims["exp"] = time.Now().Add(j.config.TokenDuration).Unix()
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwtClaims)
+	return token.SignedString(j.config.SecretKey)
+}
+
+// GenerateTokenWithoutExpiration generates a new JWT token without an expiration time
+func (j *jwtHandler) GenerateTokenWithoutExpiration(claims map[string]interface{}) (string, error) {
+	jwtClaims := jwt.MapClaims(claims)
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwtClaims)
 	return token.SignedString(j.config.SecretKey)

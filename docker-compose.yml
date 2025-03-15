@@ -6,17 +6,11 @@ services:
   #   container_name: backend
   #   ports:
   #     - "8080:8080"
-  #   environment:
-  #     - DB_HOST=postgres
-  #     - DB_PORT=5432
-  #     - DB_USER=postgres
-  #     - DB_PASSWORD=postgres
-  #     - DB_NAME=postgres
-  #     - REDIS_ADDR=redis:6379
-  #     - JWT_SECRET=test
-  #   depends_on:
-  #     - postgres
-  #     - redis
+  #   env_file:
+  #     - .env
+  #   # depends_on:
+  #     # - postgres
+  #     # - redis
       
   # nginx:
   #   image: nginx:1.27
@@ -24,9 +18,11 @@ services:
   #   ports:
   #     - "80:80"
   #   volumes:
-  #     - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-  #   depends_on:
-  #     - backend
+  #     - ./nginx:/etc/nginx/conf.d:ro
+  #   # depends_on:
+  #     # - backend
+  #   extra_hosts:
+  #     - "host.docker.internal:host-gateway"
 
   # postgres:
   #   image: postgres:latest
@@ -51,6 +47,7 @@ services:
   kafka:
     image: apache/kafka:3.9.0
     container_name: kafka
+    user: "appuser:appuser"
     ports:
       - "9092:9092"
     environment:
@@ -65,8 +62,14 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
       CLUSTER_ID: "LiKR6NrNSY2PVkX7d9kBiw"
+      KAFKA_LOG_SEGMENT_BYTES: 536870912  # 100MB
+      KAFKA_LOG_RETENTION_BYTES: 10737418240  # 10GB max retention per topic
+      KAFKA_REPLICA_FETCH_MAX_BYTES: 104857600  # 100MB
+      KAFKA_FETCH_MESSAGE_MAX_BYTES: 104857600  # 100MB
+      # Set the log directory explicitly
+      KAFKA_LOG_DIRS: "/kafka-data"
     volumes:
-      - kafka_data:/var/lib/kafka/data
+      - ./kafka-data:/kafka-data
     networks:
       - logging-network
   
@@ -75,45 +78,47 @@ services:
     container_name: kafka-ui
     ports:
       - "8081:8080"
+    restart: always
     environment:
       KAFKA_CLUSTERS_0_NAME: local
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
       DYNAMIC_CONFIG_ENABLED: "true"
+      SERVER_SERVLET_CONTEXT_PATH: /
     depends_on:
       - kafka
     networks:
       - logging-network
 
-  fluent-bit:
-    image: fluent/fluent-bit:latest
-    container_name: fluent-bit
-    volumes:
-      - ./fluent-bit.conf:/fluent-bit/etc/fluent-bit.conf
-      - ./logs:/var/log:ro
-    ports:
-      - "24224:24224"
-    networks:
-      - logging-network
-  
-  elasticsearch:
-    image: elasticsearch:7.14.2
-    container_name: elasticsearch
-    ports:
-      - "9200:9200"
+  opensearch:
+    image: opensearchproject/opensearch:2.11.1
+    container_name: opensearch-node1
     environment:
-      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
       - discovery.type=single-node
-    volumes:
-      - elasticsearch_data:/var/lib/elasticsearch
-    networks:
-      - logging-network
-  
+      - bootstrap.memory_lock=true
+      - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m"
+      - "DISABLE_SECURITY_PLUGIN=true"
+      # Elasticsearch compatibility settings
+      - "COMPATIBILITY_MODE=true"
+      - "compatibility.override_main_response_version=true"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    ports:
+      - 9200:9200
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9200/_cluster/health | grep -vq '\"status\":\"red\"'"]
+      interval: 20s
+      timeout: 10s
+      retries: 3
+
 networks:
   logging-network:
     driver: bridge
 
 volumes:
-  elasticsearch_data:
-  kafka_data:
   postgres_data:
   redis_data:

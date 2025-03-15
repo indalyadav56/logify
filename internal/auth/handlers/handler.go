@@ -4,10 +4,12 @@ import (
 	"net/http"
 
 	"common/pkg/logger"
+	"common/pkg/response"
 	"common/pkg/validator"
-	"github.com/gin-gonic/gin"
 	"logify/internal/auth/dto"
 	"logify/internal/auth/services"
+
+	"github.com/gin-gonic/gin"
 )
 
 type AuthHandler interface {
@@ -43,15 +45,17 @@ func NewAuthHandler(service services.AuthService, log logger.Logger, validator v
 func (h *authHandler) Register(c *gin.Context) {
 	var req dto.RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, err.Error())
+		response.SendError(c, http.StatusBadRequest, "Failed to register user", err)
 		return
 	}
+
 	resp, err := h.service.Register(c.Request.Context(), &req)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, err.Error())
+		response.SendError(c, http.StatusInternalServerError, "Failed to register user", err)
 		return
 	}
-	c.JSON(http.StatusOK, resp)
+
+	response.SendSuccess(c, "User registered successfully", resp)
 }
 
 // Login godoc
@@ -65,15 +69,17 @@ func (h *authHandler) Register(c *gin.Context) {
 func (h *authHandler) Login(c *gin.Context) {
 	var req dto.LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, err.Error())
+		response.SendError(c, http.StatusBadRequest, "Failed to login user", err)
 		return
 	}
+
 	resp, err := h.service.Login(c.Request.Context(), &req)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, err.Error())
+		response.SendError(c, http.StatusInternalServerError, "Failed to login user", err)
 		return
 	}
-	c.JSON(http.StatusOK, resp)
+
+	response.SendSuccess(c, "User logged in successfully", resp)
 }
 
 // RefreshToken godoc
@@ -90,11 +96,13 @@ func (h *authHandler) RefreshToken(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, err.Error())
 		return
 	}
+
 	resp, err := h.service.RefreshToken(c.Request.Context(), &req)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, err.Error())
 		return
 	}
+
 	c.JSON(http.StatusOK, resp)
 }
 

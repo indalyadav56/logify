@@ -2,19 +2,22 @@ package handlers
 
 import (
 	"common/pkg/logger"
+	"common/pkg/response"
 	"common/pkg/validator"
-	"fmt"
+	"logify/internal/log/dto"
 	"logify/internal/log/services"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
 
 type LogHandler interface {
-	Create(c *gin.Context)
-	Update(c *gin.Context)
-	Delete(c *gin.Context)
+	PublishLog(c *gin.Context)
 	LogSearch(c *gin.Context)
+	GetAllServices(c *gin.Context)
+
+	AddBookmark(c *gin.Context)
 }
 
 type logHandler struct {
@@ -37,56 +40,94 @@ func NewLogHandler(service services.LogService, log logger.Logger, validator val
 // @Accept json
 // @Produce json
 // @Router /v1/logs [post]
-func (h *logHandler) Create(c *gin.Context) {
-	rawData, err := c.GetRawData()
-	if err != nil {
-		h.log.Error("failed to get raw data", err)
-		c.JSON(500, gin.H{"message": "failed to get raw data"})
-		return
-	}
-	fmt.Println("rawData", string(rawData))
+func (h *logHandler) PublishLog(c *gin.Context) {
+	tenantID := c.MustGet("tenant_id").(string)
+	projectID := c.MustGet("project_id").(string)
+
 	// if err := h.validator.Validate(rawData); err != nil {
 	// 	h.log.Error("failed to validate raw data", err)
 	// 	c.JSON(400, gin.H{"message": "failed to validate raw data"})
 	// 	return
 	// }
-	if err := h.service.PublishLog(string(rawData)); err != nil {
-		h.log.Error("failed to publish log", err)
-		c.JSON(500, gin.H{"message": "failed to publish log"})
+
+	var req dto.LogRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		h.log.Error("failed to bind json", err)
+		response.SendError(c, http.StatusBadRequest, "failed to bind json", err)
 		return
 	}
-	c.JSON(http.StatusAccepted, gin.H{"message": "log created successfully"})
-}
 
-// @Summary Update log details
-// @Description Update details of an existing log entry
-// @Tags log
-// @Accept json
-// @Produce json
-// @Param id path int true "log ID"
-// @Router /v1/logs/{id} [patch]
-func (h *logHandler) Update(c *gin.Context) {
-	// Implementation for Update
-}
+	if req.Timestamp == "" {
+		req.Timestamp = time.Now().UTC().Format(time.RFC3339)
+	}
 
-// @Summary Delete log
-// @Description Delete an existing log entry
-// @Tags log
-// @Accept json
-// @Produce json
-// @Router /v1/logs/{id} [delete]
-func (h *logHandler) Delete(c *gin.Context) {
-	// Implementation for Delete
+	req.TenantID = tenantID
+	req.ProjectID = projectID
+	if err := h.service.PublishLog(&req); err != nil {
+		h.log.Error("failed to publish log", err)
+		response.SendError(c, http.StatusInternalServerError, "failed to publish log", err)
+		return
+	}
+
+	response.SendSuccess(c, "log created successfully", nil)
 }
 
 func (h *logHandler) LogSearch(c *gin.Context) {
-	result, err := h.service.Search("query")
-	if err != nil {
-		h.log.Error("failed to filter logs", err)
-		c.JSON(500, gin.H{"message": "failed to filter logs"})
+	tenantID := c.MustGet("tenant_id").(string)
+	projectID := c.MustGet("project_id").(string)
+
+	var req dto.LogSearchRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		h.log.Error("failed to bind json", err)
+		response.SendError(c, http.StatusBadRequest, "failed to bind json", err)
 		return
 	}
 
-	c.JSON(200, gin.H{"message": "Get log", "logs": result})
+	req.TenantID = tenantID
+	req.ProjectID = projectID
+
+	result, err := h.service.Search(&req)
+	if err != nil {
+		h.log.Error("failed to filter logs", err)
+		response.SendError(c, http.StatusInternalServerError, "failed to filter logs", err)
+		return
+	}
+
+	response.SendSuccess(c, "Get log", result)
+
+}
+
+func (h *logHandler) GetAllServices(c *gin.Context) {
+	result, err := h.service.GetAllServices()
+	if err != nil {
+		h.log.Error("failed to get all services", err)
+		response.SendError(c, http.StatusInternalServerError, "failed to get all services", err)
+		return
+	}
+
+	response.SendSuccess(c, "Get log", result)
+
+}
+
+func (h *logHandler) AddBookmark(c *gin.Context) {
+
+	tenantID := c.MustGet("tenant_id").(string)
+	projectID := c.MustGet("project_id").(string)
+
+	var req dto.AddBookmarkRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		h.log.Error("failed to bind json", err)
+		response.SendError(c, http.StatusBadRequest, "failed to bind json", err)
+		return
+	}
+
+	result, err := h.service.AddBookmark(req.LogID, tenantID, projectID)
+	if err != nil {
+		h.log.Error("failed to get all services", err)
+		response.SendError(c, http.StatusInternalServerError, "failed to get all services", err)
+		return
+	}
+
+	response.SendSuccess(c, "Get log", result)
 
 }

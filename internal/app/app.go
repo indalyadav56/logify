@@ -1,6 +1,7 @@
 package app
 
 import (
+	commonMiddlewares "common/middlewares"
 	database "common/pkg/db"
 	"common/pkg/jwt"
 	"common/pkg/logger"
@@ -14,7 +15,11 @@ import (
 	"time"
 
 	"github.com/gin-contrib/cors"
+	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"
+	"github.com/opensearch-project/opensearch-go"
+	"github.com/twmb/franz-go/pkg/kadm"
+	"github.com/twmb/franz-go/pkg/kgo"
 
 	userHandlers "logify/internal/user/handlers"
 	userRepos "logify/internal/user/repository"
@@ -102,7 +107,30 @@ func (a *App) initDependencies() error {
 	}
 	a.deps.JWT = jwt.New(jwtConfig)
 
+	// for client  project api key
+	jwtClientConfig := jwt.JWTConfig{
+		SecretKey:     []byte(a.deps.Config.ClientJWTSecret),
+		TokenDuration: time.Duration(a.deps.Config.JWTExpirationDays) * 24 * time.Hour,
+	}
+	a.deps.ClientJWT = jwt.New(jwtClientConfig)
+
 	a.deps.Server = gin.Default()
+
+	a.deps.OpenSearch, err = opensearch.NewClient(opensearch.Config{
+		Addresses: []string{"http://localhost:9200"},
+	})
+	if err != nil {
+		log.Fatalf("Error creating the client: %s", err)
+	}
+
+	a.deps.KafkaClient, err = kgo.NewClient(
+		kgo.SeedBrokers("localhost:9092"),
+	)
+	if err != nil {
+		panic(err)
+	}
+
+	a.deps.KafkaAdmin = kadm.NewClient(a.deps.KafkaClient)
 
 	a.initRepositories()
 
@@ -131,8 +159,8 @@ func (a *App) initRepositories() {
 func (a *App) initServices() {
 	a.deps.UserService = userServices.NewUserService(a.deps.UserRepository, a.deps.Logger)
 	a.deps.AuthService = authServices.NewAuthService(a.deps.Logger, a.deps.JWT, a.deps.UserService)
-	a.deps.LogService = logServices.NewLogService(a.deps.LogRepository, a.deps.Logger)
-	a.deps.ProjectService = projectServices.NewProjectService(a.deps.ProjectRepository, a.deps.Logger)
+	a.deps.LogService = logServices.NewLogService(a.deps.LogRepository, a.deps.Logger, a.deps.OpenSearch, a.deps.KafkaClient, a.deps.KafkaAdmin)
+	a.deps.ProjectService = projectServices.NewProjectService(a.deps.ProjectRepository, a.deps.Logger, a.deps.ClientJWT)
 	a.deps.NotificationService = notificationServices.NewNotificationService(a.deps.NotificationRepository, a.deps.Logger)
 }
 
@@ -145,12 +173,20 @@ func (a *App) initHandlers() {
 }
 
 func (a *App) registerRoutes() {
-	a.deps.Server.Use(cors.Default())
+	a.deps.Server.Use(cors.New(cors.Config{
+		AllowAllOrigins: true,
+		AllowMethods:    []string{"GET", "POST", "PUT", "DELETE"},
+		AllowHeaders:    []string{"Origin", "Content-Type", "Authorization"},
+	}))
+	a.deps.Server.Use(gzip.Gzip(gzip.DefaultCompression))
+	a.deps.Server.Use(commonMiddlewares.LoggerMiddleware(a.deps.Logger, a.deps.JWT))
 
-	userRoutes.UserRoutes(a.deps.Server, a.deps.UserHandler)
+	// a.deps.Server.Use(middlewares.CheckStorageLimit(a.deps.Redis))
+
+	userRoutes.UserRoutes(a.deps.Server, a.deps.UserHandler, a.deps.Logger, a.deps.JWT)
 	authRoutes.AuthRoutes(a.deps.Server, a.deps.AuthHandler)
-	logRoutes.LogRoutes(a.deps.Server, a.deps.LogHandler)
-	projectRoutes.ProjectRoutes(a.deps.Server, a.deps.ProjectHandler)
+	logRoutes.LogRoutes(a.deps.Server, a.deps.LogHandler, a.deps.Logger, a.deps.ClientJWT)
+	projectRoutes.ProjectRoutes(a.deps.Server, a.deps.ProjectHandler, a.deps.Logger, a.deps.JWT)
 	notificationRoutes.NotificationRoutes(a.deps.Server, a.deps.NotificationHandler)
 
 	a.deps.Server.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
@@ -161,6 +197,17 @@ func (a *App) registerRoutes() {
 	a.deps.Server.GET("/", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "index.html", gin.H{})
 	})
+
+	a.deps.Server.GET("/health", func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"status": "ok",
+		})
+	})
+
+	a.deps.Server.GET("/menus", func(c *gin.Context) {
+		c.JSON(200, GetNavigationConfig())
+	})
+
 }
 
 func (a *App) Shutdown() error {
@@ -168,4 +215,53 @@ func (a *App) Shutdown() error {
 		a.deps.Logger.Error("failed to close database connection")
 	}
 	return nil
+}
+
+type NavigationItem struct {
+	Title    string           `json:"title"`
+	Icon     string           `json:"icon"`
+	Route    string           `json:"route"`
+	Roles    []string         `json:"-"`
+	Children []NavigationItem `json:"-"`
+}
+
+// GetNavigationConfig returns the navigation configuration for the application
+func GetNavigationConfig() []NavigationItem {
+	return []NavigationItem{
+		{
+			Title: "Dashboard",
+			Icon:  "dashboard",
+			Route: "/dashboard",
+			Roles: []string{"admin", "manager", "user", "read-only"},
+		},
+		{
+			Title: "Logs",
+			Icon:  "logs",
+			Route: "/logs",
+			Roles: []string{"admin", "manager", "user", "read-only"},
+			Children: []NavigationItem{
+				{
+					Title: "View Logs",
+					Route: "/logs/view",
+					Roles: []string{"admin", "manager", "user", "read-only"},
+				},
+				{
+					Title: "Export Logs",
+					Route: "/logs/export",
+					Roles: []string{"admin", "manager"},
+				},
+				{
+					Title: "Bookmark Logs",
+					Route: "/logs/bookmark",
+					Roles: []string{"admin", "user"},
+				},
+			},
+		},
+		{
+			Title: "Settings",
+			Icon:  "settings",
+			Route: "/settings",
+			Roles: []string{"admin", "manager"},
+		},
+	}
 }
