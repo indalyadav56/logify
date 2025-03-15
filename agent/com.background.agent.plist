@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.background.agent.go</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/opt/background-agent-go/agent</string>
+    </array>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+    <key>StandardErrorPath</key>
+    <string>/opt/background-agent-go/logs/agent.err</string>
+    <key>StandardOutPath</key>
+    <string>/opt/background-agent-go/logs/agent.out</string>
+    <key>WorkingDirectory</key>
+    <string>/opt/background-agent-go</string>
+</dict>
+</plist>

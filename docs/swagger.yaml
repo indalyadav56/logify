@@ -1,4 +1,42 @@
 basePath: /v1
+definitions:
+  dto.LoginRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  dto.RefreshTokenRequest:
+    properties:
+      refresh_token:
+        type: string
+    required:
+    - refresh_token
+    type: object
+  dto.RegisterRequest:
+    properties:
+      email:
+        type: string
+      first_name:
+        type: string
+      last_name:
+        type: string
+      middle_name:
+        type: string
+      password:
+        minLength: 6
+        type: string
+    required:
+    - email
+    - first_name
+    - last_name
+    - middle_name
+    - password
+    type: object
 host: localhost:8080
 info:
   contact:
@@ -12,7 +50,645 @@ info:
   termsOfService: http://swagger.io/terms/
   title: logify API
   version: "1.0"
-paths: {}
+paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate a user and return a JWT token
+      parameters:
+      - description: User details
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/dto.LoginRequest'
+      produces:
+      - application/json
+      responses: {}
+      summary: Login a user
+      tags:
+      - Auth
+  /auth/logout:
+    post:
+      consumes:
+      - application/json
+      description: Invalidate the refresh token to log the user out
+      produces:
+      - application/json
+      responses: {}
+      summary: Logout a user
+      tags:
+      - Auth
+  /auth/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Refresh the JWT token using a valid refresh token
+      parameters:
+      - description: Refresh token
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RefreshTokenRequest'
+      produces:
+      - application/json
+      responses: {}
+      summary: Refresh the JWT token
+      tags:
+      - Auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Register a new user with the provided details
+      parameters:
+      - description: User details
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RegisterRequest'
+      produces:
+      - application/json
+      responses: {}
+      summary: Register a new user
+      tags:
+      - Auth
+  /auth/reset-password:
+    post:
+      consumes:
+      - application/json
+      description: Reset the user's password using a valid reset token
+      produces:
+      - application/json
+      responses: {}
+      summary: Reset password
+      tags:
+      - Auth
+  /v1/alerts:
+    post:
+      consumes:
+      - application/json
+      description: Create a new alert entry
+      produces:
+      - application/json
+      responses: {}
+      summary: Create a new alert
+      tags:
+      - alert
+  /v1/alerts/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete an existing alert entry
+      produces:
+      - application/json
+      responses: {}
+      summary: Delete alert
+      tags:
+      - alert
+    get:
+      consumes:
+      - application/json
+      description: Get details of a alert entry
+      parameters:
+      - description: alert ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses: {}
+      summary: Get alert details
+      tags:
+      - alert
+    patch:
+      consumes:
+      - application/json
+      description: Update details of an existing alert entry
+      parameters:
+      - description: alert ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses: {}
+      summary: Update alert details
+      tags:
+      - alert
+  /v1/analyticss:
+    post:
+      consumes:
+      - application/json
+      description: Create a new analytics entry
+      produces:
+      - application/json
+      responses: {}
+      summary: Create a new analytics
+      tags:
+      - analytics
+  /v1/analyticss/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete an existing analytics entry
+      produces:
+      - application/json
+      responses: {}
+      summary: Delete analytics
+      tags:
+      - analytics
+    get:
+      consumes:
+      - application/json
+      description: Get details of a analytics entry
+      parameters:
+      - description: analytics ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses: {}
+      summary: Get analytics details
+      tags:
+      - analytics
+    patch:
+      consumes:
+      - application/json
+      description: Update details of an existing analytics entry
+      parameters:
+      - description: analytics ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses: {}
+      summary: Update analytics details
+      tags:
+      - analytics
+  /v1/integrations:
+    post:
+      consumes:
+      - application/json
+      description: Create a new integration entry
+      produces:
+      - application/json
+      responses: {}
+      summary: Create a new integration
+      tags:
+      - integration
+  /v1/integrations/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete an existing integration entry
+      produces:
+      - application/json
+      responses: {}
+      summary: Delete integration
+      tags:
+      - integration
+    get:
+      consumes:
+      - application/json
+      description: Get details of a integration entry
+      parameters:
+      - description: integration ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses: {}
+      summary: Get integration details
+      tags:
+      - integration
+    patch:
+      consumes:
+      - application/json
+      description: Update details of an existing integration entry
+      parameters:
+      - description: integration ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses: {}
+      summary: Update integration details
+      tags:
+      - integration
+  /v1/logs:
+    post:
+      consumes:
+      - application/json
+      description: Create a new log entry
+      produces:
+      - application/json
+      responses: {}
+      summary: Create a new log
+      tags:
+      - log
+  /v1/metricss:
+    post:
+      consumes:
+      - application/json
+      description: Create a new metrics entry
+      produces:
+      - application/json
+      responses: {}
+      summary: Create a new metrics
+      tags:
+      - metrics
+  /v1/metricss/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete an existing metrics entry
+      produces:
+      - application/json
+      responses: {}
+      summary: Delete metrics
+      tags:
+      - metrics
+    get:
+      consumes:
+      - application/json
+      description: Get details of a metrics entry
+      parameters:
+      - description: metrics ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses: {}
+      summary: Get metrics details
+      tags:
+      - metrics
+    patch:
+      consumes:
+      - application/json
+      description: Update details of an existing metrics entry
+      parameters:
+      - description: metrics ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses: {}
+      summary: Update metrics details
+      tags:
+      - metrics
+  /v1/notifications:
+    post:
+      consumes:
+      - application/json
+      description: Create a new notification entry
+      produces:
+      - application/json
+      responses: {}
+      summary: Create a new notification
+      tags:
+      - notification
+  /v1/notifications/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete an existing notification entry
+      produces:
+      - application/json
+      responses: {}
+      summary: Delete notification
+      tags:
+      - notification
+    get:
+      consumes:
+      - application/json
+      description: Get details of a notification entry
+      parameters:
+      - description: notification ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses: {}
+      summary: Get notification details
+      tags:
+      - notification
+    patch:
+      consumes:
+      - application/json
+      description: Update details of an existing notification entry
+      parameters:
+      - description: notification ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses: {}
+      summary: Update notification details
+      tags:
+      - notification
+  /v1/projects:
+    post:
+      consumes:
+      - application/json
+      description: Create a new project entry
+      produces:
+      - application/json
+      responses: {}
+      summary: Create a new project
+      tags:
+      - project
+  /v1/projects/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete an existing project entry
+      produces:
+      - application/json
+      responses: {}
+      summary: Delete project
+      tags:
+      - project
+    get:
+      consumes:
+      - application/json
+      description: Get details of a project entry
+      parameters:
+      - description: project ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      summary: Get project details
+      tags:
+      - project
+    patch:
+      consumes:
+      - application/json
+      description: Update details of an existing project entry
+      parameters:
+      - description: project ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses: {}
+      summary: Update project details
+      tags:
+      - project
+  /v1/reports:
+    post:
+      consumes:
+      - application/json
+      description: Create a new report entry
+      produces:
+      - application/json
+      responses: {}
+      summary: Create a new report
+      tags:
+      - report
+  /v1/reports/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete an existing report entry
+      produces:
+      - application/json
+      responses: {}
+      summary: Delete report
+      tags:
+      - report
+    get:
+      consumes:
+      - application/json
+      description: Get details of a report entry
+      parameters:
+      - description: report ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses: {}
+      summary: Get report details
+      tags:
+      - report
+    patch:
+      consumes:
+      - application/json
+      description: Update details of an existing report entry
+      parameters:
+      - description: report ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses: {}
+      summary: Update report details
+      tags:
+      - report
+  /v1/roles:
+    post:
+      consumes:
+      - application/json
+      description: Create a new role entry
+      produces:
+      - application/json
+      responses: {}
+      summary: Create a new role
+      tags:
+      - role
+  /v1/roles/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete an existing role entry
+      produces:
+      - application/json
+      responses: {}
+      summary: Delete role
+      tags:
+      - role
+    get:
+      consumes:
+      - application/json
+      description: Get details of a role entry
+      parameters:
+      - description: role ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses: {}
+      summary: Get role details
+      tags:
+      - role
+    patch:
+      consumes:
+      - application/json
+      description: Update details of an existing role entry
+      parameters:
+      - description: role ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses: {}
+      summary: Update role details
+      tags:
+      - role
+  /v1/settingss:
+    post:
+      consumes:
+      - application/json
+      description: Create a new settings entry
+      produces:
+      - application/json
+      responses: {}
+      summary: Create a new settings
+      tags:
+      - settings
+  /v1/settingss/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete an existing settings entry
+      produces:
+      - application/json
+      responses: {}
+      summary: Delete settings
+      tags:
+      - settings
+    get:
+      consumes:
+      - application/json
+      description: Get details of a settings entry
+      parameters:
+      - description: settings ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses: {}
+      summary: Get settings details
+      tags:
+      - settings
+    patch:
+      consumes:
+      - application/json
+      description: Update details of an existing settings entry
+      parameters:
+      - description: settings ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses: {}
+      summary: Update settings details
+      tags:
+      - settings
+  /v1/users:
+    post:
+      consumes:
+      - application/json
+      description: Create a new user entry
+      produces:
+      - application/json
+      responses: {}
+      summary: Create a new user
+      tags:
+      - user
+  /v1/users/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete an existing user entry
+      produces:
+      - application/json
+      responses: {}
+      summary: Delete user
+      tags:
+      - user
+    get:
+      consumes:
+      - application/json
+      description: Get details of a user entry
+      parameters:
+      - description: user ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses: {}
+      summary: Get user details
+      tags:
+      - user
+    patch:
+      consumes:
+      - application/json
+      description: Update details of an existing user entry
+      parameters:
+      - description: user ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses: {}
+      summary: Update user details
+      tags:
+      - user
+  /v1/users/me:
+    get:
+      consumes:
+      - application/json
+      description: Return details of the currently authenticated user
+      produces:
+      - application/json
+      responses: {}
+      summary: Get the current authenticated user
+      tags:
+      - Auth
 schemes:
 - http
 - https

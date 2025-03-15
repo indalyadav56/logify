@@ -296,3 +296,24 @@ Code review :====>
 
 Add
 
+
+
+tests/
+├── bdd/                  # Behavior-Driven Development tests
+│   ├── suites/          # Organized BDD test suites
+│   │   └── task_suite_test.go  # Feature-level BDD tests
+│   └── bootstrap_test.go       # Ginkgo bootstrap file
+├── e2e/                  # End-to-End tests
+│   ├── api/             # E2E tests for API endpoints
+│   │   └── task_api_test.go   # API-level E2E tests
+│   └── bootstrap_test.go      # E2E test setup
+├── integration/          # Integration tests
+│   ├── repository/      # Integration tests for persistence layer
+│   │   └── memory_test.go    # Memory repository tests
+│   └── bootstrap_test.go     # Integration test setup
+└── mocks/                # Optional: Mock implementations (if needed)
+    └── repository_mock.go  # Mock for TaskRepository
+  
+
+TDD:- for unit-level confidence (e.g., "Does this function work?").
+BDD:- for feature-level validation (e.g., "Does this feature meet the user’s needs?").

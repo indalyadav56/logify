@@ -11,7 +11,7 @@ CREATE TABLE if not exists users (
     last_name VARCHAR(100),
     email VARCHAR(255) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
-    role_id UUID REFERENCES roles(id),
+    role_id UUID NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT now(),
     updated_at TIMESTAMP NOT NULL DEFAULT now()
 );
