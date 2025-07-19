@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"log"
 	"logify/config"
-	_ "logify/docs"
+	_ "logify/docs/swagger"
 	"net/http"
 	"time"
 

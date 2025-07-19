@@ -1,13 +1,13 @@
 run:
   # Timeout for analysis, e.g. 5m
   timeout: 5m
-  
+
   # Include test files
   tests: true
-  
+
   # Maximum number of concurrent workers
   concurrency: 4
-  
+
   # Exit code when at least one issue was found
   issues-exit-code: 1
 
@@ -16,45 +16,45 @@ linters:
   enable:
     - ineffassign
     # Error detection
-    - errcheck      # Detect unchecked errors
-    - gosimple     # Simplify code
-    - govet        # Reports suspicious constructs
-    - staticcheck  # Go static analysis
-    
+    - errcheck # Detect unchecked errors
+    - gosimple # Simplify code
+    - govet # Reports suspicious constructs
+    - staticcheck # Go static analysis
+
     # Code style
-    - gofmt        # Format code
-    - goimports    # Manage imports
-    - revive       # Drop-in replacement for golint
-    
+    - gofmt # Format code
+    - goimports # Manage imports
+    - revive # Drop-in replacement for golint
+
     # Bug detection
-    - gosec        # Security problems
-    - bodyclose    # Check HTTP response bodies are closed
-    - noctx        # Required context.Context as first argument
-    - errorlint    # Error wrapping
-    
+    - gosec # Security problems
+    - bodyclose # Check HTTP response bodies are closed
+    - noctx # Required context.Context as first argument
+    - errorlint # Error wrapping
+
     # Performance
-    - prealloc     # Find slice preallocation opportunities
-    
+    - prealloc # Find slice preallocation opportunities
+
     # Complexity
-    - cyclop       # Cyclomatic complexity
-    - gocognit     # Cognitive complexity
-    
+    - cyclop # Cyclomatic complexity
+    - gocognit # Cognitive complexity
+
     # Best practices
-    - godot        # Check comment sentences
-    - misspell     # Spelling errors
-    - whitespace   # Trailing whitespace
+    - godot # Check comment sentences
+    - misspell # Spelling errors
+    - whitespace # Trailing whitespace
 
 linters-settings:
   cyclop:
     max-complexity: 15
-    
+
   gocognit:
     min-complexity: 20
-    
+
   gosec:
     excludes:
-      - G404  # Insecure random number source (math/rand)
-      
+      - G404 # Insecure random number source (math/rand)
+
   revive:
     rules:
       - name: exported
@@ -70,11 +70,10 @@ issues:
       linters:
         - gosec
         - errcheck
-        
+
   max-issues-per-linter: 50
   max-same-issues: 10
-  
+
   # Show all issues
   new: false
   new-from-rev: ""
-  

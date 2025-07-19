@@ -1,49 +1,38 @@
 services:
-  # backend:
-  #   build:
-  #     dockerfile: Dockerfile
-  #     context: .
-  #   container_name: backend
-  #   ports:
-  #     - "8080:8080"
-  #   env_file:
-  #     - .env
-  #   # depends_on:
-  #     # - postgres
-  #     # - redis
-      
-  # nginx:
-  #   image: nginx:1.27
-  #   container_name: logify_nginx
-  #   ports:
-  #     - "80:80"
-  #   volumes:
-  #     - ./nginx:/etc/nginx/conf.d:ro
-  #   # depends_on:
-  #     # - backend
-  #   extra_hosts:
-  #     - "host.docker.internal:host-gateway"
+  backend:
+    build:
+      dockerfile: Dockerfile
+      context: .
+    container_name: backend
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+      - redis
+      - kafka
 
-  # postgres:
-  #   image: postgres:latest
-  #   container_name: logify_postgres
-  #   ports:
-  #     - "5432:5432"
-  #   environment:
-  #     - POSTGRES_DB=postgres
-  #     - POSTGRES_USER=postgres
-  #     - POSTGRES_PASSWORD=postgres
-  #   volumes:
-  #     - postgres_data:/var/lib/postgresql/data
+  postgres:
+    image: postgres:latest
+    container_name: logify_postgres
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
 
-  # redis:
-  #   image: redis:latest
-  #   container_name: logify_redis
-  #   ports:
-  #     - "6371:6379"
-  #   volumes:
-  #     - redis_data:/data
-  
+  redis:
+    image: redis:latest
+    container_name: logify_redis
+    ports:
+      - "6371:6379"
+    volumes:
+      - redis_data:/data
+
   kafka:
     image: apache/kafka:3.9.0
     container_name: kafka
@@ -62,17 +51,17 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
       CLUSTER_ID: "LiKR6NrNSY2PVkX7d9kBiw"
-      KAFKA_LOG_SEGMENT_BYTES: 536870912  # 100MB
-      KAFKA_LOG_RETENTION_BYTES: 10737418240  # 10GB max retention per topic
-      KAFKA_REPLICA_FETCH_MAX_BYTES: 104857600  # 100MB
-      KAFKA_FETCH_MESSAGE_MAX_BYTES: 104857600  # 100MB
+      KAFKA_LOG_SEGMENT_BYTES: 536870912 # 100MB
+      KAFKA_LOG_RETENTION_BYTES: 10737418240 # 10GB max retention per topic
+      KAFKA_REPLICA_FETCH_MAX_BYTES: 104857600 # 100MB
+      KAFKA_FETCH_MESSAGE_MAX_BYTES: 104857600 # 100MB
       # Set the log directory explicitly
       KAFKA_LOG_DIRS: "/kafka-data"
     volumes:
       - ./kafka-data:/kafka-data
     networks:
       - logging-network
-  
+
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
     container_name: kafka-ui
@@ -110,7 +99,11 @@ services:
     ports:
       - 9200:9200
     healthcheck:
-      test: ["CMD-SHELL", "curl -s http://localhost:9200/_cluster/health | grep -vq '\"status\":\"red\"'"]
+      test:
+        [
+          "CMD-SHELL",
+          'curl -s http://localhost:9200/_cluster/health | grep -vq ''"status":"red"''',
+        ]
       interval: 20s
       timeout: 10s
       retries: 3
