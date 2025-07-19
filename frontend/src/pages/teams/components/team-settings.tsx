@@ -6,7 +6,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge";
 
 interface TeamSettingsProps {
   team: Team;
@@ -113,11 +112,11 @@ export function TeamSettings({ team }: TeamSettingsProps) {
         <div className="space-y-4">
           <h4 className="font-medium">Default Member Permissions</h4>
           <div className="flex flex-wrap gap-2">
-            {settings.default_member_permissions.map((permission) => (
+            {/* {settings.default_member_permissions.map((permission) => (
               <Badge key={permission} variant="secondary">
                 {permission}
               </Badge>
-            ))}
+            ))} */}
           </div>
         </div>
 
@@ -152,10 +151,7 @@ export function TeamSettings({ team }: TeamSettingsProps) {
         </div>
 
         <div className="flex justify-end space-x-2">
-          <Button
-            onClick={handleSave}
-            disabled={isSubmitting}
-          >
+          <Button onClick={handleSave} disabled={isSubmitting}>
             {isSubmitting ? "Saving..." : "Save Changes"}
           </Button>
         </div>

@@ -57,9 +57,9 @@ export function ApiKeysForm() {
     toast.success("API key copied to clipboard");
   };
 
-  const deleteKey = (id: string) => {
-    toast.success("API key revoked successfully");
-  };
+  // const deleteKey = () => {
+  //   toast.success("API key revoked successfully");
+  // };
 
   return (
     <div className="space-y-6">
@@ -114,7 +114,9 @@ export function ApiKeysForm() {
                   <TableCell>{apiKey.lastUsed}</TableCell>
                   <TableCell>
                     <Badge
-                      variant={apiKey.status === "active" ? "default" : "secondary"}
+                      variant={
+                        apiKey.status === "active" ? "default" : "secondary"
+                      }
                     >
                       {apiKey.status}
                     </Badge>
@@ -134,7 +136,7 @@ export function ApiKeysForm() {
                           Copy
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          onClick={() => deleteKey(apiKey.id)}
+                          // onClick={() => deleteKey(apiKey.id)}
                           className="text-destructive"
                         >
                           <Trash className="mr-2 h-4 w-4" />

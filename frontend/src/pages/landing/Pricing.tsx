@@ -1,9 +1,8 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle } from 'lucide-react';
+import { CheckCircle } from "lucide-react";
 
 const PricingCard = ({
   name,
@@ -20,14 +19,14 @@ const PricingCard = ({
   popular?: boolean;
   buttonText?: string;
 }) => (
-  <Card className={`p-6 ${popular ? 'border-primary shadow-lg' : ''}`}>
-    {popular && (
-      <Badge className="mb-4 bg-primary">Most Popular</Badge>
-    )}
+  <Card className={`p-6 ${popular ? "border-primary shadow-lg" : ""}`}>
+    {popular && <Badge className="mb-4 bg-primary">Most Popular</Badge>}
     <h3 className="text-2xl font-bold">{name}</h3>
     <div className="mt-4 mb-2">
       <span className="text-4xl font-bold">${price}</span>
-      {price !== 'Custom' && <span className="text-muted-foreground">/month</span>}
+      {price !== "Custom" && (
+        <span className="text-muted-foreground">/month</span>
+      )}
     </div>
     <p className="text-muted-foreground mb-6">{description}</p>
     <Link to="/signup">
@@ -59,8 +58,8 @@ const Pricing = () => {
         "Basic log analytics",
         "Email support",
         "Basic integrations",
-        "Community access"
-      ]
+        "Community access",
+      ],
     },
     {
       name: "Professional",
@@ -77,8 +76,8 @@ const Pricing = () => {
         "Advanced integrations",
         "Custom dashboards",
         "API access",
-        "SSO authentication"
-      ]
+        "SSO authentication",
+      ],
     },
     {
       name: "Enterprise",
@@ -95,18 +94,21 @@ const Pricing = () => {
         "Compliance support",
         "Advanced security",
         "Custom training",
-        "Dedicated account manager"
-      ]
-    }
+        "Dedicated account manager",
+      ],
+    },
   ];
 
   return (
     <section className="py-20 bg-muted/50" id="pricing">
       <div className="container mx-auto px-4">
         <div className="text-center max-w-3xl mx-auto mb-16">
-          <h2 className="text-3xl font-bold mb-4">Simple, transparent pricing</h2>
+          <h2 className="text-3xl font-bold mb-4">
+            Simple, transparent pricing
+          </h2>
           <p className="text-xl text-muted-foreground">
-            Choose the perfect plan for your team. All plans include a 14-day free trial.
+            Choose the perfect plan for your team. All plans include a 14-day
+            free trial.
           </p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -119,19 +121,27 @@ const Pricing = () => {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 max-w-4xl mx-auto">
             <div className="p-4 bg-background rounded-lg border">
               <h4 className="font-semibold mb-2">Custom Deployment</h4>
-              <p className="text-sm text-muted-foreground">On-premise or private cloud deployment options</p>
+              <p className="text-sm text-muted-foreground">
+                On-premise or private cloud deployment options
+              </p>
             </div>
             <div className="p-4 bg-background rounded-lg border">
               <h4 className="font-semibold mb-2">Advanced Security</h4>
-              <p className="text-sm text-muted-foreground">Custom security policies and compliance</p>
+              <p className="text-sm text-muted-foreground">
+                Custom security policies and compliance
+              </p>
             </div>
             <div className="p-4 bg-background rounded-lg border">
               <h4 className="font-semibold mb-2">24/7 Support</h4>
-              <p className="text-sm text-muted-foreground">Dedicated support team and account manager</p>
+              <p className="text-sm text-muted-foreground">
+                Dedicated support team and account manager
+              </p>
             </div>
             <div className="p-4 bg-background rounded-lg border">
               <h4 className="font-semibold mb-2">Custom Integration</h4>
-              <p className="text-sm text-muted-foreground">Custom integrations and API access</p>
+              <p className="text-sm text-muted-foreground">
+                Custom integrations and API access
+              </p>
             </div>
           </div>
         </div>

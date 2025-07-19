@@ -55,13 +55,13 @@ export function ProjectOverview({ project }: ProjectOverviewProps) {
                 </label>
                 <div>
                   <Badge
-                    variant={
-                      project.environment === "prod"
-                        ? "destructive"
-                        : project.environment === "staging"
-                        ? "warning"
-                        : "secondary"
-                    }
+                  // variant={
+                  //   project.environment === "prod"
+                  //     ? "destructive"
+                  //     : project.environment === "staging"
+                  //     ? "warning"
+                  //     : "secondary"
+                  // }
                   >
                     {project.environment}
                   </Badge>
@@ -179,7 +179,9 @@ export function ProjectOverview({ project }: ProjectOverviewProps) {
                 <BarChart className="h-8 w-8 text-primary" />
                 <div className="text-right">
                   <p className="text-2xl font-bold">
-                    {((project.stats?.storageUsed || 0) / 1000000000).toFixed(2)}{" "}
+                    {((project.stats?.storageUsed || 0) / 1000000000).toFixed(
+                      2
+                    )}{" "}
                     GB
                   </p>
                   <p className="text-sm text-muted-foreground">Used of 5 GB</p>

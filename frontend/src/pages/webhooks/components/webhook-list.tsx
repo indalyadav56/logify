@@ -1,6 +1,6 @@
-import { useWebhookStore, WebhookEventType } from "@/store/useWebhookStore";
+import { useWebhookStore } from "@/store/useWebhookStore";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+// import { Badge } from "@/components/ui/badge";
 import {
   Table,
   TableBody,
@@ -19,7 +19,7 @@ import {
   Trash,
   XCircle,
 } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
+// import { formatDistanceToNow } from "date-fns";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -38,14 +38,16 @@ interface WebhookListProps {
 }
 
 export function WebhookList({ showActive, searchQuery }: WebhookListProps) {
-  const { webhooks, toggleWebhook, deleteWebhook, rotateSecret } = useWebhookStore();
+  const { webhooks, toggleWebhook, deleteWebhook, rotateSecret } =
+    useWebhookStore();
   const [selectedWebhook, setSelectedWebhook] = useState<string | null>(null);
 
   const filteredWebhooks = webhooks
     .filter((webhook) => webhook.active === showActive)
-    .filter((webhook) =>
-      webhook.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      webhook.url.toLowerCase().includes(searchQuery.toLowerCase())
+    .filter(
+      (webhook) =>
+        webhook.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        webhook.url.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
   const handleCopySecret = (secret: string) => {
@@ -53,12 +55,12 @@ export function WebhookList({ showActive, searchQuery }: WebhookListProps) {
     toast.success("Secret copied to clipboard");
   };
 
-  const getEventBadgeColor = (event: WebhookEventType) => {
-    if (event.includes('error')) return 'destructive';
-    if (event.includes('warning')) return 'warning';
-    if (event.includes('created')) return 'success';
-    return 'secondary';
-  };
+  // const getEventBadgeColor = (event: WebhookEventType) => {
+  //   if (event.includes("error")) return "destructive";
+  //   if (event.includes("warning")) return "warning";
+  //   if (event.includes("created")) return "success";
+  //   return "secondary";
+  // };
 
   return (
     <ScrollArea className="h-[600px]">
@@ -90,29 +92,26 @@ export function WebhookList({ showActive, searchQuery }: WebhookListProps) {
                 </TableCell>
                 <TableCell>
                   <div className="flex flex-wrap gap-1">
-                    {webhook.events.map((event) => (
-                      <Badge
-                        key={event}
-                        variant={getEventBadgeColor(event)}
-                      >
+                    {/* {webhook.events.map((event) => (
+                      <Badge key={event} variant={getEventBadgeColor(event)}>
                         {event}
                       </Badge>
-                    ))}
+                    ))} */}
                   </div>
                 </TableCell>
                 <TableCell>
                   {webhook.last_delivery ? (
                     <div className="flex items-center gap-2">
-                      {webhook.last_delivery.status === 'success' ? (
+                      {webhook.last_delivery.status === "success" ? (
                         <CheckCircle2 className="h-4 w-4 text-success" />
                       ) : (
                         <XCircle className="h-4 w-4 text-destructive" />
                       )}
                       <span>
-                        {formatDistanceToNow(
+                        {/* {formatDistanceToNow(
                           new Date(webhook.last_delivery.created_at),
                           { addSuffix: true }
-                        )}
+                        )} */}
                       </span>
                     </div>
                   ) : (
@@ -120,9 +119,9 @@ export function WebhookList({ showActive, searchQuery }: WebhookListProps) {
                   )}
                 </TableCell>
                 <TableCell>
-                  {formatDistanceToNow(new Date(webhook.created_at), {
+                  {/* {formatDistanceToNow(new Date(webhook.created_at), {
                     addSuffix: true,
-                  })}
+                  })} */}
                 </TableCell>
                 <TableCell className="text-right">
                   <DropdownMenu>
@@ -145,12 +144,16 @@ export function WebhookList({ showActive, searchQuery }: WebhookListProps) {
                           </>
                         )}
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => rotateSecret(webhook.id)}>
+                      <DropdownMenuItem
+                        onClick={() => rotateSecret(webhook.id)}
+                      >
                         <Key className="mr-2 h-4 w-4" /> Rotate Secret
                       </DropdownMenuItem>
                       {webhook.secret && (
                         <DropdownMenuItem
-                          onClick={() => handleCopySecret(webhook.secret!.value)}
+                          onClick={() =>
+                            handleCopySecret(webhook.secret!.value)
+                          }
                         >
                           <Copy className="mr-2 h-4 w-4" /> Copy Secret
                         </DropdownMenuItem>

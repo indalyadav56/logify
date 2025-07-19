@@ -20,8 +20,7 @@ import {
 } from "@/components/ui/select";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge";
-import { X } from "lucide-react";
+// import { Badge } from "@/components/ui/badge";
 
 interface CreateWebhookProps {
   open: boolean;
@@ -96,9 +95,9 @@ export function CreateWebhook({ open, onOpenChange }: CreateWebhookProps) {
     }
   };
 
-  const handleEventRemove = (event: WebhookEventType) => {
-    setSelectedEvents(selectedEvents.filter((e) => e !== event));
-  };
+  // const handleEventRemove = (event: WebhookEventType) => {
+  //   setSelectedEvents(selectedEvents.filter((e) => e !== event));
+  // };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -106,7 +105,8 @@ export function CreateWebhook({ open, onOpenChange }: CreateWebhookProps) {
         <DialogHeader>
           <DialogTitle>Create New Webhook</DialogTitle>
           <DialogDescription>
-            Create a new webhook endpoint to receive real-time event notifications.
+            Create a new webhook endpoint to receive real-time event
+            notifications.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
@@ -139,7 +139,11 @@ export function CreateWebhook({ open, onOpenChange }: CreateWebhookProps) {
           </div>
           <div className="grid gap-2">
             <Label>Events</Label>
-            <Select onValueChange={(value) => handleEventSelect(value as WebhookEventType)}>
+            <Select
+              onValueChange={(value) =>
+                handleEventSelect(value as WebhookEventType)
+              }
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Select events to subscribe to" />
               </SelectTrigger>
@@ -156,7 +160,7 @@ export function CreateWebhook({ open, onOpenChange }: CreateWebhookProps) {
               </SelectContent>
             </Select>
             <div className="flex flex-wrap gap-2 mt-2">
-              {selectedEvents.map((event) => (
+              {/* {selectedEvents.map((event) => (
                 <Badge
                   key={event}
                   variant="secondary"
@@ -172,7 +176,7 @@ export function CreateWebhook({ open, onOpenChange }: CreateWebhookProps) {
                     <X className="h-3 w-3" />
                   </Button>
                 </Badge>
-              ))}
+              ))} */}
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
@@ -201,7 +205,11 @@ export function CreateWebhook({ open, onOpenChange }: CreateWebhookProps) {
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={handleReset} disabled={isSubmitting}>
+          <Button
+            variant="outline"
+            onClick={handleReset}
+            disabled={isSubmitting}
+          >
             Cancel
           </Button>
           <Button onClick={handleCreate} disabled={isSubmitting}>

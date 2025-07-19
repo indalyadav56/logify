@@ -1,17 +1,15 @@
-import { useParams } from "react-router-dom"
-import { useProjectStore } from "@/store/useProjectStore"
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
-import { ScrollText, AlertTriangle, Clock, Users } from "lucide-react"
+} from "@/components/ui/card";
+import { ScrollText, AlertTriangle, Clock, Users } from "lucide-react";
 
 export function ProjectOverview() {
-  const { projectId } = useParams()
-  const { currentProject } = useProjectStore()
+  // const { projectId } = useParams()
+  // const { currentProject } = useProjectStore()
 
   const stats = [
     {
@@ -38,14 +36,14 @@ export function ProjectOverview() {
       icon: Users,
       description: "Currently online",
     },
-  ]
+  ];
 
   return (
     <div className="space-y-6">
       {/* Stats Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat, index) => {
-          const Icon = stat.icon
+          const Icon = stat.icon;
           return (
             <Card key={index}>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -61,7 +59,7 @@ export function ProjectOverview() {
                 </p>
               </CardContent>
             </Card>
-          )
+          );
         })}
       </div>
 
@@ -81,5 +79,5 @@ export function ProjectOverview() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

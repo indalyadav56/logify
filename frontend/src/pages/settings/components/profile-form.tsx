@@ -15,7 +15,13 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 const profileFormSchema = z.object({
   username: z
@@ -33,8 +39,14 @@ const profileFormSchema = z.object({
   bio: z.string().max(160).min(4),
   urls: z
     .object({
-      github: z.string().url({ message: "Please enter a valid URL." }).optional(),
-      linkedin: z.string().url({ message: "Please enter a valid URL." }).optional(),
+      github: z
+        .string()
+        .url({ message: "Please enter a valid URL." })
+        .optional(),
+      linkedin: z
+        .string()
+        .url({ message: "Please enter a valid URL." })
+        .optional(),
     })
     .optional(),
 });
@@ -59,6 +71,7 @@ export function ProfileForm() {
   });
 
   function onSubmit(data: ProfileFormValues) {
+    console.log(data);
     toast.success("Profile updated successfully!");
   }
 
@@ -79,7 +92,9 @@ export function ProfileForm() {
             </Avatar>
             <div className="space-y-2">
               <Button variant="outline">Upload New Picture</Button>
-              <Button variant="ghost" className="text-destructive">Remove Picture</Button>
+              <Button variant="ghost" className="text-destructive">
+                Remove Picture
+              </Button>
             </div>
           </div>
         </CardContent>
@@ -91,7 +106,8 @@ export function ProfileForm() {
             <CardHeader>
               <CardTitle>Personal Information</CardTitle>
               <CardDescription>
-                Update your personal information here. This will be displayed on your profile.
+                Update your personal information here. This will be displayed on
+                your profile.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -141,7 +157,8 @@ export function ProfileForm() {
                       />
                     </FormControl>
                     <FormDescription>
-                      You can <span>@mention</span> other users and organizations.
+                      You can <span>@mention</span> other users and
+                      organizations.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -165,7 +182,10 @@ export function ProfileForm() {
                   <FormItem>
                     <FormLabel>GitHub</FormLabel>
                     <FormControl>
-                      <Input placeholder="https://github.com/username" {...field} />
+                      <Input
+                        placeholder="https://github.com/username"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -178,7 +198,10 @@ export function ProfileForm() {
                   <FormItem>
                     <FormLabel>LinkedIn</FormLabel>
                     <FormControl>
-                      <Input placeholder="https://linkedin.com/in/username" {...field} />
+                      <Input
+                        placeholder="https://linkedin.com/in/username"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

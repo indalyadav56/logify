@@ -1,4 +1,9 @@
-import { useTeamStore, Team, TeamRole, ProjectPermission } from "@/store/useTeamStore";
+import {
+  useTeamStore,
+  Team,
+  TeamRole,
+  ProjectPermission,
+} from "@/store/useTeamStore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,7 +24,6 @@ import {
 } from "@/components/ui/select";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
@@ -51,7 +55,9 @@ export function InviteMember({ team, open, onOpenChange }: InviteMemberProps) {
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<TeamRole>("member");
   const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
-  const [permissions, setPermissions] = useState<Record<string, ProjectPermission[]>>({});
+  const [permissions, setPermissions] = useState<
+    Record<string, ProjectPermission[]>
+  >({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleInvite = async () => {
@@ -67,12 +73,7 @@ export function InviteMember({ team, open, onOpenChange }: InviteMemberProps) {
 
     try {
       setIsSubmitting(true);
-      await inviteMember(
-        team.id,
-        email.trim(),
-        role,
-        permissions
-      );
+      await inviteMember(team.id, email.trim(), role, permissions);
       toast.success("Invitation sent successfully");
       handleReset();
     } catch (error) {
@@ -104,17 +105,20 @@ export function InviteMember({ team, open, onOpenChange }: InviteMemberProps) {
     }
   };
 
-  const togglePermission = (projectId: string, permission: ProjectPermission) => {
-    setPermissions((prev) => {
-      const projectPermissions = prev[projectId] || [];
-      return {
-        ...prev,
-        [projectId]: projectPermissions.includes(permission)
-          ? projectPermissions.filter((p) => p !== permission)
-          : [...projectPermissions, permission],
-      };
-    });
-  };
+  // const togglePermission = (
+  //   projectId: string,
+  //   permission: ProjectPermission
+  // ) => {
+  //   setPermissions((prev) => {
+  //     const projectPermissions = prev[projectId] || [];
+  //     return {
+  //       ...prev,
+  //       [projectId]: projectPermissions.includes(permission)
+  //         ? projectPermissions.filter((p) => p !== permission)
+  //         : [...projectPermissions, permission],
+  //     };
+  //   });
+  // };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -138,7 +142,10 @@ export function InviteMember({ team, open, onOpenChange }: InviteMemberProps) {
           </div>
           <div className="grid gap-2">
             <Label>Role</Label>
-            <Select value={role} onValueChange={(value: TeamRole) => setRole(value)}>
+            <Select
+              value={role}
+              onValueChange={(value: TeamRole) => setRole(value)}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Select role" />
               </SelectTrigger>
@@ -166,30 +173,32 @@ export function InviteMember({ team, open, onOpenChange }: InviteMemberProps) {
                     <div className="flex items-center gap-2">
                       <Checkbox
                         checked={selectedProjects.includes(projectId)}
-                        onCheckedChange={() => toggleProjectSelection(projectId)}
+                        onCheckedChange={() =>
+                          toggleProjectSelection(projectId)
+                        }
                       />
                       <span className="font-medium">Project: {projectId}</span>
                     </div>
-                    {selectedProjects.includes(projectId) && (
+                    {/* {selectedProjects.includes(projectId) && (
                       <div className="ml-6 flex flex-wrap gap-2">
                         {PERMISSIONS.map((permission) => (
-                          <Badge
-                            key={permission.value}
-                            variant={
-                              permissions[projectId]?.includes(permission.value)
-                                ? "default"
-                                : "outline"
-                            }
-                            className="cursor-pointer"
-                            onClick={() =>
-                              togglePermission(projectId, permission.value)
-                            }
-                          >
-                            {permission.label}
-                          </Badge>
+                          // <Badge
+                          //   key={permission.value}
+                          //   variant={
+                          //     permissions[projectId]?.includes(permission.value)
+                          //       ? "default"
+                          //       : "outline"
+                          //   }
+                          //   className="cursor-pointer"
+                          //   onClick={() =>
+                          //     togglePermission(projectId, permission.value)
+                          //   }
+                          // >
+                          //   {permission.label}
+                          // </Badge>
                         ))}
                       </div>
-                    )}
+                    )} */}
                   </div>
                 ))}
               </div>
@@ -197,7 +206,11 @@ export function InviteMember({ team, open, onOpenChange }: InviteMemberProps) {
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={handleReset} disabled={isSubmitting}>
+          <Button
+            variant="outline"
+            onClick={handleReset}
+            disabled={isSubmitting}
+          >
             Cancel
           </Button>
           <Button onClick={handleInvite} disabled={isSubmitting}>

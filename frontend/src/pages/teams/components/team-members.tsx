@@ -1,7 +1,12 @@
-import { useTeamStore, Team, TeamRole, ProjectPermission } from "@/store/useTeamStore";
+import {
+  useTeamStore,
+  Team,
+  TeamRole,
+  // ProjectPermission,
+} from "@/store/useTeamStore";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
+// import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,7 +15,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { formatDistanceToNow } from "date-fns";
+// import { formatDistanceToNow } from "date-fns";
 import { useState } from "react";
 import { InviteMember } from "./invite-member";
 import { EditPermissions } from "./edit-permissions";
@@ -32,18 +37,18 @@ export function TeamMembers({ team }: TeamMembersProps) {
   const [isInviting, setIsInviting] = useState(false);
   const [editingMember, setEditingMember] = useState<string | null>(null);
 
-  const getRoleBadgeVariant = (role: TeamRole) => {
-    switch (role) {
-      case "owner":
-        return "destructive";
-      case "admin":
-        return "warning";
-      case "member":
-        return "default";
-      default:
-        return "secondary";
-    }
-  };
+  // const getRoleBadgeVariant = (role: TeamRole) => {
+  //   switch (role) {
+  //     case "owner":
+  //       return "destructive";
+  //     case "admin":
+  //       return "warning";
+  //     case "member":
+  //       return "default";
+  //     default:
+  //       return "secondary";
+  //   }
+  // };
 
   const getInitials = (name: string) => {
     return name
@@ -86,13 +91,13 @@ export function TeamMembers({ team }: TeamMembersProps) {
 
             <div className="flex items-center gap-4">
               <div className="flex flex-col items-end gap-1">
-                <Badge variant={getRoleBadgeVariant(member.role)}>
+                {/* <Badge variant={getRoleBadgeVariant(member.role)}>
                   {member.role}
-                </Badge>
+                </Badge> */}
                 <span className="text-xs text-muted-foreground">
-                  Joined {formatDistanceToNow(new Date(member.joined_at), {
+                  {/* Joined {formatDistanceToNow(new Date(member.joined_at), {
                     addSuffix: true,
-                  })}
+                  })} */}
                 </span>
               </div>
 
@@ -113,15 +118,15 @@ export function TeamMembers({ team }: TeamMembersProps) {
                         role.value === member.role ||
                         role.value === "owner"
                       }
-                      onClick={() => updateMemberRole(team.id, member.id, role.value)}
+                      onClick={() =>
+                        updateMemberRole(team.id, member.id, role.value)
+                      }
                     >
                       Make {role.label}
                     </DropdownMenuItem>
                   ))}
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onClick={() => setEditingMember(member.id)}
-                  >
+                  <DropdownMenuItem onClick={() => setEditingMember(member.id)}>
                     <Shield className="mr-2 h-4 w-4" />
                     Edit Permissions
                   </DropdownMenuItem>

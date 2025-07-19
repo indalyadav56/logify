@@ -9,8 +9,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { formatDistanceToNow } from "date-fns";
+// import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Dialog,
@@ -80,7 +79,7 @@ export function WebhookDeliveries({ webhookId }: WebhookDeliveriesProps) {
                       ) : (
                         <div className="h-4 w-4 rounded-full bg-yellow-500" />
                       )}
-                      <Badge
+                      {/* <Badge
                         variant={
                           delivery.status === "success"
                             ? "success"
@@ -90,11 +89,11 @@ export function WebhookDeliveries({ webhookId }: WebhookDeliveriesProps) {
                         }
                       >
                         {delivery.status}
-                      </Badge>
+                      </Badge> */}
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge variant="outline">{delivery.event_type}</Badge>
+                    {/* <Badge variant="outline">{delivery.event_type}</Badge> */}
                   </TableCell>
                   <TableCell>
                     <Dialog>
@@ -120,7 +119,9 @@ export function WebhookDeliveries({ webhookId }: WebhookDeliveriesProps) {
                           </div>
                           {delivery.response_body && (
                             <div>
-                              <h4 className="font-medium mb-2">Response Body</h4>
+                              <h4 className="font-medium mb-2">
+                                Response Body
+                              </h4>
                               <pre className="bg-muted p-4 rounded-lg overflow-auto max-h-[200px]">
                                 {JSON.stringify(
                                   JSON.parse(delivery.response_body),
@@ -143,9 +144,9 @@ export function WebhookDeliveries({ webhookId }: WebhookDeliveriesProps) {
                     </Dialog>
                   </TableCell>
                   <TableCell>
-                    {formatDistanceToNow(new Date(delivery.created_at), {
+                    {/* {formatDistanceToNow(new Date(delivery.created_at), {
                       addSuffix: true,
-                    })}
+                    })} */}
                   </TableCell>
                   <TableCell className="text-right">
                     {delivery.status === "failed" && (

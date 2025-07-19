@@ -1,4 +1,4 @@
-import { useWebhookStore } from "@/store/useWebhookStore";
+// import { useWebhookStore } from "@/store/useWebhookStore";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus, Search } from "lucide-react";
@@ -52,27 +52,18 @@ export default function WebhooksPage() {
               </TabsList>
 
               <TabsContent value="active" className="space-y-4">
-                <WebhookList
-                  showActive={true}
-                  searchQuery={searchQuery}
-                />
+                <WebhookList showActive={true} searchQuery={searchQuery} />
               </TabsContent>
 
               <TabsContent value="inactive" className="space-y-4">
-                <WebhookList
-                  showActive={false}
-                  searchQuery={searchQuery}
-                />
+                <WebhookList showActive={false} searchQuery={searchQuery} />
               </TabsContent>
             </Tabs>
           </CardContent>
         </Card>
       </div>
 
-      <CreateWebhook
-        open={isCreating}
-        onOpenChange={setIsCreating}
-      />
+      <CreateWebhook open={isCreating} onOpenChange={setIsCreating} />
     </div>
   );
 }

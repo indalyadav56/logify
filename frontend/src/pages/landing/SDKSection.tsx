@@ -1,11 +1,5 @@
-import React from 'react';
 import { Button } from "@/components/ui/button";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Card,
   CardContent,
@@ -13,16 +7,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import {
-  Copy,
-  Terminal,
-  Download,
-  BookOpen,
-  Github,
-} from 'lucide-react';
+import { Copy, Terminal, Download, BookOpen, Github } from "lucide-react";
 
-const CodeBlock = ({ code, language }: { code: string, language: string }) => {
+const CodeBlock = ({ code, language }: { code: string; language: string }) => {
+  console.log("language", language);
   const copyToClipboard = () => {
     navigator.clipboard.writeText(code);
   };
@@ -47,7 +35,7 @@ const CodeBlock = ({ code, language }: { code: string, language: string }) => {
 const SDKSection = () => {
   const sdks = {
     python: {
-      installation: 'pip install logify-sdk',
+      installation: "pip install logify-sdk",
       example: `from logify import Logify
 
 # Initialize the client
@@ -67,11 +55,11 @@ dashboard = logify.dashboard.create({
     "name": "User Activity",
     "metrics": ["login_count", "active_users"]
 })`,
-      version: '1.2.0',
-      docs: 'https://docs.logify.dev/python'
+      version: "1.2.0",
+      docs: "https://docs.logify.dev/python",
     },
     javascript: {
-      installation: 'npm install @logify/sdk',
+      installation: "npm install @logify/sdk",
       example: `import { Logify } from '@logify/sdk';
 
 // Initialize the client
@@ -100,11 +88,11 @@ logify.monitor.watch('memory_usage', {
     console.log('High memory usage detected:', metric);
   }
 });`,
-      version: '2.1.0',
-      docs: 'https://docs.logify.dev/javascript'
+      version: "2.1.0",
+      docs: "https://docs.logify.dev/javascript",
     },
     golang: {
-      installation: 'go get github.com/logify/sdk-go',
+      installation: "go get github.com/logify/sdk-go",
       example: `package main
 
 import (
@@ -129,8 +117,8 @@ func main() {
     // Custom metrics
     client.Metric.Gauge("server_memory", 1024)
 }`,
-      version: '1.0.1',
-      docs: 'https://docs.logify.dev/golang'
+      version: "1.0.1",
+      docs: "https://docs.logify.dev/golang",
     },
     java: {
       installation: `<dependency>
@@ -162,16 +150,18 @@ public class Example {
         client.trackMetric("api_latency", 45.2);
     }
 }`,
-      version: '1.1.0',
-      docs: 'https://docs.logify.dev/java'
-    }
+      version: "1.1.0",
+      docs: "https://docs.logify.dev/java",
+    },
   };
 
   return (
     <section className="py-20" id="sdks">
       <div className="container mx-auto px-4">
         <div className="text-center max-w-3xl mx-auto mb-16">
-          <h2 className="text-3xl font-bold mb-4">Powerful SDKs for Every Platform</h2>
+          <h2 className="text-3xl font-bold mb-4">
+            Powerful SDKs for Every Platform
+          </h2>
           <p className="text-xl text-muted-foreground">
             Integrate Logify into your application with our easy-to-use SDKs
           </p>
@@ -192,7 +182,7 @@ public class Example {
                   <CardHeader>
                     <div className="flex items-center justify-between">
                       <CardTitle>Installation</CardTitle>
-                      <Badge variant="secondary">v{sdk.version}</Badge>
+                      {/* <Badge variant="secondary">v{sdk.version}</Badge> */}
                     </div>
                     <CardDescription>
                       Get started with Logify in your {lang} application
@@ -240,7 +230,8 @@ public class Example {
             </CardHeader>
             <CardContent>
               <p className="text-muted-foreground">
-                Available on all major package managers. Easy installation with npm, pip, go get, and maven.
+                Available on all major package managers. Easy installation with
+                npm, pip, go get, and maven.
               </p>
             </CardContent>
           </Card>
@@ -254,7 +245,8 @@ public class Example {
             </CardHeader>
             <CardContent>
               <p className="text-muted-foreground">
-                Comprehensive documentation with examples, tutorials, and API references.
+                Comprehensive documentation with examples, tutorials, and API
+                references.
               </p>
             </CardContent>
           </Card>
@@ -268,7 +260,8 @@ public class Example {
             </CardHeader>
             <CardContent>
               <p className="text-muted-foreground">
-                All SDKs are open source. Contribute, report issues, or customize for your needs.
+                All SDKs are open source. Contribute, report issues, or
+                customize for your needs.
               </p>
             </CardContent>
           </Card>

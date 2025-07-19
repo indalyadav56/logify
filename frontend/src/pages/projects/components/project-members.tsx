@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useProjectStore } from "@/store/useProjectStore";
 import {
   Card,
   CardContent,
@@ -69,17 +68,20 @@ export function ProjectMembers({ project }: ProjectMembersProps) {
   const handleInviteMember = async () => {
     try {
       // API call to invite member
-      await fetch(`http://localhost:8080/v1/projects/${project.id}/members/invite`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-        body: JSON.stringify({
-          email: inviteEmail,
-          role: inviteRole,
-        }),
-      });
+      await fetch(
+        `http://localhost:8080/v1/projects/${project.id}/members/invite`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+          body: JSON.stringify({
+            email: inviteEmail,
+            role: inviteRole,
+          }),
+        }
+      );
 
       setIsInviteDialogOpen(false);
       setInviteEmail("");
@@ -105,7 +107,10 @@ export function ProjectMembers({ project }: ProjectMembersProps) {
     }
   };
 
-  const handleUpdateRole = async (memberId: string, newRole: Member["role"]) => {
+  const handleUpdateRole = async (
+    memberId: string,
+    newRole: Member["role"]
+  ) => {
     try {
       await fetch(
         `http://localhost:8080/v1/projects/${project.id}/members/${memberId}`,
@@ -135,7 +140,10 @@ export function ProjectMembers({ project }: ProjectMembersProps) {
               Manage team members and their roles in this project
             </CardDescription>
           </div>
-          <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
+          <Dialog
+            open={isInviteDialogOpen}
+            onOpenChange={setIsInviteDialogOpen}
+          >
             <DialogTrigger asChild>
               <Button>
                 <Plus className="mr-2 h-4 w-4" />
@@ -160,7 +168,10 @@ export function ProjectMembers({ project }: ProjectMembersProps) {
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Role</label>
-                  <Select value={inviteRole} onValueChange={(v) => setInviteRole(v as Member["role"])}>
+                  <Select
+                    value={inviteRole}
+                    onValueChange={(v) => setInviteRole(v as Member["role"])}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Select role" />
                     </SelectTrigger>
@@ -172,7 +183,10 @@ export function ProjectMembers({ project }: ProjectMembersProps) {
                 </div>
               </div>
               <DialogFooter>
-                <Button variant="outline" onClick={() => setIsInviteDialogOpen(false)}>
+                <Button
+                  variant="outline"
+                  onClick={() => setIsInviteDialogOpen(false)}
+                >
                   Cancel
                 </Button>
                 <Button onClick={handleInviteMember}>Send Invitation</Button>
@@ -223,8 +237,12 @@ export function ProjectMembers({ project }: ProjectMembersProps) {
                         : "outline"
                     }
                   >
-                    {member.role === "owner" && <Shield className="mr-1 h-3 w-3" />}
-                    {member.role === "admin" && <User className="mr-1 h-3 w-3" />}
+                    {member.role === "owner" && (
+                      <Shield className="mr-1 h-3 w-3" />
+                    )}
+                    {member.role === "admin" && (
+                      <User className="mr-1 h-3 w-3" />
+                    )}
                     {member.role.charAt(0).toUpperCase() + member.role.slice(1)}
                   </Badge>
                 </TableCell>

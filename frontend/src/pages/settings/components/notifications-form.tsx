@@ -13,8 +13,20 @@ import {
 } from "@/components/ui/form";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const notificationsFormSchema = z.object({
   email_notifications: z.boolean().default(true),
@@ -47,6 +59,7 @@ export function NotificationsForm() {
   });
 
   function onSubmit(data: NotificationsFormValues) {
+    console.log(data);
     toast.success("Notification preferences updated!");
   }
 
@@ -208,7 +221,10 @@ export function NotificationsForm() {
               name="alert_frequency"
               render={({ field }) => (
                 <FormItem>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select frequency" />

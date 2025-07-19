@@ -1,4 +1,3 @@
-import { useImportStore } from "@/store/useImportStore";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FileUpload } from "./components/file-upload";
@@ -7,12 +6,10 @@ import { ImportJobs } from "./components/import-jobs";
 import { ImportPreview } from "./components/import-preview";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import {
   ArrowUpDown,
   FileText,
   Settings,
-  Upload,
   Database,
   History,
 } from "lucide-react";
@@ -87,7 +84,9 @@ export default function ImportPage() {
             <Card>
               <CardContent className="p-6">
                 <div className="flex flex-col space-y-2">
-                  <span className="text-muted-foreground text-sm">Total Imports</span>
+                  <span className="text-muted-foreground text-sm">
+                    Total Imports
+                  </span>
                   <span className="text-2xl font-bold">1,234</span>
                   <span className="text-xs text-green-500 flex items-center">
                     <ArrowUpDown className="h-3 w-3 mr-1" />
@@ -99,7 +98,9 @@ export default function ImportPage() {
             <Card>
               <CardContent className="p-6">
                 <div className="flex flex-col space-y-2">
-                  <span className="text-muted-foreground text-sm">Success Rate</span>
+                  <span className="text-muted-foreground text-sm">
+                    Success Rate
+                  </span>
                   <span className="text-2xl font-bold">98.2%</span>
                   <span className="text-xs text-green-500 flex items-center">
                     <ArrowUpDown className="h-3 w-3 mr-1" />

@@ -87,13 +87,13 @@ export function ProjectList() {
                   <TableCell className="font-medium">{project.name}</TableCell>
                   <TableCell>
                     <Badge
-                      variant={
-                        project.environment === "prod"
-                          ? "destructive"
-                          : project.environment === "staging"
-                          ? "warning"
-                          : "secondary"
-                      }
+                    // variant={
+                    //   project.environment === "prod"
+                    //     ? "destructive"
+                    //     : project.environment === "staging"
+                    //     ? "warning"
+                    //     : "secondary"
+                    // }
                     >
                       {project.environment}
                     </Badge>

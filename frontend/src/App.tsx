@@ -21,20 +21,20 @@ import {
 } from "./components/ui/sidebar";
 import { Toaster } from "sonner";
 import {
-  BarChart,
-  Bell,
-  Bookmark,
-  GalleryVerticalEnd,
+  // BarChart,
+  // Bell,
+  // Bookmark,
+  // GalleryVerticalEnd,
   LayoutDashboard,
   Logs,
-  Settings2,
-  Download,
-  Webhook,
-  Users,
-  ScrollText,
-  Upload,
-  CreditCard,
-  BookOpen,
+  // Settings2,
+  // Download,
+  // Webhook,
+  // Users,
+  // ScrollText,
+  // Upload,
+  // CreditCard,
+  // BookOpen,
 } from "lucide-react";
 import Loading from "./components/Loading";
 import { publicRoutes } from "./routes/public-routes";
@@ -55,61 +55,61 @@ const navigationItems = [
     icon: Logs,
     href: "/logs",
   },
-  {
-    title: "Projects",
-    icon: GalleryVerticalEnd,
-    href: "/projects",
-  },
-  {
-    title: "Alerts",
-    icon: Bell,
-    href: "/alerts",
-  },
-  {
-    title: "Billing",
-    icon: CreditCard,
-    href: "/billing",
-  },
-  {
-    title: "Documentation",
-    icon: BookOpen,
-    href: "/docs",
-  },
-  {
-    title: "Analytics",
-    icon: BarChart,
-    href: "/analytics",
-  },
-  {
-    title: "Import",
-    icon: Upload,
-    href: "/import",
-  },
-  {
-    title: "Export",
-    icon: Download,
-    href: "/export",
-  },
-  {
-    title: "Notifications",
-    icon: Bell,
-    href: "/notifications",
-  },
-  {
-    title: "Webhooks",
-    icon: Webhook,
-    href: "/webhooks",
-  },
-  {
-    title: "Audit Logs",
-    icon: ScrollText,
-    href: "/audit",
-  },
-  {
-    title: "Settings",
-    icon: Settings2,
-    href: "/settings",
-  },
+  // {
+  //   title: "Projects",
+  //   icon: GalleryVerticalEnd,
+  //   href: "/projects",
+  // },
+  // {
+  //   title: "Alerts",
+  //   icon: Bell,
+  //   href: "/alerts",
+  // },
+  // {
+  //   title: "Billing",
+  //   icon: CreditCard,
+  //   href: "/billing",
+  // },
+  // {
+  //   title: "Documentation",
+  //   icon: BookOpen,
+  //   href: "/docs",
+  // },
+  // {
+  //   title: "Analytics",
+  //   icon: BarChart,
+  //   href: "/analytics",
+  // },
+  // {
+  //   title: "Import",
+  //   icon: Upload,
+  //   href: "/import",
+  // },
+  // {
+  //   title: "Export",
+  //   icon: Download,
+  //   href: "/export",
+  // },
+  // {
+  //   title: "Notifications",
+  //   icon: Bell,
+  //   href: "/notifications",
+  // },
+  // {
+  //   title: "Webhooks",
+  //   icon: Webhook,
+  //   href: "/webhooks",
+  // },
+  // {
+  //   title: "Audit Logs",
+  //   icon: ScrollText,
+  //   href: "/audit",
+  // },
+  // {
+  //   title: "Settings",
+  //   icon: Settings2,
+  //   href: "/settings",
+  // },
 ];
 
 function AppContent() {

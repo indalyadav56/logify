@@ -1,5 +1,4 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProjectList } from "./components/project-list";
 import { ProjectGrid } from "./components/project-grid";
 import { CreateProject } from "./components/create-project";
@@ -74,16 +73,13 @@ export default function ProjectsPage() {
             {view === "grid" ? (
               <ProjectGrid showArchived={searchQuery !== ""} />
             ) : (
-              <ProjectList showArchived={searchQuery !== ""} />
+              <ProjectList />
             )}
           </CardContent>
         </Card>
       </div>
 
-      <CreateProject
-        open={isCreating}
-        onOpenChange={setIsCreating}
-      />
+      <CreateProject open={isCreating} onOpenChange={setIsCreating} />
     </div>
   );
 }

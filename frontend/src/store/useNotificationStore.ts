@@ -1,8 +1,8 @@
-import { create } from 'zustand';
-import { devtools, persist } from 'zustand/middleware';
+import { create } from "zustand";
+import { devtools, persist } from "zustand/middleware";
 
-export type NotificationPriority = 'low' | 'medium' | 'high';
-export type NotificationType = 'error' | 'warning' | 'info' | 'success';
+export type NotificationPriority = "low" | "medium" | "high";
+export type NotificationType = "error" | "warning" | "info" | "success";
 
 export interface Notification {
   id: string;
@@ -22,7 +22,9 @@ interface NotificationState {
   unreadCount: number;
   isLoading: boolean;
   error: string | null;
-  addNotification: (notification: Omit<Notification, 'id' | 'created_at' | 'read'>) => void;
+  addNotification: (
+    notification: Omit<Notification, "id" | "created_at" | "read">
+  ) => void;
   markAsRead: (id: string) => void;
   markAllAsRead: () => void;
   deleteNotification: (id: string) => void;
@@ -33,7 +35,7 @@ interface NotificationState {
 export const useNotificationStore = create<NotificationState>()(
   devtools(
     persist(
-      (set, get) => ({
+      (set, _) => ({
         notifications: [],
         unreadCount: 0,
         isLoading: false,
@@ -69,7 +71,10 @@ export const useNotificationStore = create<NotificationState>()(
 
         markAllAsRead: () => {
           set((state) => ({
-            notifications: state.notifications.map((n) => ({ ...n, read: true })),
+            notifications: state.notifications.map((n) => ({
+              ...n,
+              read: true,
+            })),
             unreadCount: 0,
           }));
         },
@@ -79,9 +84,10 @@ export const useNotificationStore = create<NotificationState>()(
             const notification = state.notifications.find((n) => n.id === id);
             return {
               notifications: state.notifications.filter((n) => n.id !== id),
-              unreadCount: notification && !notification.read
-                ? state.unreadCount - 1
-                : state.unreadCount,
+              unreadCount:
+                notification && !notification.read
+                  ? state.unreadCount - 1
+                  : state.unreadCount,
             };
           });
         },
@@ -93,18 +99,23 @@ export const useNotificationStore = create<NotificationState>()(
         fetchNotifications: async () => {
           set({ isLoading: true, error: null });
           try {
-            const response = await fetch('http://localhost:8080/v1/notifications', {
-              headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`,
-              },
-            });
+            const response = await fetch(
+              "http://localhost:8080/v1/notifications",
+              {
+                headers: {
+                  Authorization: `Bearer ${localStorage.getItem("token")}`,
+                },
+              }
+            );
 
             if (!response.ok) {
-              throw new Error('Failed to fetch notifications');
+              throw new Error("Failed to fetch notifications");
             }
 
             const data = await response.json();
-            const unreadCount = data.filter((n: Notification) => !n.read).length;
+            const unreadCount = data.filter(
+              (n: Notification) => !n.read
+            ).length;
 
             set({
               notifications: data,
@@ -120,7 +131,7 @@ export const useNotificationStore = create<NotificationState>()(
         },
       }),
       {
-        name: 'logify-notifications-storage',
+        name: "logify-notifications-storage",
       }
     )
   )

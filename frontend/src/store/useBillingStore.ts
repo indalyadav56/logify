@@ -45,7 +45,7 @@ interface BillingStore {
   cancelSubscription: () => Promise<void>;
 }
 
-export const useBillingStore = create<BillingStore>((set, get) => ({
+export const useBillingStore = create<BillingStore>((set, _) => ({
   currentPlan: null,
   availablePlans: [],
   invoices: [],
@@ -56,11 +56,14 @@ export const useBillingStore = create<BillingStore>((set, get) => ({
   fetchCurrentPlan: async () => {
     try {
       set({ isLoading: true, error: null });
-      const response = await fetch("http://localhost:8080/v1/billing/subscription", {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
+      const response = await fetch(
+        "http://localhost:8080/v1/billing/subscription",
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
 
       if (!response.ok) {
         throw new Error("Failed to fetch current plan");
@@ -102,11 +105,14 @@ export const useBillingStore = create<BillingStore>((set, get) => ({
   fetchInvoices: async () => {
     try {
       set({ isLoading: true, error: null });
-      const response = await fetch("http://localhost:8080/v1/billing/invoices", {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
+      const response = await fetch(
+        "http://localhost:8080/v1/billing/invoices",
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
 
       if (!response.ok) {
         throw new Error("Failed to fetch invoices");
@@ -148,14 +154,17 @@ export const useBillingStore = create<BillingStore>((set, get) => ({
   updateSubscription: async (planId: string) => {
     try {
       set({ isLoading: true, error: null });
-      const response = await fetch("http://localhost:8080/v1/billing/subscription", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-        body: JSON.stringify({ plan_id: planId }),
-      });
+      const response = await fetch(
+        "http://localhost:8080/v1/billing/subscription",
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+          body: JSON.stringify({ plan_id: planId }),
+        }
+      );
 
       if (!response.ok) {
         throw new Error("Failed to update subscription");
@@ -174,12 +183,15 @@ export const useBillingStore = create<BillingStore>((set, get) => ({
   cancelSubscription: async () => {
     try {
       set({ isLoading: true, error: null });
-      const response = await fetch("http://localhost:8080/v1/billing/subscription", {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
+      const response = await fetch(
+        "http://localhost:8080/v1/billing/subscription",
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
 
       if (!response.ok) {
         throw new Error("Failed to cancel subscription");

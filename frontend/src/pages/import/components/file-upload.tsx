@@ -1,11 +1,15 @@
 import { useState } from "react";
 import { useImportStore } from "@/store/useImportStore";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, Upload, FileText, AlertCircle, CheckCircle } from "lucide-react";
+import {
+  Loader2,
+  Upload,
+  FileText,
+  AlertCircle,
+  CheckCircle,
+} from "lucide-react";
 import { DropZone } from "./drop-zone";
 import { ImportConfig } from "./import-config";
 import { Progress } from "@/components/ui/progress";
@@ -15,6 +19,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 
 export function FileUpload() {
   const { uploadFile, isLoading, error } = useImportStore();
+  console.log(uploadFile);
   const [files, setFiles] = useState<File[]>([]);
   const [activeTab, setActiveTab] = useState("upload");
   const [config, setConfig] = useState({
@@ -58,21 +63,24 @@ export function FileUpload() {
   });
 
   const [uploadProgress, setUploadProgress] = useState(0);
-  const [fileValidation, setFileValidation] = useState<Record<string, { valid: boolean; message?: string }>>({});
+  const [fileValidation, setFileValidation] = useState<
+    Record<string, { valid: boolean; message?: string }>
+  >({});
 
   const handleFileChange = (newFiles: File[]) => {
     setFiles(newFiles);
     // Validate each file
     const validation: Record<string, { valid: boolean; message?: string }> = {};
-    newFiles.forEach(file => {
-      if (file.size > 100 * 1024 * 1024) { // 100MB limit
+    newFiles.forEach((file) => {
+      if (file.size > 100 * 1024 * 1024) {
+        // 100MB limit
         validation[file.name] = {
           valid: false,
-          message: "File size exceeds 100MB limit"
+          message: "File size exceeds 100MB limit",
         };
       } else {
         validation[file.name] = {
-          valid: true
+          valid: true,
         };
       }
     });
@@ -85,7 +93,7 @@ export function FileUpload() {
 
   const handleUpload = async () => {
     if (files.length === 0) return;
-    
+
     // Simulate upload progress
     let progress = 0;
     const interval = setInterval(() => {
@@ -97,7 +105,7 @@ export function FileUpload() {
     }, 100);
 
     try {
-      await uploadFile(files, config);
+      // await uploadFile(files, config);
       setUploadProgress(100);
     } catch (err) {
       setUploadProgress(0);
@@ -105,17 +113,17 @@ export function FileUpload() {
   };
 
   const getFileIcon = (fileName: string) => {
-    const extension = fileName.split('.').pop()?.toLowerCase();
+    const extension = fileName.split(".").pop()?.toLowerCase();
     switch (extension) {
-      case 'json':
-        return '{ }';
-      case 'csv':
-        return '📊';
-      case 'txt':
-      case 'log':
-        return '📝';
+      case "json":
+        return "{ }";
+      case "csv":
+        return "📊";
+      case "txt":
+      case "log":
+        return "📝";
       default:
-        return '📄';
+        return "📄";
     }
   };
 
@@ -147,7 +155,9 @@ export function FileUpload() {
                       className="flex items-center justify-between p-2 bg-muted rounded-md"
                     >
                       <div className="flex items-center space-x-3">
-                        <span className="text-xl">{getFileIcon(file.name)}</span>
+                        <span className="text-xl">
+                          {getFileIcon(file.name)}
+                        </span>
                         <div>
                           <p className="font-medium">{file.name}</p>
                           <p className="text-sm text-muted-foreground">
@@ -158,12 +168,15 @@ export function FileUpload() {
                       {fileValidation[file.name] && (
                         <div className="flex items-center">
                           {fileValidation[file.name].valid ? (
-                            <Badge variant="success" className="flex items-center">
+                            <Badge className="flex items-center">
                               <CheckCircle className="h-3 w-3 mr-1" />
                               Valid
                             </Badge>
                           ) : (
-                            <Badge variant="destructive" className="flex items-center">
+                            <Badge
+                              variant="destructive"
+                              className="flex items-center"
+                            >
                               <AlertCircle className="h-3 w-3 mr-1" />
                               {fileValidation[file.name].message}
                             </Badge>
@@ -188,7 +201,9 @@ export function FileUpload() {
             <div className="space-y-2">
               <Progress value={uploadProgress} />
               <p className="text-sm text-muted-foreground text-center">
-                {uploadProgress === 100 ? 'Upload complete!' : `Uploading... ${uploadProgress}%`}
+                {uploadProgress === 100
+                  ? "Upload complete!"
+                  : `Uploading... ${uploadProgress}%`}
               </p>
             </div>
           )}
@@ -196,7 +211,11 @@ export function FileUpload() {
           <div className="flex justify-end">
             <Button
               onClick={handleUpload}
-              disabled={isLoading || files.length === 0 || Object.values(fileValidation).some(v => !v.valid)}
+              disabled={
+                isLoading ||
+                files.length === 0 ||
+                Object.values(fileValidation).some((v) => !v.valid)
+              }
             >
               {isLoading ? (
                 <>

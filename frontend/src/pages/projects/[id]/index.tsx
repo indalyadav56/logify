@@ -1,28 +1,26 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { useProjectStore } from "@/store/useProjectStore";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+// import {
+//   Card,
+//   CardContent,
+//   CardDescription,
+//   CardHeader,
+//   CardTitle,
+// } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProjectOverview } from "../components/project-overview";
 import { ProjectMembers } from "../components/project-members";
 import { ProjectSettings } from "../components/project-settings";
 import { ProjectApiKeys } from "../components/project-api-keys";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
+// import { Skeleton } from "@/components/ui/skeleton";
+// import { Alert, AlertDescription } from "@/components/ui/alert";
+// import { AlertCircle } from "lucide-react";
 
 export default function ProjectDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const { projects } = useProjectStore();
   const [activeTab, setActiveTab] = useState("overview");
-
-
 
   const project = projects.find((p) => p.id === id);
 

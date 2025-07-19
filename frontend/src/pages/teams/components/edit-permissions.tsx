@@ -8,7 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
+// import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useState } from "react";
@@ -51,9 +51,9 @@ export function EditPermissions({
 }: EditPermissionsProps) {
   const { updateMemberPermissions } = useTeamStore();
   const member = team.members.find((m) => m.id === memberId);
-  const [permissions, setPermissions] = useState<Record<string, ProjectPermission[]>>(
-    member?.project_permissions || {}
-  );
+  const [permissions, setPermissions] = useState<
+    Record<string, ProjectPermission[]>
+  >(member?.project_permissions || {});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSave = async () => {
@@ -61,7 +61,9 @@ export function EditPermissions({
 
     setIsSubmitting(true);
     try {
-      for (const [projectId, projectPermissions] of Object.entries(permissions)) {
+      for (const [projectId, projectPermissions] of Object.entries(
+        permissions
+      )) {
         await updateMemberPermissions(
           team.id,
           memberId,
@@ -78,7 +80,10 @@ export function EditPermissions({
     }
   };
 
-  const togglePermission = (projectId: string, permission: ProjectPermission) => {
+  const togglePermission = (
+    projectId: string,
+    permission: ProjectPermission
+  ) => {
     setPermissions((prev) => {
       const projectPermissions = prev[projectId] || [];
       return {

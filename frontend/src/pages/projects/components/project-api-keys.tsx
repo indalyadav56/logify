@@ -27,14 +27,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import {
-  Copy,
-  Key,
-  Plus,
-  RefreshCw,
-  Trash2,
-  CheckCircle,
-} from "lucide-react";
+import { Copy, Key, Plus, Trash2, CheckCircle } from "lucide-react";
 // import { useToast } from "@/components/ui/use-toast";
 
 interface ApiKey {
@@ -104,17 +97,17 @@ export function ProjectApiKeys({ project }: ProjectApiKeysProps) {
         }
       );
 
-      toast({
-        title: "Success",
-        description: "API key deleted successfully.",
-      });
+      // toast({
+      //   title: "Success",
+      //   description: "API key deleted successfully.",
+      // });
     } catch (error) {
       console.error("Failed to delete API key:", error);
-      toast({
-        title: "Error",
-        description: "Failed to delete API key. Please try again.",
-        variant: "destructive",
-      });
+      // toast({
+      //   title: "Error",
+      //   description: "Failed to delete API key. Please try again.",
+      //   variant: "destructive",
+      // });
     }
   };
 
@@ -136,7 +129,10 @@ export function ProjectApiKeys({ project }: ProjectApiKeysProps) {
               Manage API keys for accessing your project programmatically
             </CardDescription>
           </div>
-          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+          <Dialog
+            open={isCreateDialogOpen}
+            onOpenChange={setIsCreateDialogOpen}
+          >
             <DialogTrigger asChild>
               <Button>
                 <Plus className="mr-2 h-4 w-4" />
@@ -156,8 +152,8 @@ export function ProjectApiKeys({ project }: ProjectApiKeysProps) {
                   <Alert>
                     <CheckCircle className="h-4 w-4" />
                     <AlertDescription>
-                      Your API key has been created. Make sure to copy it now as it
-                      won't be shown again.
+                      Your API key has been created. Make sure to copy it now as
+                      it won't be shown again.
                     </AlertDescription>
                   </Alert>
                   <div className="space-y-2">

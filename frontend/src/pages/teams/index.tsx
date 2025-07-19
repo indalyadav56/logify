@@ -1,4 +1,4 @@
-import { useTeamStore } from "@/store/useTeamStore";
+// import { useTeamStore } from "@/store/useTeamStore";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus, Search } from "lucide-react";
@@ -52,27 +52,18 @@ export default function TeamsPage() {
               </TabsList>
 
               <TabsContent value="my-teams" className="space-y-4">
-                <TeamList
-                  type="active"
-                  searchQuery={searchQuery}
-                />
+                <TeamList type="active" searchQuery={searchQuery} />
               </TabsContent>
 
               <TabsContent value="invitations" className="space-y-4">
-                <TeamList
-                  type="pending"
-                  searchQuery={searchQuery}
-                />
+                <TeamList type="pending" searchQuery={searchQuery} />
               </TabsContent>
             </Tabs>
           </CardContent>
         </Card>
       </div>
 
-      <CreateTeam
-        open={isCreating}
-        onOpenChange={setIsCreating}
-      />
+      <CreateTeam open={isCreating} onOpenChange={setIsCreating} />
     </div>
   );
 }

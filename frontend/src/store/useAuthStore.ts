@@ -5,17 +5,17 @@ interface User {
   email: string;
 }
 
-interface AuthResponse {
-  data: {
-    user_id: string;
-    email: string;
-    token: {
-      access_token: string;
-    };
-  };
-  message: string;
-  status_code: number;
-}
+// interface AuthResponse {
+//   data: {
+//     user_id: string;
+//     email: string;
+//     token: {
+//       access_token: string;
+//     };
+//   };
+//   message: string;
+//   status_code: number;
+// }
 
 interface AuthState {
   user: User | null;
@@ -46,7 +46,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ isLoading: true, error: null });
     try {
       console.log("Attempting login with:", { email });
-      
+
       const response = await fetch("http://localhost:8080/v1/auth/login", {
         method: "POST",
         headers: {
@@ -60,7 +60,9 @@ export const useAuthStore = create<AuthState>((set) => ({
       console.log("Login response:", responseData);
 
       if (!response.ok) {
-        throw new Error(responseData.detail || responseData.message || "Login failed");
+        throw new Error(
+          responseData.detail || responseData.message || "Login failed"
+        );
       }
 
       // Check if response has the expected structure
@@ -70,7 +72,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       }
 
       const { data } = responseData;
-      
+
       set({
         user: {
           user_id: data.user_id,
@@ -84,15 +86,16 @@ export const useAuthStore = create<AuthState>((set) => ({
 
       // Store token in localStorage for persistence
       localStorage.setItem("token", data.token.access_token);
-      
+
       console.log("Login successful:", {
         user_id: data.user_id,
         email: data.email,
-        isAuthenticated: true
+        isAuthenticated: true,
       });
     } catch (error) {
       console.error("Login error:", error);
-      const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred";
+      const errorMessage =
+        error instanceof Error ? error.message : "An unexpected error occurred";
       set({
         user: null,
         token: null,

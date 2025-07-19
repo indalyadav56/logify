@@ -14,8 +14,20 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const displayFormSchema = z.object({
   theme: z.enum(["light", "dark", "system"], {
@@ -48,6 +60,7 @@ export function DisplayForm() {
   });
 
   function onSubmit(data: DisplayFormValues) {
+    console.log(data);
     toast.success("Display settings updated!");
   }
 
@@ -83,7 +96,9 @@ export function DisplayForm() {
                           />
                         </FormControl>
                         <Button
-                          variant={field.value === "light" ? "default" : "outline"}
+                          variant={
+                            field.value === "light" ? "default" : "outline"
+                          }
                           className="w-full"
                         >
                           Light
@@ -98,7 +113,9 @@ export function DisplayForm() {
                           />
                         </FormControl>
                         <Button
-                          variant={field.value === "dark" ? "default" : "outline"}
+                          variant={
+                            field.value === "dark" ? "default" : "outline"
+                          }
                           className="w-full"
                         >
                           Dark
@@ -113,7 +130,9 @@ export function DisplayForm() {
                           />
                         </FormControl>
                         <Button
-                          variant={field.value === "system" ? "default" : "outline"}
+                          variant={
+                            field.value === "system" ? "default" : "outline"
+                          }
                           className="w-full"
                         >
                           System
@@ -132,7 +151,10 @@ export function DisplayForm() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Font Family</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select a font" />
@@ -158,7 +180,10 @@ export function DisplayForm() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Display Density</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select display density" />

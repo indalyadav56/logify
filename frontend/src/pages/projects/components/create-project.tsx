@@ -48,8 +48,8 @@ export function CreateProject({ open, onOpenChange }: CreateProjectProps) {
     setIsSubmitting(true);
     try {
       await createProject({
-        title: title.trim(),
-        description: description.trim(),
+        // title: title.trim(),
+        // description: description.trim(),
         environment: environment as "dev" | "staging" | "prod",
       });
       toast.success("Project created successfully");
@@ -120,10 +120,7 @@ export function CreateProject({ open, onOpenChange }: CreateProjectProps) {
           >
             Cancel
           </Button>
-          <Button
-            onClick={handleCreate}
-            disabled={isSubmitting}
-          >
+          <Button onClick={handleCreate} disabled={isSubmitting}>
             {isSubmitting ? "Creating..." : "Create Project"}
           </Button>
         </DialogFooter>

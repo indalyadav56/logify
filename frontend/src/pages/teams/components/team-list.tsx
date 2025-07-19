@@ -1,6 +1,5 @@
-import { useTeamStore, Team, TeamRole } from "@/store/useTeamStore";
+import { useTeamStore, Team } from "@/store/useTeamStore";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   Table,
   TableBody,
@@ -9,13 +8,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  MoreHorizontal,
-  Settings,
-  Trash,
-  Users,
-} from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
+import { MoreHorizontal, Settings, Trash, Users } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,7 +20,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useState } from "react";
 import { TeamMembers } from "./team-members";
 import { TeamSettings } from "./team-settings";
-import { useNavigate } from "react-router-dom";
 
 interface TeamListProps {
   type: "active" | "pending";
@@ -38,12 +30,12 @@ export function TeamList({ type, searchQuery }: TeamListProps) {
   const { teams, deleteTeam } = useTeamStore();
   const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
+  console.log(type);
 
-  const filteredTeams = teams
-    .filter((team) =>
-      team.name.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+  const filteredTeams = teams.filter((team) =>
+    team.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const handleViewMembers = (team: Team) => {
     setSelectedTeam(selectedTeam === team.id ? null : team.id);
@@ -55,16 +47,16 @@ export function TeamList({ type, searchQuery }: TeamListProps) {
     setShowSettings(true);
   };
 
-  const getRoleColor = (role: TeamRole) => {
-    switch (role) {
-      case "owner":
-        return "destructive";
-      case "admin":
-        return "warning";
-      default:
-        return "secondary";
-    }
-  };
+  // const getRoleColor = (role: TeamRole) => {
+  //   switch (role) {
+  //     case "owner":
+  //       return "destructive";
+  //     case "admin":
+  //       return "warning";
+  //     default:
+  //       return "secondary";
+  //   }
+  // };
 
   return (
     <ScrollArea className="h-[600px]">
@@ -90,13 +82,13 @@ export function TeamList({ type, searchQuery }: TeamListProps) {
                     </div>
                   </div>
                 </TableCell>
-                <TableCell>
+                {/* <TableCell>
                   <div className="flex items-center gap-2">
                     <span>{team.members.length}</span>
                     {team.members.slice(0, 3).map((member) => (
                       <Badge
                         key={member.id}
-                        variant={getRoleColor(member.role)}
+                        // variant={getRoleColor(member.role)}
                       >
                         {member.role}
                       </Badge>
@@ -112,11 +104,11 @@ export function TeamList({ type, searchQuery }: TeamListProps) {
                   <Badge variant="outline">
                     {team.projects.length} projects
                   </Badge>
-                </TableCell>
+                </TableCell> */}
                 <TableCell>
-                  {formatDistanceToNow(new Date(team.created_at), {
+                  {/* {formatDistanceToNow(new Date(team.created_at), {
                     addSuffix: true,
-                  })}
+                  })} */}
                 </TableCell>
                 <TableCell className="text-right">
                   <DropdownMenu>
@@ -129,7 +121,9 @@ export function TeamList({ type, searchQuery }: TeamListProps) {
                       <DropdownMenuItem onClick={() => handleViewMembers(team)}>
                         <Users className="mr-2 h-4 w-4" /> View Members
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleViewSettings(team)}>
+                      <DropdownMenuItem
+                        onClick={() => handleViewSettings(team)}
+                      >
                         <Settings className="mr-2 h-4 w-4" /> Settings
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />

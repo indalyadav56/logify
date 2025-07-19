@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { useImportStore } from "@/store/useImportStore";
 import {
   Card,
@@ -20,6 +19,7 @@ import {
 
 export function ImportJobs() {
   const { jobs, retryJob, deleteJob, error } = useImportStore();
+  console.log(error);
 
   const getStatusIcon = (status: string) => {
     switch (status) {

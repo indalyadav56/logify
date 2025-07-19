@@ -14,7 +14,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge";
+// import { Badge } from "@/components/ui/badge";
 
 interface CreateTeamProps {
   open: boolean;
@@ -32,9 +32,8 @@ export function CreateTeam({ open, onOpenChange }: CreateTeamProps) {
   const [description, setDescription] = useState("");
   const [allowMemberInvites, setAllowMemberInvites] = useState(false);
   const [requireAdminApproval, setRequireAdminApproval] = useState(true);
-  const [defaultPermissions, setDefaultPermissions] = useState<ProjectPermission[]>(
-    DEFAULT_PERMISSIONS
-  );
+  const [defaultPermissions, setDefaultPermissions] =
+    useState<ProjectPermission[]>(DEFAULT_PERMISSIONS);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleCreate = async () => {
@@ -143,15 +142,11 @@ export function CreateTeam({ open, onOpenChange }: CreateTeamProps) {
                 size="sm"
                 onClick={() =>
                   setDefaultPermissions(
-                    defaultPermissions.length === 0
-                      ? DEFAULT_PERMISSIONS
-                      : []
+                    defaultPermissions.length === 0 ? DEFAULT_PERMISSIONS : []
                   )
                 }
               >
-                {defaultPermissions.length === 0
-                  ? "Add Defaults"
-                  : "Clear All"}
+                {defaultPermissions.length === 0 ? "Add Defaults" : "Clear All"}
               </Button>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -164,7 +159,11 @@ export function CreateTeam({ open, onOpenChange }: CreateTeamProps) {
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={handleReset} disabled={isSubmitting}>
+          <Button
+            variant="outline"
+            onClick={handleReset}
+            disabled={isSubmitting}
+          >
             Cancel
           </Button>
           <Button onClick={handleCreate} disabled={isSubmitting}>

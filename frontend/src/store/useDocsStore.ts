@@ -6,7 +6,12 @@ export interface DocSection {
   description?: string;
   content: string;
   order: number;
-  category: "getting-started" | "guides" | "api-reference" | "sdks" | "examples";
+  category:
+    | "getting-started"
+    | "guides"
+    | "api-reference"
+    | "sdks"
+    | "examples";
 }
 
 export interface DocCategory {
@@ -26,7 +31,7 @@ interface DocsStore {
   searchDocs: (query: string) => Promise<DocSection[]>;
 }
 
-export const useDocsStore = create<DocsStore>((set, get) => ({
+export const useDocsStore = create<DocsStore>((set, _) => ({
   categories: [],
   currentSection: null,
   isLoading: false,

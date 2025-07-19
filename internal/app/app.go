@@ -11,7 +11,7 @@ import (
 	"log"
 	"logify/config"
 	_ "logify/docs/swagger"
-	"net/http"
+	"path/filepath"
 	"time"
 
 	"github.com/gin-contrib/cors"
@@ -173,6 +173,22 @@ func (a *App) initHandlers() {
 }
 
 func (a *App) registerRoutes() {
+	// web
+	distPath, err := filepath.Abs("../../web/dist")
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+
+	a.deps.Server.Static("/assets", filepath.Join(distPath, "assets"))
+	a.deps.Server.StaticFile("/favicon.ico", filepath.Join(distPath, "favicon.svg"))
+	a.deps.Server.StaticFile("/", filepath.Join(distPath, "index.html"))
+
+	a.deps.Server.NoRoute(func(c *gin.Context) {
+		c.File(filepath.Join(distPath, "index.html"))
+	})
+
+	// api
 	a.deps.Server.Use(cors.New(cors.Config{
 		AllowAllOrigins: true,
 		AllowMethods:    []string{"GET", "POST", "PUT", "DELETE"},
@@ -190,13 +206,6 @@ func (a *App) registerRoutes() {
 	notificationRoutes.NotificationRoutes(a.deps.Server, a.deps.NotificationHandler)
 
 	a.deps.Server.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
-
-	a.deps.Server.LoadHTMLGlob("web/templates/*")
-	a.deps.Server.Static("/web/static", "./static")
-
-	a.deps.Server.GET("/", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "index.html", gin.H{})
-	})
 
 	a.deps.Server.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{
