@@ -1,6 +1,13 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Activity, AlertTriangle, ArrowDown, ArrowUp, CheckCircle2, Clock, Server } from "lucide-react";
+import {
+  Activity,
+  AlertTriangle,
+  ArrowDown,
+  ArrowUp,
+  CheckCircle2,
+  Clock,
+  Server,
+} from "lucide-react";
 
 export function DashboardMetrics() {
   return (
@@ -14,11 +21,13 @@ export function DashboardMetrics() {
           <div className="flex items-center justify-between">
             <div className="space-y-1">
               <p className="text-2xl font-bold">Healthy</p>
-              <p className="text-xs text-muted-foreground">All systems operational</p>
+              <p className="text-xs text-muted-foreground">
+                All systems operational
+              </p>
             </div>
-            <Badge variant="secondary" className="whitespace-nowrap">
+            {/* <Badge variant="secondary" className="whitespace-nowrap">
               99.99% uptime
-            </Badge>
+            </Badge> */}
           </div>
         </CardContent>
       </Card>
