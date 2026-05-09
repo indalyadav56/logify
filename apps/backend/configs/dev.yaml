@@ -1,0 +1,29 @@
+server:
+  port: "8080"
+  read_timeout: "10s"
+  write_timeout: "10s"
+  idle_timeout: "60s"
+
+database:
+  host: "localhost"
+  port: "5432"
+  user: "postgres"
+  password: "postgres"
+  name: "logify"
+  ssl_mode: "disable"
+  max_open_conns: 25
+  max_idle_conns: 25
+  max_lifetime: "5m"
+
+logger:
+  level: "info"
+
+admin:
+  email: "admin@example.com"
+  password: "change_me"
+
+kafka:
+  brokers:
+    - "localhost:29092"
+
+clickhouse_dsn: "clickhouse://default:mypassword@localhost:9000/logify?dial_timeout=5s&read_timeout=3s"

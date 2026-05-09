@@ -1,0 +1,16 @@
+{
+  "name": "@logify/api-types",
+  "version": "0.0.1",
+  "private": true,
+  "description": "TypeScript types generated from the Logify OpenAPI spec",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "generate": "../../scripts/generate-types.sh --out src/generated",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "openapi-typescript": "^7.0.0",
+    "typescript": "^5.4.0"
+  }
+}

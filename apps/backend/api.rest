@@ -1,0 +1,186 @@
+### Ingest
+POST http://localhost:8080/v1/logs
+Content-Type: application/json
+
+{
+  "tenant_id": "acme-corp",
+  "project_id": "ecommerce-prod",
+  "timestamp": "2026-05-06T12:30:45.123Z",
+  "level": "ERROR",
+  "service": "payment-api",
+  "namespace": "checkout",
+  "environment": "production",
+  "host": "payment-api-7f89d9c6d8-xyz",
+  "source": "golang",
+  "trace_id": "4bf92f3577b34da6a3ce929d0e0e4736",
+  "span_id": "00f067aa0ba902b7",
+  "request_id": "req_123456789",
+  "user_id": "user_98765",
+  "message": "Payment processing failed due to timeout",
+  "tags": {
+    "region": "ap-south-1",
+    "cluster": "eks-prod",
+    "version": "v1.4.2"
+  },
+  "attributes": {
+    "http.method": "POST",
+    "http.route": "/payments",
+    "http.status_code": "500",
+    "order.id": "order_998877",
+    "retry_count": "2",
+    "exception.type": "TimeoutException"
+  }
+}
+
+###
+
+### Search
+POST http://localhost:8080/v1/logs/search
+Content-Type: application/json
+
+{
+  "tenant_id": "acme-corp",
+  "from": "2026-05-01T00:00:00Z",
+  "to": "2026-05-07T23:59:59Z"
+}
+
+###
+
+### ── Get single log ──────────────────────────────────────────────────────────
+
+GET http://localhost:8080/v1/logs/00000000-0000-0000-0000-000000000001?tenant_id=acme-corp
+
+###
+
+### ── Aggregate — count by level ──────────────────────────────────────────────
+
+POST http://localhost:8080/v1/logs/aggregate
+Content-Type: application/json
+
+{
+  "tenant_id": "acme-corp",
+  "group_by": "level",
+  "from": "2026-05-01T00:00:00Z",
+  "to": "2026-05-07T23:59:59Z"
+}
+
+###
+
+### ── Aggregate — hourly histogram ───────────────────────────────────────────
+
+POST http://localhost:8080/v1/logs/aggregate
+Content-Type: application/json
+
+{
+  "tenant_id": "acme-corp",
+  "interval": "1h",
+  "from": "2026-05-06T00:00:00Z",
+  "to": "2026-05-07T00:00:00Z"
+}
+
+###
+
+### ── Request export ──────────────────────────────────────────────────────────
+
+POST http://localhost:8080/v1/logs/export
+Content-Type: application/json
+
+{
+  "tenant_id": "acme-corp",
+  "severities": ["ERROR"],
+  "from": "2026-05-01T00:00:00Z",
+  "to": "2026-05-07T23:59:59Z",
+  "format": "ndjson"
+}
+
+###
+
+### ── Export status ───────────────────────────────────────────────────────────
+
+GET http://localhost:8080/v1/exports/some-export-id
+
+###
+
+### ── Auth ────────────────────────────────────────────────────────────────────
+
+# 1. Register a new tenant and admin user
+POST http://localhost:8080/v1/auth/register
+Content-Type: application/json
+
+{
+  "email": "admin@acme-corp.com",
+  "password": "securepassword123",
+  "tenant_name": "Acme Corp"
+}
+
+###
+
+# 2. Login
+POST http://localhost:8080/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@acme-corp.com",
+  "password": "securepassword123"
+}
+
+###
+
+# 3. Refresh Token
+POST http://localhost:8080/v1/auth/refresh
+Content-Type: application/json
+
+{
+  "refresh_token": "your-refresh-token-here"
+}
+
+###
+
+# 4. Logout
+POST http://localhost:8080/v1/auth/logout
+Content-Type: application/json
+
+{}
+
+###
+
+# 5. Forgot Password
+POST http://localhost:8080/v1/auth/forgot-password
+Content-Type: application/json
+
+{
+  "email": "admin@acme-corp.com"
+}
+
+###
+
+# 6. Reset Password
+POST http://localhost:8080/v1/auth/reset-password
+Content-Type: application/json
+
+{
+  "token": "reset-token-from-email",
+  "new_password": "newsecurepassword123"
+}
+
+###
+
+# 7. Verify Email
+POST http://localhost:8080/v1/auth/verify-email
+Content-Type: application/json
+
+{
+  "token": "verification-token-from-email"
+}
+
+###
+
+# 8. Resend Verification Email
+POST http://localhost:8080/v1/auth/resend-verification
+Content-Type: application/json
+
+{
+  "email": "admin@acme-corp.com"
+}
+
+###
