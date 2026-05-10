@@ -4,7 +4,6 @@ import "./globals.css"
 
 import { cn } from "@/lib/utils"
 import { ThemeProvider } from "@/components/theme-provider"
-import { AppShell } from "@/components/app-shell"
 import { Toaster } from "@/components/ui/sonner"
 
 const inter = Inter({
@@ -21,9 +20,9 @@ const jetbrainsMono = JetBrains_Mono({
 })
 
 export const metadata: Metadata = {
-  title: "Logify — Observability platform",
+  title: "Logify — Observability platform for logs, metrics & traces",
   description:
-    "Logify is a SaaS observability platform for logs, metrics, traces, and alerts.",
+    "Logify is the modern, AI-native observability platform. Ingest, explore and alert on logs, metrics and traces from every service in seconds.",
 }
 
 export default function RootLayout({
@@ -49,7 +48,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <AppShell>{children}</AppShell>
+          {children}
           <Toaster richColors position="top-right" />
         </ThemeProvider>
       </body>

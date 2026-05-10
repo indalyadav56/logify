@@ -32,7 +32,9 @@ import {
 } from "@/components/ui/dropdown-menu"
 
 const TITLES: Record<string, string> = {
-  "/logs": "Logs",
+  "/dashboard": "Dashboard",
+  "/dashboard/ai-insights": "AI insights",
+  "/dashboard/logs": "Logs",
 }
 
 const ENVIRONMENTS = [
@@ -45,14 +47,19 @@ export function AppHeader() {
   const pathname = usePathname()
   const title = TITLES[pathname] ?? toTitle(pathname)
   const [env, setEnv] = React.useState(ENVIRONMENTS[0])
+  const hasFacets = pathname.startsWith("/dashboard/logs")
 
   return (
     <header className="sticky top-0 z-30 flex h-[52px] shrink-0 items-center gap-2 border-b border-border/60 bg-background/85 px-3 backdrop-blur-md">
-      <SidebarTrigger className="-ml-1 size-8" />
-      <Separator
-        orientation="vertical"
-        className="mx-0.5 h-4 bg-border/60"
-      />
+      {hasFacets ? (
+        <>
+          <SidebarTrigger className="-ml-1 size-8" />
+          <Separator
+            orientation="vertical"
+            className="mx-0.5 h-4 bg-border/60"
+          />
+        </>
+      ) : null}
 
       <Link
         href="/"

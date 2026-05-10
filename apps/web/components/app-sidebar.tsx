@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { usePathname } from "next/navigation"
 
 import { cn } from "@/lib/utils"
 import { useSidebar } from "@/components/ui/sidebar"
@@ -20,7 +21,11 @@ const LEVEL_COLOR: Record<LogLevel, string> = {
 
 export function AppSidebar() {
   const { open, openMobile, isMobile } = useSidebar()
-  const visible = isMobile ? openMobile : open
+  const pathname = usePathname()
+  const showsFacets = pathname.startsWith("/dashboard/logs")
+  const visible = (isMobile ? openMobile : open) && showsFacets
+
+  if (!showsFacets) return null
 
   return (
     <aside

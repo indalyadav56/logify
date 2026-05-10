@@ -8,12 +8,16 @@ import {
   ChevronsRightIcon,
   CommandIcon,
   Grid3x3Icon,
+  LayoutDashboardIcon,
+  PlusCircleIcon,
   ScrollTextIcon,
   SearchIcon,
   SparklesIcon,
 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
+import { DEFAULT_WORKSPACES, type WorkspaceSummary } from "@/lib/workspace"
+import { CreateWorkspaceDialog } from "@/components/workspace/create-workspace-dialog"
 import {
   Tooltip,
   TooltipContent,
@@ -36,6 +40,7 @@ type NavItem = {
   icon: React.ComponentType<{ className?: string }>
   label: string
   badge?: { kind: "live" | "count"; value: string }
+  exact?: boolean
 }
 
 type NavSection = {
@@ -45,10 +50,26 @@ type NavSection = {
 
 const SECTIONS: NavSection[] = [
   {
+    label: "Workspace",
+    items: [
+      {
+        href: "/dashboard",
+        icon: LayoutDashboardIcon,
+        label: "Dashboard",
+        exact: true,
+      },
+    ],
+  },
+  {
     label: "Observe",
     items: [
       {
-        href: "/logs",
+        href: "/dashboard/ai-insights",
+        icon: SparklesIcon,
+        label: "AI insights",
+      },
+      {
+        href: "/dashboard/logs",
         icon: ScrollTextIcon,
         label: "Logs",
         badge: { kind: "live", value: "live" },
@@ -57,17 +78,16 @@ const SECTIONS: NavSection[] = [
   },
 ]
 
-const WORKSPACES = [
-  { id: "prod", name: "Logify Production", role: "Admin", initials: "LP" },
-  { id: "stage", name: "Logify Staging", role: "Editor", initials: "LS" },
-  { id: "sand", name: "Acme Sandbox", role: "Viewer", initials: "AS" },
-]
-
 const STORAGE_KEY = "logify:appbar-expanded"
 
 export function AppBar() {
   const pathname = usePathname()
-  const [workspace, setWorkspace] = React.useState(WORKSPACES[0])
+  const [workspaces, setWorkspaces] =
+    React.useState<WorkspaceSummary[]>(DEFAULT_WORKSPACES)
+  const [workspace, setWorkspace] = React.useState<WorkspaceSummary>(
+    DEFAULT_WORKSPACES[0]
+  )
+  const [createWorkspaceOpen, setCreateWorkspaceOpen] = React.useState(false)
   const [expanded, setExpanded] = React.useState(false)
 
   React.useEffect(() => {
@@ -104,13 +124,16 @@ export function AppBar() {
       <WorkspaceTrigger
         expanded={expanded}
         workspace={workspace}
+        workspaces={workspaces}
         onPick={setWorkspace}
+        onRequestCreate={() => setCreateWorkspaceOpen(true)}
       />
 
       <SectionDivider expanded={expanded} />
 
       <QuickAction
         expanded={expanded}
+        pathname={pathname}
         icon={SearchIcon}
         label="Search"
         kbd={
@@ -131,6 +154,8 @@ export function AppBar() {
       />
       <QuickAction
         expanded={expanded}
+        pathname={pathname}
+        href="/dashboard/ai-insights"
         icon={SparklesIcon}
         label="AI insights"
         dot="bg-violet-500"
@@ -138,6 +163,7 @@ export function AppBar() {
       />
       <QuickAction
         expanded={expanded}
+        pathname={pathname}
         icon={Grid3x3Icon}
         label="Apps"
         tooltip="Apps"
@@ -212,6 +238,16 @@ export function AppBar() {
           <span className="text-[13px] font-medium">Collapse</span>
         ) : null}
       </button>
+
+      <CreateWorkspaceDialog
+        open={createWorkspaceOpen}
+        onOpenChange={setCreateWorkspaceOpen}
+        takenIds={workspaces.map((w) => w.id)}
+        onCreated={(w) => {
+          setWorkspaces((prev) => [...prev, w])
+          setWorkspace(w)
+        }}
+      />
     </aside>
   )
 }
@@ -238,11 +274,15 @@ function SectionDivider({
 function WorkspaceTrigger({
   expanded,
   workspace,
+  workspaces,
   onPick,
+  onRequestCreate,
 }: {
   expanded: boolean
-  workspace: (typeof WORKSPACES)[number]
-  onPick: (w: (typeof WORKSPACES)[number]) => void
+  workspace: WorkspaceSummary
+  workspaces: WorkspaceSummary[]
+  onPick: (w: WorkspaceSummary) => void
+  onRequestCreate: () => void
 }) {
   return (
     <DropdownMenu>
@@ -274,7 +314,7 @@ function WorkspaceTrigger({
         <DropdownMenuLabel className="text-[11px]">
           Workspace
         </DropdownMenuLabel>
-        {WORKSPACES.map((w) => (
+        {workspaces.map((w) => (
           <DropdownMenuItem
             key={w.id}
             onClick={() => onPick(w)}
@@ -297,7 +337,13 @@ function WorkspaceTrigger({
           </DropdownMenuItem>
         ))}
         <DropdownMenuSeparator />
-        <DropdownMenuItem>+ Create workspace</DropdownMenuItem>
+        <DropdownMenuItem
+          className="gap-2 font-medium"
+          onSelect={() => onRequestCreate()}
+        >
+          <PlusCircleIcon className="size-4 text-muted-foreground" />
+          Create workspace
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   )
@@ -305,6 +351,8 @@ function WorkspaceTrigger({
 
 function QuickAction({
   expanded,
+  pathname,
+  href,
   icon: Icon,
   label,
   dot,
@@ -312,23 +360,29 @@ function QuickAction({
   tooltip,
 }: {
   expanded: boolean
+  pathname: string
+  href?: string
   icon: React.ComponentType<{ className?: string }>
   label: string
   dot?: string
   kbd?: React.ReactNode
   tooltip: React.ReactNode
 }) {
-  const button = (
-    <button
-      type="button"
-      aria-label={label}
-      className={cn(
-        "relative flex items-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
-        expanded
-          ? "mx-1.5 h-9 justify-start gap-2.5 px-2"
-          : "mx-auto size-9 justify-center"
-      )}
-    >
+  const active =
+    href != null &&
+    (pathname === href ||
+      (href !== "/" && pathname.startsWith(`${href}/`)))
+
+  const className = cn(
+    "relative flex items-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
+    active && "bg-primary/10 text-foreground",
+    expanded
+      ? "mx-1.5 h-9 justify-start gap-2.5 px-2"
+      : "mx-auto size-9 justify-center"
+  )
+
+  const content = (
+    <>
       <Icon className="size-4 shrink-0" />
       {expanded ? (
         <span className="text-[13px] font-medium">{label}</span>
@@ -343,14 +397,25 @@ function QuickAction({
           )}
         />
       ) : null}
-    </button>
+    </>
   )
 
-  if (expanded) return button
+  const interactive =
+    href == null ? (
+      <button type="button" aria-label={label} className={className}>
+        {content}
+      </button>
+    ) : (
+      <Link href={href} aria-label={label} className={className}>
+        {content}
+      </Link>
+    )
+
+  if (expanded) return interactive
 
   return (
     <Tooltip>
-      <TooltipTrigger asChild>{button}</TooltipTrigger>
+      <TooltipTrigger asChild>{interactive}</TooltipTrigger>
       <TooltipContent side="right">{tooltip}</TooltipContent>
     </Tooltip>
   )
@@ -365,7 +430,7 @@ function NavLink({
   pathname: string
   expanded: boolean
 }) {
-  const active = isActive(pathname, item.href)
+  const active = isActive(pathname, item.href, item.exact)
   const Icon = item.icon
 
   const badgeNode = item.badge ? (
@@ -496,8 +561,8 @@ function UserTrigger({ expanded }: { expanded: boolean }) {
   )
 }
 
-function isActive(pathname: string, href: string) {
-  if (href === "/") return pathname === "/"
+function isActive(pathname: string, href: string, exact?: boolean) {
+  if (href === "/" || exact) return pathname === href
   return pathname === href || pathname.startsWith(href + "/")
 }
 

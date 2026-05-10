@@ -160,14 +160,6 @@ export function QueryBar({
                 </li>
               ))}
             </ul>
-            <div className="flex items-center justify-between border-t border-border/60 bg-popover px-3 py-1.5 text-[11px] text-muted-foreground">
-              <span className="flex items-center gap-1">
-                <CodeIcon className="size-3" /> Lucene-compatible
-              </span>
-              <span className="flex items-center gap-1">
-                <HistoryIcon className="size-3" /> History · ⌘H
-              </span>
-            </div>
           </div>
         ) : null}
       </div>
