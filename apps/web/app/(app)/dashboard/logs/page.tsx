@@ -45,9 +45,9 @@ import { LogDetail } from "@/components/observability/log-detail"
 import {
   type LogEntry,
   type LogLevel,
-  logs as ALL_LOGS,
 } from "@/lib/mock-data"
 import { useLogsStore } from "@/lib/logs-store"
+import { useLogsData } from "@/lib/logs-data-context"
 
 const LEVEL_COLOR: Record<LogLevel, string> = {
   trace: "#71717a",
@@ -92,18 +92,26 @@ export default function LogsPage() {
     setPaused,
   } = useLogsStore()
 
+  const {
+    logs: sourceLogs,
+    loading: logsLoading,
+    refetch,
+    dataSource,
+  } = useLogsData()
+
   const [selected, setSelected] = React.useState<LogEntry | null>(null)
   const [chartHidden, setChartHidden] = React.useState(false)
   const [wrap, setWrap] = React.useState(false)
 
   const filtered = React.useMemo(() => {
     const q = query.trim().toLowerCase()
-    return ALL_LOGS.filter((log) => {
+    return sourceLogs.filter((log) => {
       if (q) {
         const matches =
           log.message.toLowerCase().includes(q) ||
           log.service.toLowerCase().includes(q) ||
-          log.host.toLowerCase().includes(q)
+          log.host.toLowerCase().includes(q) ||
+          log.traceId.toLowerCase().includes(q)
         if (!matches) return false
       }
       const sel = selection
@@ -118,11 +126,29 @@ export default function LogsPage() {
         !sel.environment.has(log.environment)
       )
         return false
+      const pid = String(log.attributes.project_id ?? "")
+      if (sel.project_id && sel.project_id.size > 0) {
+        if (!pid || !sel.project_id.has(pid)) return false
+      }
+      const regionAttr = String(log.attributes.region ?? "")
+      if (
+        sel.api_region &&
+        sel.api_region.size > 0 &&
+        (!regionAttr || !sel.api_region.has(regionAttr))
+      )
+        return false
       return true
     })
-  }, [query, selection])
+  }, [query, selection, sourceLogs])
 
   const histogram = React.useMemo(() => buildHistogram(filtered), [filtered])
+
+  React.useEffect(() => {
+    setSelected((prev) => {
+      if (!prev) return null
+      return sourceLogs.some((l) => l.id === prev.id) ? prev : null
+    })
+  }, [sourceLogs])
 
   const totalRecords = React.useMemo(
     () =>
@@ -154,19 +180,28 @@ export default function LogsPage() {
               onRangeChange={setRange}
               paused={paused}
               onPauseChange={setPaused}
+              onRun={() => {
+                refetch().catch(() => {})
+              }}
             />
           </div>
 
-          {!chartHidden ? (
+          {chartHidden ? null : (
             <VolumeChart data={histogram} totals={totalRecords} />
-          ) : null}
+          )}
 
           <ResultsHeader
             count={filtered.length}
+            totalRecords={sourceLogs.length}
+            loading={logsLoading}
+            apiLive={dataSource === "api"}
             wrap={wrap}
             setWrap={setWrap}
             chartHidden={chartHidden}
             onToggleChart={() => setChartHidden((c) => !c)}
+            onRefresh={() => {
+              refetch().catch(() => {})
+            }}
           />
 
           {/* <WatchdogBanner /> */}
@@ -193,36 +228,44 @@ export default function LogsPage() {
 
 function ResultsHeader({
   count,
+  totalRecords,
+  loading,
+  apiLive,
   wrap,
   setWrap,
   chartHidden,
   onToggleChart,
+  onRefresh,
 }: {
   count: number
+  totalRecords: number
+  loading: boolean
+  apiLive: boolean
   wrap: boolean
   setWrap: (v: boolean) => void
   chartHidden: boolean
   onToggleChart: () => void
+  onRefresh: () => void
 }) {
   return (
     <div className="flex h-9 items-center gap-2 border-b border-border/60 bg-muted/20 px-3">
       <span className="font-mono text-[12.5px] tabular-nums">
         <strong className="font-semibold text-foreground">
-          {count.toLocaleString()}
+          {loading ? "…" : count.toLocaleString()}
         </strong>
         <span className="text-muted-foreground">
           {" "}
-          of 72,318 records
+          of {loading ? "…" : totalRecords.toLocaleString()} records
         </span>
       </span>
       <Badge
         variant="outline"
         className="h-5 gap-1 border-border/60 px-1.5 font-mono text-[11px] text-muted-foreground"
       >
-        sampled 100%
+        {apiLive ? "API" : "mock"} · sampled 100%
       </Badge>
       <span className="text-[11.5px] text-muted-foreground">
-        Last refreshed just now
+        {loading ? "Loading…" : "Last refreshed just now"}
       </span>
 
       <div className="ml-auto flex items-center gap-0.5">
@@ -278,13 +321,6 @@ function ResultsHeader({
           size="xs"
           className="h-7 gap-1.5 text-[12px] text-muted-foreground hover:text-foreground"
         >
-          <SaveIcon /> Save view
-        </Button>
-        <Button
-          variant="ghost"
-          size="xs"
-          className="h-7 gap-1.5 text-[12px] text-muted-foreground hover:text-foreground"
-        >
           <DownloadIcon /> Export
         </Button>
         <Button
@@ -292,8 +328,10 @@ function ResultsHeader({
           size="icon-xs"
           aria-label="Refresh"
           className="h-7 w-7 text-muted-foreground hover:text-foreground"
+          onClick={onRefresh}
+          disabled={loading}
         >
-          <RefreshCwIcon />
+          <RefreshCwIcon className={cn(loading && "animate-spin")} />
         </Button>
         <Button
           variant="ghost"

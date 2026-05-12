@@ -7,7 +7,8 @@ import { cn } from "@/lib/utils"
 import { useSidebar } from "@/components/ui/sidebar"
 import { Facets, type FacetGroup } from "@/components/observability/facets"
 import { useLogsStore } from "@/lib/logs-store"
-import { logs as ALL_LOGS, type LogLevel } from "@/lib/mock-data"
+import { useLogsData } from "@/lib/logs-data-context"
+import { type LogLevel } from "@/lib/mock-data"
 
 const LEVELS: LogLevel[] = ["trace", "debug", "info", "warn", "error", "fatal"]
 const LEVEL_COLOR: Record<LogLevel, string> = {
@@ -46,16 +47,17 @@ export function AppSidebar() {
 
 function LogsFacetsContent() {
   const { selection, setSelection } = useLogsStore()
+  const { logs: facetLogs, dataSource } = useLogsData()
 
-  const groups = React.useMemo<FacetGroup[]>(
-    () => [
+  const groups = React.useMemo<FacetGroup[]>(() => {
+    const baseGroups: FacetGroup[] = [
       {
         id: "level",
         label: "Status",
         pinned: true,
         values: LEVELS.map((l) => ({
           value: l,
-          count: ALL_LOGS.filter((x) => x.level === l).length,
+          count: facetLogs.filter((x) => x.level === l).length,
           color: LEVEL_COLOR[l],
         })),
       },
@@ -63,20 +65,56 @@ function LogsFacetsContent() {
         id: "service",
         label: "Service",
         pinned: true,
-        values: groupCount(ALL_LOGS.map((l) => l.service)),
+        values: groupCount(facetLogs.map((l) => l.service)),
       },
       {
         id: "host",
         label: "Host",
         pinned: true,
-        values: groupCount(ALL_LOGS.map((l) => l.host)),
+        values: groupCount(facetLogs.map((l) => l.host)),
       },
       {
         id: "environment",
         label: "Environment",
         pinned: true,
-        values: groupCount(ALL_LOGS.map((l) => l.environment)),
+        values: groupCount(facetLogs.map((l) => l.environment)),
       },
+    ]
+
+    const projectValues = groupCount(
+      facetLogs
+        .map((l) => String(l.attributes.project_id ?? "").trim())
+        .filter(Boolean)
+    )
+    if (projectValues.length > 0) {
+      baseGroups.push({
+        id: "project_id",
+        label: "Project",
+        pinned: true,
+        values: projectValues,
+      })
+    }
+
+    const regionDyn = groupCount(
+      facetLogs
+        .map((l) => String(l.attributes.region ?? "").trim())
+        .filter(Boolean)
+    )
+
+    if (dataSource === "api") {
+      if (regionDyn.length > 0) {
+        baseGroups.push({
+          id: "api_region",
+          label: "Region (tag)",
+          pinned: false,
+          values: regionDyn,
+        })
+      }
+      return baseGroups
+    }
+
+    return [
+      ...baseGroups,
       {
         id: "k8s.namespace",
         label: "Kubernetes namespace",
@@ -108,9 +146,8 @@ function LogsFacetsContent() {
           { value: "ap-south-1", count: 1_320 },
         ],
       },
-    ],
-    []
-  )
+    ]
+  }, [facetLogs, dataSource])
 
   return (
     <Facets

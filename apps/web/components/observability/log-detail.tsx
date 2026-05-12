@@ -83,7 +83,7 @@ export function LogDetail({
         </Button>
       </header>
 
-      <div className="flex flex-wrap gap-1.5 border-b px-3 py-2">
+      {/* <div className="flex flex-wrap gap-1.5 border-b px-3 py-2">
         <Button variant="outline" size="xs" className="gap-1">
           <ScrollTextIcon /> Surrounding logs
         </Button>
@@ -96,7 +96,7 @@ export function LogDetail({
         <Button variant="outline" size="xs" className="gap-1 ml-auto">
           <SparklesIcon className="text-violet-500" /> Explain with AI
         </Button>
-      </div>
+      </div> */}
 
       <div className="flex-1 overflow-y-auto">
         <Section title="Message" actions={<CopyButton value={entry.message} />}>
@@ -135,7 +135,7 @@ export function LogDetail({
           </Tabs>
         </Section>
 
-        <Section title="Topology">
+        {/* <Section title="Topology">
           <div className="grid grid-cols-2 gap-1.5 text-[12px]">
             <KV label="dt.source_entity" value={`HOST-${entry.host.toUpperCase()}`} />
             <KV label="dt.entity.host" value={`HOST-${entry.host.toUpperCase()}`} />
@@ -182,7 +182,7 @@ export function LogDetail({
               ts="+1.1s"
             />
           </div>
-        </Section>
+        </Section> */}
       </div>
 
       <footer className="flex items-center justify-between gap-2 border-t bg-muted/30 px-3 py-2 text-[11px] text-muted-foreground">
