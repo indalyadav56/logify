@@ -5,9 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/indalyadav56/logify/apps/backend/internal/config"
 	"github.com/segmentio/kafka-go"
-
-	"github.com/indalyadav56/logify/apps/backend/pkg/config"
 )
 
 // Producer wraps a kafka.Writer for publishing messages.
@@ -57,9 +56,9 @@ type Consumer struct {
 // NewConsumer creates a new Kafka consumer for the given topic.
 func NewConsumer(cfg config.KafkaConfig, topic string) *Consumer {
 	reader := kafka.NewReader(kafka.ReaderConfig{
-		Brokers:  cfg.Brokers,
-		Topic:    topic,
-		GroupID:  cfg.GroupID,
+		Brokers: cfg.Brokers,
+		Topic:   topic,
+		// GroupID:  cfg.GroupID,
 		MinBytes: 10e3, // 10KB
 		MaxBytes: 10e6, // 10MB
 	})

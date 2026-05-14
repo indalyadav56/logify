@@ -11,15 +11,14 @@ import (
 )
 
 type Config struct {
-	Server       ServerConfig       `mapstructure:"server"`
-	Database     DatabaseConfig     `mapstructure:"database"`
-	Logger       LoggerConfig       `mapstructure:"logger"`
-	Admin        AdminConfig        `mapstructure:"admin"`
-	Notification NotificationConfig `mapstructure:"notification"`
-	Kafka        KafkaConfig        `mapstructure:"kafka"`
-	AppEnv       string             `mapstructure:"app_env"`
-
-	ClickHouseDSN string `mapstructure:"clickhouse_dsn"`
+	Server       ServerConfig            `mapstructure:"server"`
+	Databases    map[string]DatabaseSpec `mapstructure:"databases"`
+	Postgres     PostgresConfig          `mapstructure:"postgres"`
+	Logger       LoggerConfig            `mapstructure:"logger"`
+	Admin        AdminConfig             `mapstructure:"admin"`
+	Notification NotificationConfig      `mapstructure:"notification"`
+	Kafka        KafkaConfig             `mapstructure:"kafka"`
+	AppEnv       string                  `mapstructure:"app_env"`
 }
 
 type AdminConfig struct {
@@ -32,18 +31,6 @@ type ServerConfig struct {
 	ReadTimeout  time.Duration `mapstructure:"read_timeout"`
 	WriteTimeout time.Duration `mapstructure:"write_timeout"`
 	IdleTimeout  time.Duration `mapstructure:"idle_timeout"`
-}
-
-type DatabaseConfig struct {
-	Host         string        `mapstructure:"host"`
-	Port         string        `mapstructure:"port"`
-	User         string        `mapstructure:"user"`
-	Password     string        `mapstructure:"password"`
-	Name         string        `mapstructure:"name"`
-	SSLMode      string        `mapstructure:"ssl_mode"`
-	MaxOpenConns int           `mapstructure:"max_open_conns"`
-	MaxIdleConns int           `mapstructure:"max_idle_conns"`
-	MaxLifetime  time.Duration `mapstructure:"max_lifetime"`
 }
 
 type LoggerConfig struct {
@@ -67,6 +54,23 @@ type KafkaConfig struct {
 	Brokers []string `mapstructure:"brokers"`
 }
 
+type PostgresConfig struct {
+	Primary PostgresConnConfig `mapstructure:"primary"`
+}
+
+type PostgresConnConfig struct {
+	Host            string        `mapstructure:"host"`
+	Port            int           `mapstructure:"port"`
+	User            string        `mapstructure:"user"`
+	Password        string        `mapstructure:"password"`
+	Database        string        `mapstructure:"database"`
+	SSLMode         string        `mapstructure:"ssl_mode"`
+	MaxOpenConns    int           `mapstructure:"max_open_conns"`
+	MaxIdleConns    int           `mapstructure:"max_idle_conns"`
+	ConnMaxLifetime time.Duration `mapstructure:"conn_max_lifetime"`
+	ConnMaxIdleTime time.Duration `mapstructure:"conn_max_idle_time"`
+}
+
 // Load initializes the configuration based on the environment.
 func Load() (*Config, error) {
 	env := os.Getenv("APP_ENV")
@@ -79,10 +83,15 @@ func Load() (*Config, error) {
 	v.AddConfigPath("configs")
 	v.AddConfigPath(".") // Look in current directory as well
 
-	// Load environment specific config (merges with base)
+	// Shared defaults (server tuning, legacy postgres block, kafka defaults, etc.)
+	v.SetConfigName("base")
+	if err := v.MergeInConfig(); err != nil {
+		log.Printf("Info: Could not load base config: %v", err)
+	}
+
+	// Environment overlay (local, dev, stage, prod)
 	v.SetConfigName(env)
 	if err := v.MergeInConfig(); err != nil {
-		// It's okay if specific env config doesn't exist, providing base exists or defaults are set
 		log.Printf("Info: Could not load %s config: %v", env, err)
 	}
 
@@ -117,13 +126,11 @@ func Load() (*Config, error) {
 	return &cfg, nil
 }
 
+// GetDatabaseURL returns the default postgres connection string (pgx/libpq), or empty if misconfigured.
 func (c *Config) GetDatabaseURL() string {
-	return fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
-		c.Database.Host,
-		c.Database.Port,
-		c.Database.User,
-		c.Database.Password,
-		c.Database.Name,
-		c.Database.SSLMode,
-	)
+	pc, err := c.PostgresPoolConfig(DefaultPostgresConn)
+	if err != nil {
+		return ""
+	}
+	return pc.DSN()
 }

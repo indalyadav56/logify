@@ -1,0 +1,42 @@
+app:
+  environment: "local"
+
+# Native ClickHouse client (see internal/config/database.go — required for server DI)
+databases:
+  clickhouse:
+    driver: clickhouse
+    dsn: "clickhouse://default:mypassword@127.0.0.1:9000/logify?dial_timeout=5s&read_timeout=3s"
+
+clients:
+  user_service:
+    target: "passthrough:///localhost:9091"
+    tls:
+      enabled: false
+    timeouts:
+      rpc: 30s 
+
+# Matches repo root docker-compose.yaml (host port 5433 → container 5432)
+postgres:
+  primary:
+    host: "127.0.0.1"
+    port: 5433
+    user: "postgres"
+    password: "postgres"
+    database: "logify"
+    ssl_mode: "disable"
+
+redis:
+  host: "localhost"
+  tls_enabled: false
+
+kafka:
+  brokers:
+    - "localhost:29092"
+
+# telemetry:
+#   tracing:
+#     enabled: false                # ← skip OTLP locally
+#     sample_rate: 1.0
+#   logging:
+#     level: "debug"
+#     format: "console"             # ← human-readable

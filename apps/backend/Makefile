@@ -1,4 +1,4 @@
-.PHONY: run build test lint clean docker-build docker-run migrate-up migrate-down fmt vet
+.PHONY: run build test lint clean docker-build docker-run migrate-up migrate-down fmt vet mocks
 
 # Application
 APP_NAME     := logify-backend
@@ -10,12 +10,12 @@ DOCKER_IMAGE := logify-backend
 DOCKER_TAG   := latest
 
 # Database
-MIGRATE_DSN  ?= "postgres://postgres:postgres@localhost:5432/logify?sslmode=disable"
+MIGRATE_DSN  ?= "postgres://postgres:postgres@localhost:5433/logify?sslmode=disable"
 
-## run: Run the application in development mode
+## run: Run the API locally (APP_ENV=local matches docker compose defaults in configs/local.yaml)
 run:
 	@echo "▶ Running $(APP_NAME)..."
-	LOG_FORMAT=console go run $(MAIN_FILE)
+	APP_ENV=local LOG_FORMAT=console go run $(MAIN_FILE)
 
 ## build: Build the application binary
 build:
@@ -43,6 +43,11 @@ fmt:
 vet:
 	@echo "▶ Vetting..."
 	go vet ./...
+
+## mocks: Generate mocks via mockery (config: .mockery.yaml)
+mocks:
+	@echo "▶ Generating mocks..."
+	mockery
 
 ## clean: Remove build artifacts
 clean:
@@ -88,6 +93,7 @@ help:
 # goose up
 
 # goose -dir migrations/clickhouse create create_logs sql
+# goose -dir migrations/postgres create create_users sql
 
 
 # Apply

@@ -86,12 +86,17 @@ func NewWorkerContainer(ctx context.Context, cfg *config.Config, log *zap.Logger
 		GroupID: "log-processor-group",
 	})
 
-	c.ClickHouseDB, err = pkgClickhouse.NewClickHouseDB(c.Config.ClickHouseDSN)
+	chDSN, err := c.Config.ClickHouseNativeDSN(config.DefaultClickHouseConn)
 	if err != nil {
 		return nil, err
 	}
 
-	chOpts, err := ch.ParseDSN(c.Config.ClickHouseDSN)
+	c.ClickHouseDB, err = pkgClickhouse.NewClickHouseDB(chDSN)
+	if err != nil {
+		return nil, err
+	}
+
+	chOpts, err := ch.ParseDSN(chDSN)
 	if err != nil {
 		return nil, fmt.Errorf("clickhouse parse dsn: %w", err)
 	}

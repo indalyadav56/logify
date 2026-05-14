@@ -5,6 +5,8 @@ import (
 	"errors"
 
 	ch "github.com/ClickHouse/clickhouse-go/v2"
+	"github.com/gin-gonic/gin"
+	"github.com/indalyadav56/logify/apps/backend/internal/auth/application"
 	"github.com/indalyadav56/logify/apps/backend/internal/config"
 	processorApp "github.com/indalyadav56/logify/apps/backend/internal/processor/application"
 	searchApp "github.com/indalyadav56/logify/apps/backend/internal/search/application"
@@ -14,18 +16,25 @@ import (
 	"github.com/segmentio/kafka-go"
 	"go.uber.org/zap"
 
-	// Ingest bounded context
+	// Ingest
 	ingestApp "github.com/indalyadav56/logify/apps/backend/internal/ingest/application"
 	ingestKafka "github.com/indalyadav56/logify/apps/backend/internal/ingest/infrastructure/kafka"
 	ingestHTTP "github.com/indalyadav56/logify/apps/backend/internal/ingest/transport/http"
 
-	// Auth bounded context
+	// Auth
+	authService "github.com/indalyadav56/logify/apps/backend/internal/auth/application"
+	authRepo "github.com/indalyadav56/logify/apps/backend/internal/auth/infrastructure/postgres"
 	authHTTP "github.com/indalyadav56/logify/apps/backend/internal/auth/transport/http"
 
-	// User bounded context
+	// User
 	userHTTP "github.com/indalyadav56/logify/apps/backend/internal/user/transport/http"
 
-	// Notification bounded context
+	// Role
+	roleApp "github.com/indalyadav56/logify/apps/backend/internal/role/application"
+	rolePG "github.com/indalyadav56/logify/apps/backend/internal/role/infrastructure/postgres"
+	roleHTTP "github.com/indalyadav56/logify/apps/backend/internal/role/transport/http"
+
+	// Notification
 	notificationHTTP "github.com/indalyadav56/logify/apps/backend/internal/notification/transport/http"
 )
 
@@ -34,6 +43,11 @@ type ServerContainer struct {
 
 	KafkaWriter  *kafka.Writer
 	ClickHouseDB ch.Conn
+
+	// Auth
+	AuthRepo    *authRepo.RefreshTokenRepository
+	AuthService application.AuthService
+	AuthHandler *authHTTP.AuthHandler
 
 	// Ingest bounded context
 	IngestService ingestApp.IngestService
@@ -46,11 +60,12 @@ type ServerContainer struct {
 	// Processor bounded context (read-only reference, not started here)
 	ProcessorService *processorApp.ProcessorService
 
-	// Auth bounded context
-	AccountHandler authHTTP.AccountHandler
-
 	// User bounded context
 	UserManagementHandler userHTTP.UserManagementHandler
+
+	// Role (RBAC) bounded context
+	RoleService roleApp.RoleService
+	RoleHandler roleHTTP.RoleHandler
 
 	// Notification bounded context
 	NotificationDashboardHandler notificationHTTP.NotificationDashboardHandler
@@ -70,7 +85,11 @@ func NewServerContainer(ctx context.Context, cfg *config.Config, log *zap.Logger
 		Balancer: &kafka.LeastBytes{},
 	}
 
-	c.ClickHouseDB, err = pkgClickhouse.NewClickHouseDB(c.Config.ClickHouseDSN)
+	chDSN, err := c.Config.ClickHouseNativeDSN(config.DefaultClickHouseConn)
+	if err != nil {
+		return nil, err
+	}
+	c.ClickHouseDB, err = pkgClickhouse.NewClickHouseDB(chDSN)
 	if err != nil {
 		return nil, err
 	}
@@ -79,6 +98,7 @@ func NewServerContainer(ctx context.Context, cfg *config.Config, log *zap.Logger
 	c.initSearch()
 	c.initAuth()
 	c.initUser()
+	c.initRole()
 	c.initNotification()
 
 	return c, nil
@@ -115,13 +135,27 @@ func (c *ServerContainer) initSearch() {
 }
 
 func (c *ServerContainer) initAuth() {
-	c.AccountHandler = authHTTP.NewAccountHandler()
+	c.AuthRepo = authRepo.NewRefreshTokenRepository(c.Shared.PostgresDB())
+	c.AuthService = authService.NewAuthService(c.Shared.Logger)
+	c.AuthHandler = authHTTP.NewAuthHandler(c.AuthService)
 }
 
 func (c *ServerContainer) initUser() {
 	c.UserManagementHandler = userHTTP.NewUserManagementHandler()
 }
 
+func (c *ServerContainer) initRole() {
+	repo := rolePG.NewRoleRepository(c.Shared.PostgresDB())
+	c.RoleService = roleApp.NewRoleService(repo, c.Shared.Logger)
+	c.RoleHandler = roleHTTP.NewRoleHandler(c.RoleService)
+}
+
 func (c *ServerContainer) initNotification() {
 	c.NotificationDashboardHandler = notificationHTTP.NewNotificationDashboardHandler()
+}
+
+func (c *ServerContainer) RegisterAllRoutes(e *gin.Engine) {
+	authHTTP.RegisterRoutes(&e.RouterGroup, c.AuthHandler)
+	ingestHTTP.RegisterRoutes(&e.RouterGroup, c.IngestHandler)
+	searchHTTP.RegisterRoutes(&e.RouterGroup, c.SearchHandler)
 }

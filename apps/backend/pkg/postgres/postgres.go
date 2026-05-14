@@ -1,53 +1,58 @@
-package database
+package postgres
 
 import (
+	"context"
 	"fmt"
 	"time"
 
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-type DatabaseConfig struct {
+type Config struct {
+	// ConnString, if set, is passed to pgx verbatim (libpq URL or keyword/value DSN).
+	ConnString   string
 	Host         string
 	Port         int
 	User         string
 	Password     string
 	Database     string
 	SSLMode      string
-	MaxOpenConns int
-	MaxIdleConns int
-	MaxLifetime  int // in seconds
+	MaxOpenConns int32
+	MaxIdleConns int32         // maps to MinConns in pgx
+	MaxLifetime  time.Duration // e.g. 5 * time.Minute
+	MaxIdleTime  time.Duration // e.g. 1 * time.Minute (no equivalent in database/sql)
 }
 
-// DSN returns the data source name for the database connection.
-func (c DatabaseConfig) DSN() string {
-	return fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
-		c.Host, c.Port, c.User, c.Password, c.Database, c.SSLMode)
+func (c Config) DSN() string {
+	if c.ConnString != "" {
+		return c.ConnString
+	}
+	return fmt.Sprintf(
+		"host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
+		c.Host, c.Port, c.User, c.Password, c.Database, c.SSLMode,
+	)
 }
 
-// NewPostgresDB initializes and returns a GORM database connection for PostgreSQL.
-func NewPostgresDB(cfg DatabaseConfig) (*gorm.DB, error) {
-	db, err := gorm.Open(postgres.Open(cfg.DSN()), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Info),
-	})
+func New(ctx context.Context, cfg Config) (*pgxpool.Pool, error) {
+	poolCfg, err := pgxpool.ParseConfig(cfg.DSN())
 	if err != nil {
-		return nil, fmt.Errorf("failed to connect to postgres: %w", err)
+		return nil, fmt.Errorf("postgres: parse config: %w", err)
 	}
 
-	sqlDB, err := db.DB()
+	poolCfg.MaxConns = cfg.MaxOpenConns
+	poolCfg.MinConns = cfg.MaxIdleConns
+	poolCfg.MaxConnLifetime = cfg.MaxLifetime
+	poolCfg.MaxConnIdleTime = cfg.MaxIdleTime
+
+	pool, err := pgxpool.NewWithConfig(ctx, poolCfg)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get underlying sql.DB: %w", err)
+		return nil, fmt.Errorf("postgres: create pool: %w", err)
 	}
 
-	sqlDB.SetMaxOpenConns(cfg.MaxOpenConns)
-	sqlDB.SetMaxIdleConns(cfg.MaxIdleConns)
-	sqlDB.SetConnMaxLifetime(time.Duration(cfg.MaxLifetime))
-
-	if err := sqlDB.Ping(); err != nil {
-		return nil, fmt.Errorf("failed to ping postgres: %w", err)
+	if err := pool.Ping(ctx); err != nil {
+		pool.Close()
+		return nil, fmt.Errorf("postgres: ping: %w", err)
 	}
 
-	return db, nil
+	return pool, nil
 }

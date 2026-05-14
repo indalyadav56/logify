@@ -1,0 +1,95 @@
+app:
+  name: "logify-backend"
+  version: "1.0.0"
+  shutdown_timeout: 30s
+
+server:
+  http:
+    host: "0.0.0.0"
+    port: 8080
+    read_timeout: 10s
+    write_timeout: 15s
+    idle_timeout: 60s
+  grpc:
+    host: "0.0.0.0"
+    port: 9090
+    reflection: false
+    max_recv_msg_size: 4194304
+    max_send_msg_size: 4194304
+    keepalive:
+      max_connection_idle: 60s
+      max_connection_age: 300s
+      time: 30s
+      timeout: 10s
+
+clients:
+  user_service:
+    load_balancing:
+      policy: "round_robin"
+    tls:
+      enabled: true
+      insecure_skip_verify: false
+    timeouts:
+      dial: 5s
+      rpc: 2s
+    keepalive:
+      time: 30s
+      timeout: 10s
+      permit_without_stream: true
+    retry:
+      max_attempts: 4
+      initial_backoff: 200ms
+      max_backoff: 2s
+      backoff_multiplier: 2.0
+      retryable_status_codes: [UNAVAILABLE, RESOURCE_EXHAUSTED]
+    circuit_breaker:
+      enabled: true
+      threshold: 50
+      min_requests: 20
+      interval: 10s
+      open_timeout: 30s
+    compression: "gzip"
+    interceptors: [tracing, metrics, logging, retry, auth]
+
+postgres:
+  primary:
+    port: 5432
+    user: "order_svc"
+    database: "orders"
+    ssl_mode: "require"
+    max_open_conns: 25
+    max_idle_conns: 10
+    conn_max_lifetime: 5m
+    conn_max_idle_time: 1m
+
+redis:
+  port: 6379
+  db: 0
+  dial_timeout: 3s
+  read_timeout: 1s
+  write_timeout: 1s
+  pool_size: 20
+  min_idle_conns: 5
+
+kafka:
+  brokers:
+    - "localhost:29092"
+
+telemetry:
+  tracing:
+    provider: "otlp"
+    propagators: [tracecontext, baggage]
+  metrics:
+    enabled: true
+    provider: "prometheus"
+    endpoint: "/metrics"
+    port: 9090
+  logging:
+    format: "json"
+    output: "stdout"
+
+rate_limit:
+  enabled: true
+  default:
+    requests_per_second: 1000
+    burst: 200

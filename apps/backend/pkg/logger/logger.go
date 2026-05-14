@@ -5,13 +5,26 @@ import (
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-
-	"github.com/indalyadav56/logify/apps/backend/pkg/config"
 )
 
-// NewLogger creates a new structured logger based on the configuration.
-func New(cfg config.LoggerConfig) (*zap.Logger, error) {
-	level, err := zapcore.ParseLevel(cfg.Level)
+type Config struct {
+	Level  string `mapstructure:"level"`
+	Format string `mapstructure:"format"`
+}
+
+func DefaultConfig() Config {
+	return Config{
+		Level:  "info",
+		Format: "json",
+	}
+}
+
+func New(cfg ...Config) (*zap.Logger, error) {
+	if len(cfg) == 0 {
+		cfg = []Config{DefaultConfig()}
+	}
+
+	level, err := zapcore.ParseLevel(cfg[0].Level)
 	if err != nil {
 		level = zapcore.InfoLevel
 	}
@@ -23,7 +36,7 @@ func New(cfg config.LoggerConfig) (*zap.Logger, error) {
 	encoderConfig.EncodeLevel = zapcore.CapitalLevelEncoder
 	encoderConfig.EncodeCaller = zapcore.ShortCallerEncoder
 
-	switch cfg.Format {
+	switch cfg[0].Format {
 	case "console":
 		encoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
 		encoder = zapcore.NewConsoleEncoder(encoderConfig)
