@@ -1,25 +1,38 @@
 package server
 
 import (
-	"net/http"
-
 	"github.com/gin-gonic/gin"
-	"go.uber.org/zap"
-
 	"github.com/indalyadav56/logify/apps/backend/internal/di"
-	"github.com/indalyadav56/logify/apps/backend/pkg/httpserver/middleware"
+	// your handlers
 )
 
-func NewHTTPRouter(c *di.ServerContainer, log *zap.Logger) http.Handler {
-	engine := gin.New()
+// Router is responsible for setting up all routes
+type Router struct {
+	container *di.ServerContainer
+}
 
+func NewRouter(container *di.ServerContainer) *Router {
+	return &Router{container: container}
+}
+
+// Setup configures all routes and middlewares on the Gin engine
+func (r *Router) Setup(engine *gin.Engine) error {
+	// Global middlewares
 	engine.Use(gin.Recovery())
-	engine.Use(middleware.CORSMiddleware())
+	// engine.Use(middleware.CORS())
+	// engine.Use(middleware.RequestID())
+	// engine.Use(middleware.Logging())
 
-	// engine.GET("/health", func(ctx *gin.Context) {})
-	// engine.GET("/readyz", func(ctx *gin.Context) {})
+	// Health checks
+	engine.GET("/healthz", func(c *gin.Context) {
+		c.JSON(200, gin.H{"status": "ok"})
+	})
+	engine.GET("/readyz", func(c *gin.Context) {
+		c.JSON(200, gin.H{"status": "ready"})
+	})
 
-	c.RegisterAllRoutes(engine)
+	// routes
+	r.container.RegisterAllRoutes(engine)
 
-	return engine
+	return nil
 }

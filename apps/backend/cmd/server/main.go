@@ -3,8 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
-	"os/signal"
-	"syscall"
+	"os"
 
 	"github.com/indalyadav56/logify/apps/backend/internal/config"
 	"github.com/indalyadav56/logify/apps/backend/internal/di"
@@ -14,7 +13,8 @@ import (
 
 func main() {
 	if err := run(); err != nil {
-		fmt.Println("failed to start server")
+		fmt.Fprintf(os.Stderr, "failed to start server: %v\n", err)
+		os.Exit(1)
 	}
 }
 
@@ -32,8 +32,7 @@ func run() error {
 	}
 	defer log.Sync()
 
-	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
-	defer cancel()
+	ctx := context.Background()
 
 	// container
 	container, err := di.NewServerContainer(ctx, cfg, log)
