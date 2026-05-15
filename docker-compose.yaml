@@ -235,29 +235,29 @@ services:
         max-file: "5"
 
   # ── Migrator (run once) ────────────────────────────────
-  migrator:
-    profiles: ["app"]
-    build:
-      context: ./apps/backend
-      dockerfile: Dockerfile
-    container_name: logify_migrator
-    entrypoint: ["./server", "migrate"]
-    restart: "no"
-    environment:
-      APP_ENV: ${APP_ENV:-dev}
-      APP_DATABASE_HOST: postgres
-      APP_DATABASE_PORT: "5432"
-      APP_DATABASE_USER: ${POSTGRES_USER:-postgres}
-      APP_DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
-      APP_DATABASE_NAME: ${POSTGRES_DB:-logify}
-      APP_CLICKHOUSE_DSN: "clickhouse://${CLICKHOUSE_USER:-default}:${CLICKHOUSE_PASSWORD:-mypassword}@clickhouse:9000/${CLICKHOUSE_DB:-logify}?dial_timeout=5s&read_timeout=3s"
-    depends_on:
-      postgres:
-        condition: service_healthy
-      clickhouse:
-        condition: service_healthy
-    networks:
-      - logify-net
+  # migrator:
+  #   profiles: ["app"]
+  #   build:
+  #     context: ./apps/backend
+  #     dockerfile: Dockerfile
+  #   container_name: logify_migrator
+  #   entrypoint: ["./server", "migrate"]
+  #   restart: "no"
+  #   environment:
+  #     APP_ENV: ${APP_ENV:-dev}
+  #     APP_DATABASE_HOST: postgres
+  #     APP_DATABASE_PORT: "5432"
+  #     APP_DATABASE_USER: ${POSTGRES_USER:-postgres}
+  #     APP_DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+  #     APP_DATABASE_NAME: ${POSTGRES_DB:-logify}
+  #     APP_CLICKHOUSE_DSN: "clickhouse://${CLICKHOUSE_USER:-default}:${CLICKHOUSE_PASSWORD:-mypassword}@clickhouse:9000/${CLICKHOUSE_DB:-logify}?dial_timeout=5s&read_timeout=3s"
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #     clickhouse:
+  #       condition: service_healthy
+  #   networks:
+  #     - logify-net
 
   # ── Web Frontend ───────────────────────────────────────
   # web:

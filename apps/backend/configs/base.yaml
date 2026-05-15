@@ -51,6 +51,13 @@ clients:
     compression: "gzip"
     interceptors: [tracing, metrics, logging, retry, auth]
 
+auth:
+  jwt:
+    secret: "change-me-in-production"
+    issuer: "logify-backend"
+    access_token_ttl: 15m
+    refresh_token_ttl: 720h   # 30 days
+
 postgres:
   primary:
     port: 5432

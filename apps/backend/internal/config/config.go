@@ -18,7 +18,19 @@ type Config struct {
 	Admin        AdminConfig             `mapstructure:"admin"`
 	Notification NotificationConfig      `mapstructure:"notification"`
 	Kafka        KafkaConfig             `mapstructure:"kafka"`
+	Auth         AuthConfig              `mapstructure:"auth"`
 	AppEnv       string                  `mapstructure:"app_env"`
+}
+
+type AuthConfig struct {
+	JWT JWTConfig `mapstructure:"jwt"`
+}
+
+type JWTConfig struct {
+	Secret          string        `mapstructure:"secret"`
+	Issuer          string        `mapstructure:"issuer"`
+	AccessTokenTTL  time.Duration `mapstructure:"access_token_ttl"`
+	RefreshTokenTTL time.Duration `mapstructure:"refresh_token_ttl"`
 }
 
 type AdminConfig struct {

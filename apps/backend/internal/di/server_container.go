@@ -24,9 +24,12 @@ import (
 	// Auth
 	authService "github.com/indalyadav56/logify/apps/backend/internal/auth/application"
 	authRepo "github.com/indalyadav56/logify/apps/backend/internal/auth/infrastructure/postgres"
+	authUsers "github.com/indalyadav56/logify/apps/backend/internal/auth/infrastructure/users"
 	authHTTP "github.com/indalyadav56/logify/apps/backend/internal/auth/transport/http"
 
 	// User
+	userDomain "github.com/indalyadav56/logify/apps/backend/internal/user/domain"
+	userPG "github.com/indalyadav56/logify/apps/backend/internal/user/infrastructure/postgres"
 	userHTTP "github.com/indalyadav56/logify/apps/backend/internal/user/transport/http"
 
 	// Role
@@ -61,6 +64,7 @@ type ServerContainer struct {
 	ProcessorService *processorApp.ProcessorService
 
 	// User bounded context
+	UserRepo              userDomain.UserRepository
 	UserManagementHandler userHTTP.UserManagementHandler
 
 	// Role (RBAC) bounded context
@@ -96,8 +100,10 @@ func NewServerContainer(ctx context.Context, cfg *config.Config, log *zap.Logger
 
 	c.initIngest()
 	c.initSearch()
-	c.initAuth()
 	c.initUser()
+	if err := c.initAuth(); err != nil {
+		return nil, err
+	}
 	c.initRole()
 	c.initNotification()
 
@@ -134,13 +140,27 @@ func (c *ServerContainer) initSearch() {
 	c.SearchHandler = searchHTTP.NewHandler(c.SearchService, c.Shared.Logger)
 }
 
-func (c *ServerContainer) initAuth() {
+func (c *ServerContainer) initAuth() error {
 	c.AuthRepo = authRepo.NewRefreshTokenRepository(c.Shared.PostgresDB())
-	c.AuthService = authService.NewAuthService(c.Shared.Logger)
+
+	issuer, err := authService.NewTokenIssuer(authService.TokenIssuerConfig{
+		Secret:          c.Config.Auth.JWT.Secret,
+		Issuer:          c.Config.Auth.JWT.Issuer,
+		AccessTokenTTL:  c.Config.Auth.JWT.AccessTokenTTL,
+		RefreshTokenTTL: c.Config.Auth.JWT.RefreshTokenTTL,
+	})
+	if err != nil {
+		return err
+	}
+
+	userPort := authUsers.NewAdapter(c.UserRepo, 0)
+	c.AuthService = authService.NewAuthService(c.Shared.Logger, issuer, c.AuthRepo, userPort)
 	c.AuthHandler = authHTTP.NewAuthHandler(c.AuthService)
+	return nil
 }
 
 func (c *ServerContainer) initUser() {
+	c.UserRepo = userPG.NewUserRepository(c.Shared.PostgresDB())
 	c.UserManagementHandler = userHTTP.NewUserManagementHandler()
 }
 

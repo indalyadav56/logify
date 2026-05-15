@@ -4,6 +4,7 @@ import "errors"
 
 var (
 	ErrInvalidCredentials = errors.New("invalid credentials")
+	ErrUserAlreadyExists  = errors.New("user with this email already exists")
 	ErrAccountLocked      = errors.New("account locked due to too many failed attempts")
 	ErrCredentialNotFound = errors.New("credential not found")
 	ErrSessionNotFound    = errors.New("session not found")

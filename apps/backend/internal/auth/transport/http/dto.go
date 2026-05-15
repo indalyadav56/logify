@@ -2,26 +2,35 @@ package http
 
 import "time"
 
+type RegisterRequest struct {
+	FullName string `json:"full_name" binding:"required,min=2,max=100"`
+	Email    string `json:"email"     binding:"required,email"`
+	Password string `json:"password"  binding:"required,min=8,max=72"`
+}
+
 type LoginRequest struct {
-	Email    string `json:"email" binding:"required,email"`
+	Email    string `json:"email"    binding:"required,email"`
 	Password string `json:"password" binding:"required"`
 }
 
-type LoginResponse struct {
+type RefreshRequest struct {
+	RefreshToken string `json:"refresh_token" binding:"required"`
+}
+
+// TokenResponse mirrors application.TokenOutput.
+type TokenResponse struct {
 	AccessToken  string       `json:"access_token"`
 	RefreshToken string       `json:"refresh_token"`
+	TokenType    string       `json:"token_type"`
 	ExpiresAt    time.Time    `json:"expires_at"`
 	User         UserResponse `json:"user"`
 }
 
 type UserResponse struct {
-	ID    string `json:"id"`
-	Email string `json:"email"`
-	Role  string `json:"role"`
-}
-
-type RefreshRequest struct {
-	RefreshToken string `json:"refresh_token" binding:"required"`
+	ID       string `json:"id"`
+	Email    string `json:"email"`
+	FullName string `json:"full_name"`
+	Role     string `json:"role"`
 }
 
 type SessionResponse struct {
