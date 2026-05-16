@@ -19,8 +19,6 @@ type LoginInput struct {
 	Password string `json:"password" validate:"required"`
 }
 
-// CreateUserInput is the data the auth service passes to the user adapter
-// when registering a new account. Password is plaintext; the adapter hashes it.
 type CreateUserInput struct {
 	FullName string
 	Email    string
@@ -33,14 +31,6 @@ type UserOutput struct {
 	Email    string
 	FullName string
 	Role     string
-}
-
-// UserAuthRecord is returned from UserLookupPort.FindByEmail and includes the
-// password hash needed to verify login credentials. It must not leak outside
-// the application layer.
-type UserAuthRecord struct {
-	UserOutput
-	PasswordHash string
 }
 
 // TokenOutput is the response returned by Register and Login.

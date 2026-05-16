@@ -2,16 +2,15 @@ package http
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/indalyadav56/logify/apps/backend/pkg/httpserver/middleware"
 )
 
 // RegisterRoutes sets up notification channel, alert rule, and notification routes.
 func RegisterRoutes(router *gin.RouterGroup, handler NotificationDashboardHandler, jwtSecret string) {
-	auth := middleware.AuthMiddleware(jwtSecret)
+	// auth := middleware.AuthMiddleware()
 
 	// Notification channels
 	channels := router.Group("/notification-channels")
-	channels.Use(auth)
+	// channels.Use(auth)
 	{
 		channels.GET("", handler.ListChannels)
 		channels.POST("", handler.CreateChannel)
@@ -23,7 +22,7 @@ func RegisterRoutes(router *gin.RouterGroup, handler NotificationDashboardHandle
 
 	// Alert rules
 	rules := router.Group("/alert-rules")
-	rules.Use(auth)
+	// rules.Use(auth)
 	{
 		rules.GET("", handler.ListAlertRules)
 		rules.POST("", handler.CreateAlertRule)
@@ -36,7 +35,7 @@ func RegisterRoutes(router *gin.RouterGroup, handler NotificationDashboardHandle
 
 	// Notifications
 	notifications := router.Group("/notifications")
-	notifications.Use(auth)
+	// notifications.Use(auth)
 	{
 		notifications.GET("", handler.ListNotifications)
 		notifications.GET("/:id", handler.GetNotification)

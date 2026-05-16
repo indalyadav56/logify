@@ -5,56 +5,84 @@ import (
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	"gopkg.in/natefinch/lumberjack.v2"
 )
 
-type Config struct {
-	Level  string `mapstructure:"level"`
-	Format string `mapstructure:"format"`
-}
+func New(cfg Config) (*zap.Logger, error) {
+	level := getLogLevel(cfg.Level)
 
-func DefaultConfig() Config {
-	return Config{
-		Level:  "info",
-		Format: "json",
-	}
-}
-
-func New(cfg ...Config) (*zap.Logger, error) {
-	if len(cfg) == 0 {
-		cfg = []Config{DefaultConfig()}
-	}
-
-	level, err := zapcore.ParseLevel(cfg[0].Level)
-	if err != nil {
-		level = zapcore.InfoLevel
+	encoderConfig := zapcore.EncoderConfig{
+		TimeKey:        "timestamp",
+		LevelKey:       "level",
+		NameKey:        "logger",
+		CallerKey:      "caller",
+		MessageKey:     "message",
+		StacktraceKey:  "stacktrace",
+		EncodeLevel:    zapcore.LowercaseLevelEncoder,
+		EncodeTime:     zapcore.ISO8601TimeEncoder,
+		EncodeCaller:   zapcore.ShortCallerEncoder,
+		EncodeDuration: zapcore.StringDurationEncoder,
 	}
 
-	var encoder zapcore.Encoder
-	encoderConfig := zap.NewProductionEncoderConfig()
-	encoderConfig.TimeKey = "timestamp"
-	encoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
-	encoderConfig.EncodeLevel = zapcore.CapitalLevelEncoder
-	encoderConfig.EncodeCaller = zapcore.ShortCallerEncoder
+	jsonEncoder := zapcore.NewJSONEncoder(encoderConfig)
 
-	switch cfg[0].Format {
-	case "console":
-		encoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
-		encoder = zapcore.NewConsoleEncoder(encoderConfig)
-	default:
-		encoder = zapcore.NewJSONEncoder(encoderConfig)
-	}
+	var cores []zapcore.Core
 
-	core := zapcore.NewCore(
-		encoder,
+	// stdout core
+	stdoutCore := zapcore.NewCore(
+		jsonEncoder,
 		zapcore.AddSync(os.Stdout),
 		level,
 	)
 
-	logger := zap.New(core,
+	cores = append(cores, stdoutCore)
+
+	// file core
+	if cfg.FileEnabled {
+		fileWriter := zapcore.AddSync(&lumberjack.Logger{
+			Filename:   cfg.FilePath,
+			MaxSize:    cfg.MaxSize,
+			MaxBackups: cfg.MaxBackups,
+			MaxAge:     cfg.MaxAge,
+			Compress:   cfg.Compress,
+		})
+
+		fileCore := zapcore.NewCore(
+			jsonEncoder,
+			fileWriter,
+			level,
+		)
+
+		cores = append(cores, fileCore)
+	}
+
+	core := zapcore.NewTee(cores...)
+
+	log := zap.New(
+		core,
 		zap.AddCaller(),
-		zap.AddCallerSkip(0),
-		zap.AddStacktrace(zapcore.ErrorLevel),
+		zap.AddCallerSkip(1),
+		zap.AddStacktrace(zap.ErrorLevel),
+	).With(
+		zap.String("service", cfg.Service),
+		zap.String("environment", cfg.Environment),
 	)
 
-	return logger, nil
+	return log, nil
+}
+
+func getLogLevel(level string) zapcore.Level {
+	switch level {
+	case "debug":
+		return zap.DebugLevel
+
+	case "warn":
+		return zap.WarnLevel
+
+	case "error":
+		return zap.ErrorLevel
+
+	default:
+		return zap.InfoLevel
+	}
 }

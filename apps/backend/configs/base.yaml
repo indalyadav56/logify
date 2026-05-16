@@ -51,6 +51,30 @@ clients:
     compression: "gzip"
     interceptors: [tracing, metrics, logging, retry, auth]
 
+logger:
+  level: info
+  format: json
+  output: both
+  file:
+    filename: ./logs/logify.log
+    max_size: 100
+    max_backups: 5
+    max_age: 30
+    compress: true
+
+ollama:
+  base_url: "http://localhost:11434"
+  model: "qwen3-embedding:8b"
+  timeout: 60s
+
+clickhouse_worker:
+  kafka_topic: "logs"
+  kafka_group_id: "log-clickhouse-group"
+
+embedding_worker:
+  kafka_topic: "logs"
+  kafka_group_id: "log-embedder-group"
+
 auth:
   jwt:
     secret: "change-me-in-production"

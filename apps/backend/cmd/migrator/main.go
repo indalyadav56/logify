@@ -1,8 +1,10 @@
-// Migrator is a small Postgres migration CLI built on goose.
+// Migrator is a small migration CLI built on goose.
+//
+// Supports both PostgreSQL (default) and ClickHouse via the -driver flag.
 //
 // Usage:
 //
-//	go run ./cmd/migrator <command> [args]
+//	go run ./cmd/migrator [flags] <command> [args]
 //
 // Commands:
 //
@@ -19,14 +21,17 @@
 //
 // Flags:
 //
-//	-dir   path to the migrations directory (default ./migrations/postgres)
-//	-dsn   override DSN; takes precedence over env / config
-//	-env   APP_ENV to load (default "local")
+//	-driver  postgres | clickhouse (default "postgres")
+//	-dir     path to the migrations directory
+//	         (default ./migrations/postgres or ./migrations/clickhouse per -driver)
+//	-dsn     override DSN; takes precedence over env / config
+//	-env     APP_ENV to load (default "local")
 //
 // DSN resolution order:
 //  1. -dsn flag
-//  2. APP_DATABASE_URL env var
-//  3. config (loaded from configs/<env>.yaml) — same as the API server.
+//  2. APP_DATABASE_URL env var (applies regardless of -driver)
+//  3. configs/<env>.yaml — Postgres via PostgresPoolConfig,
+//     ClickHouse via databases.clickhouse (Config.ClickHouseNativeDSN).
 package main
 
 import (
@@ -42,16 +47,58 @@ import (
 	"syscall"
 	"time"
 
+	// SQL drivers registered via blank import.
+	_ "github.com/ClickHouse/clickhouse-go/v2"
 	_ "github.com/jackc/pgx/v5/stdlib"
+
 	"github.com/pressly/goose/v3"
 
 	"github.com/indalyadav56/logify/apps/backend/internal/config"
 )
 
 const (
-	defaultDir = "./migrations/postgres"
 	defaultEnv = "local"
+
+	driverPostgres   = "postgres"
+	driverClickHouse = "clickhouse"
+
+	defaultDirPostgres   = "./migrations/postgres"
+	defaultDirClickHouse = "./migrations/clickhouse"
 )
+
+// driverProfile describes the per-driver wiring the migrator needs to plug
+// into goose and database/sql.
+type driverProfile struct {
+	// name is the user-facing driver name (matches the -driver flag value).
+	name string
+	// sqlDriver is the database/sql driver name to pass to sql.Open.
+	sqlDriver string
+	// gooseDialect is the dialect string for goose.SetDialect.
+	gooseDialect string
+	// defaultDir is the migrations directory used when -dir is empty.
+	defaultDir string
+}
+
+func profileFor(driver string) (driverProfile, error) {
+	switch strings.ToLower(strings.TrimSpace(driver)) {
+	case driverPostgres, "pg":
+		return driverProfile{
+			name:         driverPostgres,
+			sqlDriver:    "pgx",
+			gooseDialect: "postgres",
+			defaultDir:   defaultDirPostgres,
+		}, nil
+	case driverClickHouse, "ch":
+		return driverProfile{
+			name:         driverClickHouse,
+			sqlDriver:    "clickhouse",
+			gooseDialect: "clickhouse",
+			defaultDir:   defaultDirClickHouse,
+		}, nil
+	default:
+		return driverProfile{}, fmt.Errorf("unknown -driver %q (want %q or %q)", driver, driverPostgres, driverClickHouse)
+	}
+}
 
 func main() {
 	if err := run(); err != nil {
@@ -62,8 +109,9 @@ func main() {
 
 func run() error {
 	fs := flag.NewFlagSet("migrator", flag.ContinueOnError)
-	dir := fs.String("dir", defaultDir, "migrations directory")
-	dsnFlag := fs.String("dsn", "", "Postgres DSN (overrides env / config)")
+	driverFlag := fs.String("driver", driverPostgres, "database driver: postgres | clickhouse")
+	dir := fs.String("dir", "", "migrations directory (defaults to ./migrations/<driver>)")
+	dsnFlag := fs.String("dsn", "", "DSN (overrides env / config)")
 	envFlag := fs.String("env", defaultEnv, "APP_ENV used to load configs/<env>.yaml")
 	fs.Usage = func() { printUsage(fs) }
 
@@ -77,19 +125,27 @@ func run() error {
 	}
 	cmd, args := args[0], args[1:]
 
+	profile, err := profileFor(*driverFlag)
+	if err != nil {
+		return err
+	}
+	if strings.TrimSpace(*dir) == "" {
+		*dir = profile.defaultDir
+	}
+
 	// `create` doesn't need a DB connection.
 	if cmd == "create" {
 		return runCreate(*dir, args)
 	}
 
-	dsn, err := resolveDSN(*dsnFlag, *envFlag)
+	dsn, err := resolveDSN(profile, *dsnFlag, *envFlag)
 	if err != nil {
 		return err
 	}
 
-	db, err := sql.Open("pgx", dsn)
+	db, err := sql.Open(profile.sqlDriver, dsn)
 	if err != nil {
-		return fmt.Errorf("open db: %w", err)
+		return fmt.Errorf("open %s db: %w", profile.name, err)
 	}
 	defer db.Close()
 
@@ -99,11 +155,11 @@ func run() error {
 	pingCtx, pingCancel := context.WithTimeout(ctx, 5*time.Second)
 	defer pingCancel()
 	if err := db.PingContext(pingCtx); err != nil {
-		return fmt.Errorf("ping db: %w", err)
+		return fmt.Errorf("ping %s db: %w", profile.name, err)
 	}
 
-	if err := goose.SetDialect("postgres"); err != nil {
-		return fmt.Errorf("set dialect: %w", err)
+	if err := goose.SetDialect(profile.gooseDialect); err != nil {
+		return fmt.Errorf("set dialect %q: %w", profile.gooseDialect, err)
 	}
 
 	return dispatch(ctx, db, *dir, cmd, args)
@@ -171,8 +227,9 @@ func requireVersion(cmd string, args []string) (int64, error) {
 	return v, nil
 }
 
-// resolveDSN follows the precedence: explicit flag → APP_DATABASE_URL env → config file.
-func resolveDSN(dsnFlag, env string) (string, error) {
+// resolveDSN follows the precedence: explicit flag → APP_DATABASE_URL env →
+// driver-specific config lookup.
+func resolveDSN(profile driverProfile, dsnFlag, env string) (string, error) {
 	if dsn := strings.TrimSpace(dsnFlag); dsn != "" {
 		return dsn, nil
 	}
@@ -187,15 +244,27 @@ func resolveDSN(dsnFlag, env string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("load config: %w", err)
 	}
-	pcfg, err := cfg.PostgresPoolConfig(config.DefaultPostgresConn)
-	if err != nil {
-		return "", fmt.Errorf("postgres config: %w", err)
+
+	switch profile.name {
+	case driverPostgres:
+		pcfg, err := cfg.PostgresPoolConfig(config.DefaultPostgresConn)
+		if err != nil {
+			return "", fmt.Errorf("postgres config: %w", err)
+		}
+		dsn := pcfg.DSN()
+		if dsn == "" {
+			return "", errors.New("could not build Postgres DSN from config")
+		}
+		return dsn, nil
+	case driverClickHouse:
+		dsn, err := cfg.ClickHouseNativeDSN(config.DefaultClickHouseConn)
+		if err != nil {
+			return "", fmt.Errorf("clickhouse config: %w", err)
+		}
+		return dsn, nil
+	default:
+		return "", fmt.Errorf("no DSN resolver for driver %q", profile.name)
 	}
-	dsn := pcfg.DSN()
-	if dsn == "" {
-		return "", errors.New("could not build Postgres DSN from config")
-	}
-	return dsn, nil
 }
 
 func printUsage(fs *flag.FlagSet) {

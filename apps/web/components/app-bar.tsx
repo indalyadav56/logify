@@ -72,7 +72,6 @@ const SECTIONS: NavSection[] = [
         href: "/dashboard/logs",
         icon: ScrollTextIcon,
         label: "Logs",
-        badge: { kind: "live", value: "live" },
       },
     ],
   },
@@ -437,10 +436,7 @@ function NavLink({
     expanded ? (
       <span
         className={cn(
-          "ml-auto inline-flex h-[18px] items-center rounded px-1.5 font-mono text-[10.5px] font-semibold",
-          item.badge.kind === "live"
-            ? "bg-emerald-500/20 text-emerald-700 dark:text-emerald-300"
-            : "bg-rose-500/20 text-rose-700 dark:text-rose-300"
+          "ml-auto inline-flex h-[18px] items-center rounded px-1.5 font-mono text-[10.5px] font-semibold"
         )}
       >
         {item.badge.value}
@@ -449,8 +445,7 @@ function NavLink({
       <span
         aria-hidden
         className={cn(
-          "absolute top-1.5 right-1.5 size-1.5 rounded-full ring-2 ring-sidebar",
-          item.badge.kind === "live" ? "bg-emerald-500" : "bg-rose-500"
+          "absolute top-1.5 right-1.5 size-1.5 rounded-full ring-2 ring-sidebar"
         )}
       />
     )

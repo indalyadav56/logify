@@ -1,40 +1,26 @@
 package http
 
-// import (
-// 	"errors"
-// 	"strconv"
+import (
+	"errors"
 
-// 	"github.com/gin-gonic/gin"
-// 	"github.com/google/uuid"
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+	"github.com/indalyadav56/logify/apps/backend/internal/user/application"
+	"github.com/indalyadav56/logify/apps/backend/internal/user/domain"
+	"github.com/indalyadav56/logify/apps/backend/pkg/httpserver/middleware"
+	"github.com/indalyadav56/logify/apps/backend/pkg/response"
+)
 
-// 	"github.com/indalyadav56/logify/apps/backend/internal/user/application"
-// 	"github.com/indalyadav56/logify/apps/backend/internal/user/domain"
-// 	"github.com/indalyadav56/logify/apps/backend/pkg/httpserver/middleware"
-// 	"github.com/indalyadav56/logify/apps/backend/pkg/response"
-// 	"github.com/indalyadav56/logify/apps/backend/pkg/validator"
-// )
+type UserHandler struct {
+	service application.UserService
+}
 
-// // UserHandler defines the HTTP handler interface for user endpoints.
-// type UserHandler interface {
-// 	CreateUser(c *gin.Context)
-// 	GetUser(c *gin.Context)
-// 	UpdateUser(c *gin.Context)
-// 	DeleteUser(c *gin.Context)
-// 	ListUsers(c *gin.Context)
-// 	GetCurrentUser(c *gin.Context)
-// }
-
-// type userHandler struct {
-// 	service application.UserService
-// }
-
-// // NewUserHandler creates a new UserHandler.
-// func NewUserHandler(service application.UserService) UserHandler {
-// 	return &userHandler{service: service}
-// }
+func NewUserHandler(service application.UserService) *UserHandler {
+	return &UserHandler{service: service}
+}
 
 // // CreateUser handles POST /api/v1/users
-// func (h *userHandler) CreateUser(c *gin.Context) {
+// func (h *UserHandler) CreateUser(c *gin.Context) {
 // 	var input application.CreateUserInput
 // 	if !validator.ValidateRequest(c, &input) {
 // 		return
@@ -161,29 +147,29 @@ package http
 // 	response.Paginated(c, users, params.Page, params.PerPage, total)
 // }
 
-// // GetCurrentUser handles GET /api/v1/users/me
-// func (h *userHandler) GetCurrentUser(c *gin.Context) {
-// 	userIDStr, ok := middleware.GetUserIDFromContext(c)
-// 	if !ok {
-// 		response.Unauthorized(c, "User not authenticated")
-// 		return
-// 	}
+// GetCurrentUser handles GET /api/v1/users/me
+func (h *UserHandler) GetCurrentUser(c *gin.Context) {
+	userIDStr, ok := middleware.GetUserIDFromContext(c)
+	if !ok {
+		response.Unauthorized(c, "User not authenticated")
+		return
+	}
 
-// 	id, err := uuid.Parse(userIDStr)
-// 	if err != nil {
-// 		response.InternalServerError(c, "Invalid user ID in token")
-// 		return
-// 	}
+	id, err := uuid.Parse(userIDStr)
+	if err != nil {
+		response.InternalServerError(c, "Invalid user ID in token")
+		return
+	}
 
-// 	user, err := h.service.GetUser(c.Request.Context(), id)
-// 	if err != nil {
-// 		if errors.Is(err, domain.ErrUserNotFound) {
-// 			response.NotFound(c, "User not found")
-// 			return
-// 		}
-// 		response.InternalServerError(c, "Failed to retrieve user")
-// 		return
-// 	}
+	user, err := h.service.GetUser(c.Request.Context(), id)
+	if err != nil {
+		if errors.Is(err, domain.ErrUserNotFound) {
+			response.NotFound(c, "User not found")
+			return
+		}
+		response.InternalServerError(c, "Failed to retrieve user")
+		return
+	}
 
-// 	response.OK(c, "Current user retrieved successfully", user)
-// }
+	response.OK(c, "Current user retrieved successfully", user)
+}

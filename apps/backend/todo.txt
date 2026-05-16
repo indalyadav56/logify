@@ -1,0 +1,11 @@
+User query
+   ↓
+Embedding
+   ↓
+Vector search
+   ↓
+Retrieve relevant logs
+   ↓
+LLM reasoning
+   ↓
+AI answer

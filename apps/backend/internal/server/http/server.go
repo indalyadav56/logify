@@ -25,7 +25,9 @@ type Server struct {
 }
 
 func NewServer(ctx context.Context, cfg *config.Config, log *zap.Logger, container *di.ServerContainer) (*Server, error) {
-	router := gin.Default()
+
+	// router := gin.Default()
+	router := gin.New()
 
 	httpRouter := NewRouter(container)
 	if err := httpRouter.Setup(router); err != nil {

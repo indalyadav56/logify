@@ -74,7 +74,36 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	response.OK(c, "Login successful", toTokenResponse(tokens))
 }
 
+// RefreshToken handles POST /api/v1/auth/refresh-token.
+func (h *AuthHandler) RefreshToken(c *gin.Context) {
+	var req RefreshTokenRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, err.Error())
+		return
+	}
+}
+
+// Logout handles POST /api/v1/auth/logout.
+func (h *AuthHandler) Logout(c *gin.Context) {
+	var req LogoutRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, err.Error())
+		return
+	}
+	// err := h.svc.Logout(c.Request.Context(), application.LogoutInput{
+	// 	RefreshToken: req.RefreshToken,
+	// })
+	// if err != nil {
+	// 	response.InternalServerError(c, "Failed to logout")
+	// 	return
+	// }
+	response.OK(c, "Logout successful", nil)
+}
+
 func toTokenResponse(t *application.TokenOutput) TokenResponse {
+	if t == nil {
+		return TokenResponse{}
+	}
 	return TokenResponse{
 		AccessToken:  t.AccessToken,
 		RefreshToken: t.RefreshToken,

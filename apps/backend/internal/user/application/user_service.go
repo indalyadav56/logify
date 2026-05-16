@@ -1,104 +1,101 @@
 package application
 
-// import (
-// 	"context"
-// 	"errors"
+import (
+	"context"
+	"errors"
 
-// 	"github.com/google/uuid"
-// 	"go.uber.org/zap"
-// 	"golang.org/x/crypto/bcrypt"
+	"github.com/google/uuid"
+	"github.com/indalyadav56/logify/apps/backend/internal/user/domain"
+	"go.uber.org/zap"
+	"golang.org/x/crypto/bcrypt"
+)
 
-// 	"github.com/indalyadav56/logify/apps/backend/internal/user/domain"
-// )
+type UserService interface {
+	CreateUser(ctx context.Context, input CreateUserInput) (*UserOutput, error)
+	GetUser(ctx context.Context, id uuid.UUID) (*UserOutput, error)
+	// Authenticate verifies email/password and returns the user on success.
+	Authenticate(ctx context.Context, email, password string) (*UserOutput, error)
+	// GetUserByEmail(ctx context.Context, email string) (*domain.User, error)
+	// UpdateUser(ctx context.Context, id uuid.UUID, input UpdateUserInput) (*UserOutput, error)
+	// DeleteUser(ctx context.Context, id uuid.UUID) error
+	// ListUsers(ctx context.Context, params domain.ListParams) ([]*UserOutput, int64, error)
+}
 
-// // CreateUserInput holds the data required to create a new user.
-// type CreateUserInput struct {
-// 	Email    string `json:"email" validate:"required,email"`
-// 	FullName string `json:"full_name" validate:"required,min=2,max=100"`
-// 	Password string `json:"password" validate:"required,min=8,max=72"`
-// 	Role     string `json:"role" validate:"omitempty,oneof=admin member viewer"`
-// }
+type userService struct {
+	repo   domain.UserRepository
+	logger *zap.Logger
+}
 
-// // UpdateUserInput holds the data for updating an existing user.
-// type UpdateUserInput struct {
-// 	FullName *string `json:"full_name,omitempty" validate:"omitempty,min=2,max=100"`
-// 	Role     *string `json:"role,omitempty" validate:"omitempty,oneof=admin member viewer"`
-// 	IsActive *bool   `json:"is_active,omitempty"`
-// }
+func NewUserService(repo domain.UserRepository, logger *zap.Logger) UserService {
+	if repo == nil {
+		panic("repo is nil")
+	}
+	if logger == nil {
+		panic("logger is nil")
+	}
+	return &userService{
+		repo:   repo,
+		logger: logger.Named("user_service"),
+	}
+}
 
-// // UserOutput is the response DTO for a user.
-// type UserOutput struct {
-// 	ID       uuid.UUID   `json:"id"`
-// 	Email    string      `json:"email"`
-// 	FullName string      `json:"full_name"`
-// 	Role     domain.Role `json:"role"`
-// 	IsActive bool        `json:"is_active"`
-// }
+func (s *userService) CreateUser(ctx context.Context, input CreateUserInput) (*UserOutput, error) {
+	existing, err := s.repo.GetByEmail(ctx, input.Email)
+	if err != nil && !errors.Is(err, domain.ErrUserNotFound) {
+		s.logger.Error("failed to check existing user", zap.Error(err))
+		return nil, err
+	}
+	if existing != nil {
+		return nil, domain.ErrUserAlreadyExists
+	}
 
-// // UserService defines the application-level user operations.
-// type UserService interface {
-// 	CreateUser(ctx context.Context, input CreateUserInput) (*UserOutput, error)
-// 	GetUser(ctx context.Context, id uuid.UUID) (*UserOutput, error)
-// 	GetUserByEmail(ctx context.Context, email string) (*domain.User, error)
-// 	UpdateUser(ctx context.Context, id uuid.UUID, input UpdateUserInput) (*UserOutput, error)
-// 	DeleteUser(ctx context.Context, id uuid.UUID) error
-// 	ListUsers(ctx context.Context, params domain.ListParams) ([]*UserOutput, int64, error)
-// }
+	// Hash the password.
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.DefaultCost)
+	if err != nil {
+		s.logger.Error("failed to hash password", zap.Error(err))
+		return nil, err
+	}
 
-// type userService struct {
-// 	repo   domain.UserRepository
-// 	logger *zap.Logger
-// }
+	user := domain.NewUser(input.Email, input.FullName, string(hashedPassword))
 
-// // NewUserService creates a new UserService.
-// func NewUserService(repo domain.UserRepository, logger *zap.Logger) UserService {
-// 	return &userService{
-// 		repo:   repo,
-// 		logger: logger.Named("user_service"),
-// 	}
-// }
+	if input.Role != "" {
+		user.Role = domain.Role(input.Role)
+	}
 
-// func (s *userService) CreateUser(ctx context.Context, input CreateUserInput) (*UserOutput, error) {
-// 	// Check if user already exists.
-// 	existing, err := s.repo.GetByEmail(ctx, input.Email)
-// 	if err != nil && !errors.Is(err, domain.ErrUserNotFound) {
-// 		s.logger.Error("failed to check existing user", zap.Error(err))
-// 		return nil, err
-// 	}
-// 	if existing != nil {
-// 		return nil, domain.ErrUserAlreadyExists
-// 	}
+	if err := s.repo.Create(ctx, user); err != nil {
+		s.logger.Error("failed to create user", zap.Error(err))
+		return nil, err
+	}
 
-// 	// Hash the password.
-// 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.DefaultCost)
-// 	if err != nil {
-// 		s.logger.Error("failed to hash password", zap.Error(err))
-// 		return nil, err
-// 	}
+	s.logger.Info("user created", zap.String("user_id", user.ID.String()))
 
-// 	user := domain.NewUser(input.Email, input.FullName, string(hashedPassword))
+	return toUserOutput(user), nil
+}
 
-// 	if input.Role != "" {
-// 		user.Role = domain.Role(input.Role)
-// 	}
+func (s *userService) GetUser(ctx context.Context, id uuid.UUID) (*UserOutput, error) {
+	user, err := s.repo.GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	return toUserOutput(user), nil
+}
 
-// 	if err := s.repo.Create(ctx, user); err != nil {
-// 		s.logger.Error("failed to create user", zap.Error(err))
-// 		return nil, err
-// 	}
-
-// 	s.logger.Info("user created", zap.String("user_id", user.ID.String()))
-
-// 	return toUserOutput(user), nil
-// }
-
-// func (s *userService) GetUser(ctx context.Context, id uuid.UUID) (*UserOutput, error) {
-// 	user, err := s.repo.GetByID(ctx, id)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	return toUserOutput(user), nil
-// }
+func (s *userService) Authenticate(ctx context.Context, email, password string) (*UserOutput, error) {
+	user, err := s.repo.GetByEmail(ctx, email)
+	if err != nil {
+		if errors.Is(err, domain.ErrUserNotFound) {
+			return nil, domain.ErrInvalidCredentials
+		}
+		return nil, err
+	}
+	if !user.IsActive {
+		return nil, domain.ErrInvalidCredentials
+	}
+	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password)); err != nil {
+		return nil, domain.ErrInvalidCredentials
+	}
+	return toUserOutput(user), nil
+}
 
 // func (s *userService) GetUserByEmail(ctx context.Context, email string) (*domain.User, error) {
 // 	return s.repo.GetByEmail(ctx, email)
@@ -155,13 +152,13 @@ package application
 // 	return outputs, total, nil
 // }
 
-// // toUserOutput converts a domain User to the output DTO.
-// func toUserOutput(user *domain.User) *UserOutput {
-// 	return &UserOutput{
-// 		ID:       user.ID,
-// 		Email:    user.Email,
-// 		FullName: user.FullName,
-// 		Role:     user.Role,
-// 		IsActive: user.IsActive,
-// 	}
-// }
+// toUserOutput converts a domain User to the output DTO.
+func toUserOutput(user *domain.User) *UserOutput {
+	return &UserOutput{
+		ID:       user.ID,
+		Email:    user.Email,
+		FullName: user.FullName,
+		Role:     user.Role,
+		IsActive: user.IsActive,
+	}
+}

@@ -1,6 +1,13 @@
 app:
   environment: "local"
 
+logger:
+  level: debug
+  format: console
+  output: both
+  file:
+    filename: ./logs/logify.log
+
 # Native ClickHouse client (see internal/config/database.go — required for server DI)
 databases:
   clickhouse:

@@ -1,9 +1,11 @@
 package server
 
 import (
+	"github.com/gin-contrib/cors"
+	"github.com/gin-contrib/requestid"
 	"github.com/gin-gonic/gin"
 	"github.com/indalyadav56/logify/apps/backend/internal/di"
-	// your handlers
+	"github.com/indalyadav56/logify/apps/backend/pkg/logger"
 )
 
 // Router is responsible for setting up all routes
@@ -18,10 +20,9 @@ func NewRouter(container *di.ServerContainer) *Router {
 // Setup configures all routes and middlewares on the Gin engine
 func (r *Router) Setup(engine *gin.Engine) error {
 	// Global middlewares
-	engine.Use(gin.Recovery())
-	// engine.Use(middleware.CORS())
-	// engine.Use(middleware.RequestID())
-	// engine.Use(middleware.Logging())
+	engine.Use(cors.Default())
+	engine.Use(requestid.New())
+	engine.Use(logger.LoggerMiddleware(r.container.Logger))
 
 	// Health checks
 	engine.GET("/healthz", func(c *gin.Context) {

@@ -3,9 +3,11 @@ package di
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	ch "github.com/ClickHouse/clickhouse-go/v2"
 	"github.com/gin-gonic/gin"
+	gojwt "github.com/golang-jwt/jwt/v5"
 	"github.com/indalyadav56/logify/apps/backend/internal/auth/application"
 	"github.com/indalyadav56/logify/apps/backend/internal/config"
 	processorApp "github.com/indalyadav56/logify/apps/backend/internal/processor/application"
@@ -13,6 +15,9 @@ import (
 	searchCH "github.com/indalyadav56/logify/apps/backend/internal/search/infrastructure/clickhouse"
 	searchHTTP "github.com/indalyadav56/logify/apps/backend/internal/search/transport/http"
 	pkgClickhouse "github.com/indalyadav56/logify/apps/backend/pkg/clickhouse"
+	jwtpkg "github.com/indalyadav56/logify/apps/backend/pkg/jwt"
+	"github.com/indalyadav56/logify/apps/backend/pkg/postgres"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/segmentio/kafka-go"
 	"go.uber.org/zap"
 
@@ -24,10 +29,10 @@ import (
 	// Auth
 	authService "github.com/indalyadav56/logify/apps/backend/internal/auth/application"
 	authRepo "github.com/indalyadav56/logify/apps/backend/internal/auth/infrastructure/postgres"
-	authUsers "github.com/indalyadav56/logify/apps/backend/internal/auth/infrastructure/users"
 	authHTTP "github.com/indalyadav56/logify/apps/backend/internal/auth/transport/http"
 
 	// User
+	userApplication "github.com/indalyadav56/logify/apps/backend/internal/user/application"
 	userDomain "github.com/indalyadav56/logify/apps/backend/internal/user/domain"
 	userPG "github.com/indalyadav56/logify/apps/backend/internal/user/infrastructure/postgres"
 	userHTTP "github.com/indalyadav56/logify/apps/backend/internal/user/transport/http"
@@ -39,13 +44,23 @@ import (
 
 	// Notification
 	notificationHTTP "github.com/indalyadav56/logify/apps/backend/internal/notification/transport/http"
+
+	// Workspace
+	workspaceApp "github.com/indalyadav56/logify/apps/backend/internal/workspace/application"
+	workspacePG "github.com/indalyadav56/logify/apps/backend/internal/workspace/infrastructure/postgres"
+	workspaceHTTP "github.com/indalyadav56/logify/apps/backend/internal/workspace/transport/http"
 )
 
 type ServerContainer struct {
-	*Shared
+	Config     *config.Config
+	Logger     *zap.Logger
+	postgresDB *pgxpool.Pool
 
 	KafkaWriter  *kafka.Writer
 	ClickHouseDB ch.Conn
+
+	// JWT helper, shared by token issuance and HTTP auth middleware.
+	JWT *jwtpkg.JWT
 
 	// Auth
 	AuthRepo    *authRepo.RefreshTokenRepository
@@ -63,7 +78,8 @@ type ServerContainer struct {
 	// Processor bounded context (read-only reference, not started here)
 	ProcessorService *processorApp.ProcessorService
 
-	// User bounded context
+	// User
+	UserService           userApplication.UserService
 	UserRepo              userDomain.UserRepository
 	UserManagementHandler userHTTP.UserManagementHandler
 
@@ -73,15 +89,24 @@ type ServerContainer struct {
 
 	// Notification bounded context
 	NotificationDashboardHandler notificationHTTP.NotificationDashboardHandler
+
+	// Workspace bounded context
+	WorkspaceService workspaceApp.WorkspaceService
+	WorkspaceHandler *workspaceHTTP.WorkspaceHandler
 }
 
 func NewServerContainer(ctx context.Context, cfg *config.Config, log *zap.Logger) (*ServerContainer, error) {
-	shared, err := NewShared(ctx, cfg, log)
-	if err != nil {
-		return nil, err
-	}
+	c := &ServerContainer{Config: cfg, Logger: log}
 
-	c := &ServerContainer{Shared: shared}
+	pgCfg, err := cfg.PostgresPoolConfig(config.DefaultPostgresConn)
+	if err != nil {
+		return nil, fmt.Errorf("postgres config: %w", err)
+	}
+	pool, err := postgres.New(ctx, pgCfg)
+	if err != nil {
+		return nil, fmt.Errorf("postgres: %w", err)
+	}
+	c.postgresDB = pool
 
 	c.KafkaWriter = &kafka.Writer{
 		Addr:     kafka.TCP(c.Config.Kafka.Brokers...),
@@ -106,6 +131,7 @@ func NewServerContainer(ctx context.Context, cfg *config.Config, log *zap.Logger
 	}
 	c.initRole()
 	c.initNotification()
+	c.initWorkspace()
 
 	return c, nil
 }
@@ -122,29 +148,39 @@ func (c *ServerContainer) Close() error {
 			errs = append(errs, err)
 		}
 	}
-	if err := c.Shared.Close(); err != nil {
-		errs = append(errs, err)
+	if c.postgresDB != nil {
+		c.postgresDB.Close()
 	}
 	return errors.Join(errs...)
 }
 
 func (c *ServerContainer) initIngest() {
-	producer := ingestKafka.NewLogProducer(c.KafkaWriter, c.Shared.Logger)
+	producer := ingestKafka.NewLogProducer(c.KafkaWriter, c.Logger)
 	c.IngestService = ingestApp.NewIngestService(producer)
 	c.IngestHandler = ingestHTTP.NewIngestHandler(c.IngestService)
 }
 
 func (c *ServerContainer) initSearch() {
-	repo := searchCH.NewSearchRepository(c.ClickHouseDB, c.Shared.Logger)
-	c.SearchService = searchApp.NewSearchService(repo, c.Shared.Logger)
-	c.SearchHandler = searchHTTP.NewHandler(c.SearchService, c.Shared.Logger)
+	repo := searchCH.NewSearchRepository(c.ClickHouseDB, c.Logger)
+	c.SearchService = searchApp.NewSearchService(repo, c.Logger)
+	c.SearchHandler = searchHTTP.NewHandler(c.SearchService, c.Logger)
 }
 
 func (c *ServerContainer) initAuth() error {
-	c.AuthRepo = authRepo.NewRefreshTokenRepository(c.Shared.PostgresDB())
+	if c.Config.Auth.JWT.Secret == "" {
+		return errors.New("auth: jwt secret is required (set auth.jwt.secret)")
+	}
+
+	c.JWT = jwtpkg.New(jwtpkg.JWTConfig{
+		SecretKey:        []byte(c.Config.Auth.JWT.Secret),
+		SigningAlgorithm: gojwt.SigningMethodHS256,
+		TokenDuration:    c.Config.Auth.JWT.AccessTokenTTL,
+	})
+
+	c.AuthRepo = authRepo.NewRefreshTokenRepository(c.postgresDB)
 
 	issuer, err := authService.NewTokenIssuer(authService.TokenIssuerConfig{
-		Secret:          c.Config.Auth.JWT.Secret,
+		JWT:             c.JWT,
 		Issuer:          c.Config.Auth.JWT.Issuer,
 		AccessTokenTTL:  c.Config.Auth.JWT.AccessTokenTTL,
 		RefreshTokenTTL: c.Config.Auth.JWT.RefreshTokenTTL,
@@ -153,20 +189,20 @@ func (c *ServerContainer) initAuth() error {
 		return err
 	}
 
-	userPort := authUsers.NewAdapter(c.UserRepo, 0)
-	c.AuthService = authService.NewAuthService(c.Shared.Logger, issuer, c.AuthRepo, userPort)
+	c.AuthService = authService.NewAuthService(c.Logger, issuer, c.AuthRepo, c.UserService)
 	c.AuthHandler = authHTTP.NewAuthHandler(c.AuthService)
 	return nil
 }
 
 func (c *ServerContainer) initUser() {
-	c.UserRepo = userPG.NewUserRepository(c.Shared.PostgresDB())
+	c.UserRepo = userPG.NewUserRepository(c.postgresDB)
+	c.UserService = userApplication.NewUserService(c.UserRepo, c.Logger)
 	c.UserManagementHandler = userHTTP.NewUserManagementHandler()
 }
 
 func (c *ServerContainer) initRole() {
-	repo := rolePG.NewRoleRepository(c.Shared.PostgresDB())
-	c.RoleService = roleApp.NewRoleService(repo, c.Shared.Logger)
+	repo := rolePG.NewRoleRepository(c.postgresDB)
+	c.RoleService = roleApp.NewRoleService(repo, c.Logger)
 	c.RoleHandler = roleHTTP.NewRoleHandler(c.RoleService)
 }
 
@@ -174,8 +210,15 @@ func (c *ServerContainer) initNotification() {
 	c.NotificationDashboardHandler = notificationHTTP.NewNotificationDashboardHandler()
 }
 
+func (c *ServerContainer) initWorkspace() {
+	repo := workspacePG.NewWorkspaceRepository(c.postgresDB)
+	c.WorkspaceService = workspaceApp.NewWorkspaceService(repo, c.Logger)
+	c.WorkspaceHandler = workspaceHTTP.NewWorkspaceHandler(c.WorkspaceService)
+}
+
 func (c *ServerContainer) RegisterAllRoutes(e *gin.Engine) {
 	authHTTP.RegisterRoutes(&e.RouterGroup, c.AuthHandler)
 	ingestHTTP.RegisterRoutes(&e.RouterGroup, c.IngestHandler)
 	searchHTTP.RegisterRoutes(&e.RouterGroup, c.SearchHandler)
+	workspaceHTTP.RegisterRoutes(&e.RouterGroup, c.WorkspaceHandler, c.JWT)
 }

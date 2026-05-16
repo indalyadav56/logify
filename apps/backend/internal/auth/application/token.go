@@ -7,19 +7,18 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 
-	"github.com/indalyadav56/logify/apps/backend/pkg/httpserver/middleware"
+	jwtpkg "github.com/indalyadav56/logify/apps/backend/pkg/jwt"
 )
 
-// TokenIssuer mints JWT access tokens and opaque refresh tokens.
+// TokenIssuer mints JWT access tokens (via pkg/jwt) and opaque refresh tokens.
 //
-// Access tokens are signed JWTs (HS256) that carry the user id, email, and
-// role. Refresh tokens are opaque random strings — the server only stores
-// their SHA-256 hash (see domain.NewRefreshToken).
+// Access tokens are signed JWTs (HS256) carrying the user id, email, and role.
+// Refresh tokens are opaque random strings — only their SHA-256 hash is
+// persisted (see domain.NewRefreshToken).
 type TokenIssuer struct {
-	secret          []byte
+	jwt             *jwtpkg.JWT
 	issuer          string
 	accessTokenTTL  time.Duration
 	refreshTokenTTL time.Duration
@@ -27,8 +26,12 @@ type TokenIssuer struct {
 }
 
 // TokenIssuerConfig holds the parameters required to construct a TokenIssuer.
+//
+// JWT is the shared signing helper. Its TokenDuration should equal
+// AccessTokenTTL (the same value should be passed for both); the issuer uses
+// AccessTokenTTL only to compute the response's ExpiresAt timestamp.
 type TokenIssuerConfig struct {
-	Secret          string
+	JWT             *jwtpkg.JWT
 	Issuer          string
 	AccessTokenTTL  time.Duration
 	RefreshTokenTTL time.Duration
@@ -36,8 +39,8 @@ type TokenIssuerConfig struct {
 
 // NewTokenIssuer validates the config and returns a TokenIssuer ready to use.
 func NewTokenIssuer(cfg TokenIssuerConfig) (*TokenIssuer, error) {
-	if cfg.Secret == "" {
-		return nil, errors.New("auth: jwt secret is required")
+	if cfg.JWT == nil {
+		return nil, errors.New("auth: jwt helper is required")
 	}
 	if cfg.Issuer == "" {
 		cfg.Issuer = "logify-backend"
@@ -49,7 +52,7 @@ func NewTokenIssuer(cfg TokenIssuerConfig) (*TokenIssuer, error) {
 		cfg.RefreshTokenTTL = 30 * 24 * time.Hour
 	}
 	return &TokenIssuer{
-		secret:          []byte(cfg.Secret),
+		jwt:             cfg.JWT,
 		issuer:          cfg.Issuer,
 		accessTokenTTL:  cfg.AccessTokenTTL,
 		refreshTokenTTL: cfg.RefreshTokenTTL,
@@ -68,20 +71,19 @@ func (t *TokenIssuer) Issue(userID uuid.UUID, email, role string) (out *TokenOut
 	now := t.now().UTC()
 	accessExp := now.Add(t.accessTokenTTL)
 
-	claims := &middleware.Claims{
-		UserID: userID.String(),
-		Email:  email,
-		Role:   role,
-		RegisteredClaims: jwt.RegisteredClaims{
-			Issuer:    t.issuer,
-			Subject:   userID.String(),
-			IssuedAt:  jwt.NewNumericDate(now),
-			ExpiresAt: jwt.NewNumericDate(accessExp),
-			ID:        uuid.NewString(),
-		},
+	// Note: pkg/jwt.GenerateToken sets "exp" itself based on its configured
+	// TokenDuration; we don't pass it in the map.
+	claims := map[string]interface{}{
+		"user_id": userID.String(),
+		"email":   email,
+		"role":    role,
+		"iss":     t.issuer,
+		"sub":     userID.String(),
+		"iat":     now.Unix(),
+		"jti":     uuid.NewString(),
 	}
 
-	accessToken, err := jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString(t.secret)
+	accessToken, err := t.jwt.GenerateToken(claims)
 	if err != nil {
 		return nil, "", fmt.Errorf("sign access token: %w", err)
 	}

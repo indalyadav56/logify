@@ -1,25 +1,16 @@
 package middleware
 
 import (
-	"errors"
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v5"
 
+	jwtpkg "github.com/indalyadav56/logify/apps/backend/pkg/jwt"
 	"github.com/indalyadav56/logify/apps/backend/pkg/response"
 )
 
-// Claims represents the JWT claims structure.
-type Claims struct {
-	UserID string `json:"user_id"`
-	Email  string `json:"email"`
-	Role   string `json:"role"`
-	jwt.RegisteredClaims
-}
-
 // AuthMiddleware returns a Gin middleware that validates JWT tokens.
-func AuthMiddleware(jwtSecret string) gin.HandlerFunc {
+func AuthMiddleware(jwt *jwtpkg.JWT) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
@@ -35,23 +26,33 @@ func AuthMiddleware(jwtSecret string) gin.HandlerFunc {
 
 		tokenString := parts[1]
 
-		claims := &Claims{}
-		token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
-			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-				return nil, errors.New("unexpected signing method")
-			}
-			return []byte(jwtSecret), nil
-		})
+		token, err := jwt.ValidateToken(tokenString)
+		if err != nil {
+			response.Unauthorized(c, "Invalid or expired token")
+			return
+		}
 
-		if err != nil || !token.Valid {
+		claims, err := jwt.GetClaims(token)
+		if err != nil {
+			response.Unauthorized(c, "Invalid or expired token")
+			return
+		}
+
+		userID, ok := claims["user_id"]
+		if !ok {
+			response.Unauthorized(c, "Invalid or expired token")
+			return
+		}
+
+		userRole, ok := claims["role"]
+		if !ok {
 			response.Unauthorized(c, "Invalid or expired token")
 			return
 		}
 
 		// Store user information in the context for downstream handlers.
-		c.Set("user_id", claims.UserID)
-		c.Set("user_email", claims.Email)
-		c.Set("user_role", claims.Role)
+		c.Set("user_id", userID)
+		c.Set("user_role", userRole)
 
 		c.Next()
 	}

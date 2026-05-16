@@ -8,18 +8,42 @@ import (
 	"time"
 
 	"github.com/spf13/viper"
+
+	"github.com/indalyadav56/logify/apps/backend/pkg/logger"
 )
 
 type Config struct {
 	Server       ServerConfig            `mapstructure:"server"`
 	Databases    map[string]DatabaseSpec `mapstructure:"databases"`
 	Postgres     PostgresConfig          `mapstructure:"postgres"`
-	Logger       LoggerConfig            `mapstructure:"logger"`
+	Logger       logger.Config           `mapstructure:"logger"`
 	Admin        AdminConfig             `mapstructure:"admin"`
 	Notification NotificationConfig      `mapstructure:"notification"`
-	Kafka        KafkaConfig             `mapstructure:"kafka"`
-	Auth         AuthConfig              `mapstructure:"auth"`
-	AppEnv       string                  `mapstructure:"app_env"`
+	Kafka            KafkaConfig            `mapstructure:"kafka"`
+	Auth             AuthConfig             `mapstructure:"auth"`
+	Ollama           OllamaConfig           `mapstructure:"ollama"`
+	ClickHouseWorker ClickHouseWorkerConfig `mapstructure:"clickhouse_worker"`
+	EmbeddingWorker  EmbeddingWorkerConfig  `mapstructure:"embedding_worker"`
+	AppEnv           string                 `mapstructure:"app_env"`
+}
+
+// ClickHouseWorkerConfig configures the Kafka → ClickHouse log ingestion worker.
+type ClickHouseWorkerConfig struct {
+	KafkaTopic   string `mapstructure:"kafka_topic"`
+	KafkaGroupID string `mapstructure:"kafka_group_id"`
+}
+
+// OllamaConfig configures the local Ollama embedding API.
+type OllamaConfig struct {
+	BaseURL string        `mapstructure:"base_url"`
+	Model   string        `mapstructure:"model"`
+	Timeout time.Duration `mapstructure:"timeout"`
+}
+
+// EmbeddingWorkerConfig configures the Kafka log-embedding consumer.
+type EmbeddingWorkerConfig struct {
+	KafkaTopic   string `mapstructure:"kafka_topic"`
+	KafkaGroupID string `mapstructure:"kafka_group_id"`
 }
 
 type AuthConfig struct {
@@ -43,10 +67,6 @@ type ServerConfig struct {
 	ReadTimeout  time.Duration `mapstructure:"read_timeout"`
 	WriteTimeout time.Duration `mapstructure:"write_timeout"`
 	IdleTimeout  time.Duration `mapstructure:"idle_timeout"`
-}
-
-type LoggerConfig struct {
-	Level string `mapstructure:"level"`
 }
 
 type NotificationConfig struct {

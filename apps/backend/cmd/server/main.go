@@ -26,7 +26,22 @@ func run() error {
 	}
 
 	// logging
-	log, err := logger.New()
+	// log, err := logger.New(cfg.Logger)
+	// if err != nil {
+	// 	return fmt.Errorf("init logger: %w", err)
+	// }
+	log, err := logger.New(logger.Config{
+		Service:     "auth-service",
+		Environment: "dev",
+		Level:       "debug",
+
+		FileEnabled: true,
+		FilePath:    "logs/app.log",
+		MaxSize:     100,
+		MaxBackups:  5,
+		MaxAge:      30,
+		Compress:    true,
+	})
 	if err != nil {
 		return fmt.Errorf("init logger: %w", err)
 	}
