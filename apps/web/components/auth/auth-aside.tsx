@@ -5,19 +5,19 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 
 export function AuthAside() {
   return (
-    <aside className="relative hidden overflow-hidden bg-[oklch(0.16_0.008_44)] lg:flex lg:flex-col">
+    <aside className="relative hidden overflow-hidden bg-[oklch(0.14_0.03_252)] lg:flex lg:flex-col">
       <BackgroundFx />
 
       <div className="relative z-10 flex flex-1 flex-col justify-between p-12">
         <div>
           <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11.5px] text-white/70 backdrop-blur">
-            <span className="size-1.5 rounded-full bg-emerald-400" />
+            <span className="size-1.5 rounded-full bg-sky-400" />
             Trusted by 4,200+ engineering teams
           </span>
 
           <h2 className="mt-6 max-w-md text-balance text-3xl font-semibold tracking-tight text-white">
             Observability that{" "}
-            <span className="bg-gradient-to-br from-emerald-300 to-teal-400 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-br from-sky-300 to-cyan-400 bg-clip-text text-transparent">
               answers
             </span>{" "}
             before you ask.
@@ -47,7 +47,7 @@ function FeatureBullets() {
     <ul className="mt-12 space-y-2.5 text-[13.5px] text-white/75">
       {items.map((t) => (
         <li key={t} className="flex items-start gap-2.5">
-          <span className="mt-2 inline-block size-1.5 shrink-0 rounded-full bg-emerald-400" />
+          <span className="mt-2 inline-block size-1.5 shrink-0 rounded-full bg-sky-400" />
           <span>{t}</span>
         </li>
       ))}
@@ -66,7 +66,7 @@ function Quote() {
       </blockquote>
       <figcaption className="mt-4 flex items-center gap-3">
         <Avatar className="size-8">
-          <AvatarFallback className="bg-emerald-500/20 text-[10.5px] font-semibold text-emerald-200">
+          <AvatarFallback className="bg-sky-500/20 text-[10.5px] font-semibold text-sky-200">
             SM
           </AvatarFallback>
         </Avatar>
@@ -94,7 +94,7 @@ function BackgroundFx() {
           backgroundSize: "44px 44px",
         }}
       />
-      <div className="absolute -top-40 left-[-10%] h-[420px] w-[520px] rounded-full bg-emerald-500/30 blur-[120px]" />
+      <div className="absolute -top-40 left-[-10%] h-[420px] w-[520px] rounded-full bg-sky-500/25 blur-[120px]" />
       <div className="absolute top-1/2 right-[-12%] h-[320px] w-[420px] rounded-full bg-cyan-400/15 blur-[120px]" />
     </div>
   )

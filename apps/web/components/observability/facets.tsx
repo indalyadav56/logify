@@ -74,15 +74,15 @@ export function Facets({
   return (
     <aside
       className={cn(
-        "flex min-h-0 w-full flex-col border-r bg-sidebar/30 text-sm",
+        "flex min-h-0 w-full flex-col border-r border-sidebar-border bg-sidebar font-sans text-sm",
         className
       )}
     >
-      <div className="flex h-11 shrink-0 items-center justify-between border-b border-border/60 px-3">
-        <h3 className="flex items-center gap-1.5 text-[13px] font-semibold tracking-tight">
+      <div className="flex h-14 shrink-0 items-center justify-between border-b border-border/60 px-4">
+        <h3 className="flex items-center gap-2 text-[13px] font-semibold tracking-tight text-sidebar-foreground">
           {title}
           {totalSelected > 0 ? (
-            <span className="inline-flex h-[18px] items-center rounded bg-primary px-1.5 font-mono text-[11px] font-semibold text-primary-foreground tabular-nums">
+            <span className="tabular-nums-lining inline-flex h-[18px] min-w-5 items-center justify-center rounded-md bg-primary px-1.5 text-[11px] font-semibold text-primary-foreground">
               {totalSelected}
             </span>
           ) : null}
@@ -99,14 +99,14 @@ export function Facets({
         ) : null}
       </div>
 
-      <div className="shrink-0 border-b border-border/60 px-2 py-2">
+      <div className="shrink-0 border-b border-border/50 px-4 py-3">
         <div className="relative">
-          <SearchIcon className="absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
+          <SearchIcon className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search facets"
-            className="h-8 pl-8 text-[12.5px]"
+            className="h-9 bg-background pl-8 text-[12.5px]"
           />
           {search ? (
             <Button
@@ -157,91 +157,98 @@ function FacetGroupBlock({
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="flex w-full items-center gap-1.5 px-3 py-2 text-left transition-colors hover:bg-muted/40"
+        className="flex w-full items-center gap-2 px-4 py-3 text-left transition-colors duration-150 ease-out hover:bg-sidebar-accent/50"
       >
         {open ? (
           <ChevronDownIcon className="size-3.5 text-muted-foreground" />
         ) : (
           <ChevronRightIcon className="size-3.5 text-muted-foreground" />
         )}
-        <span className="text-[12.5px] font-semibold tracking-tight">
+        <span className="text-[12.5px] font-semibold tracking-tight text-sidebar-foreground">
           {group.label}
         </span>
-        <span className="ml-auto font-mono text-[11px] font-medium text-muted-foreground tabular-nums">
+        <span className="tabular-nums-lining ml-auto text-[11px] font-medium text-muted-foreground">
           {selected.size > 0 ? `${selected.size}/` : ""}
           {formatCount(total)}
         </span>
       </button>
 
-      {open ? (
-        <div className="px-1.5 pb-2">
-          <div className="flex flex-col gap-px">
-            {visible.map((v) => {
-              const isSelected = selected.has(v.value)
-              return (
-                <button
-                  key={v.value}
-                  type="button"
-                  onClick={() => onToggle(v.value)}
-                  className={cn(
-                    "group/facet flex h-7 items-center gap-2 rounded px-2 text-left text-[12.5px] transition-colors",
-                    isSelected
-                      ? "bg-primary/10 text-foreground"
-                      : "text-foreground/85 hover:bg-muted/60 hover:text-foreground"
-                  )}
-                >
-                  <span
+      <div
+        className={cn(
+          "grid transition-[grid-template-rows] duration-200 ease-out motion-reduce:transition-none",
+          open ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+        )}
+      >
+        <div className="min-h-0 overflow-hidden">
+          <div className="px-3 pb-3">
+            <div className="flex flex-col gap-0.5">
+              {visible.map((v) => {
+                const isSelected = selected.has(v.value)
+                return (
+                  <button
+                    key={v.value}
+                    type="button"
+                    onClick={() => onToggle(v.value)}
                     className={cn(
-                      "flex size-3.5 shrink-0 items-center justify-center rounded-[3px] border transition-colors",
+                      "group/facet flex h-9 items-center gap-2.5 rounded-md px-2.5 text-left text-[12.5px] transition-colors duration-150 ease-out",
                       isSelected
-                        ? "border-primary bg-primary text-primary-foreground"
-                        : "border-input bg-background group-hover/facet:border-foreground/50"
+                        ? "bg-primary/12 text-foreground shadow-[inset_0_0_0_1px_color-mix(in_oklab,var(--primary)_22%,transparent)]"
+                        : "text-foreground/90 hover:bg-muted/70 hover:text-foreground"
                     )}
                   >
-                    {isSelected ? (
-                      <svg
-                        viewBox="0 0 12 12"
-                        className="size-2.5"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth={3}
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <polyline points="2,6 5,9 10,3" />
-                      </svg>
-                    ) : null}
-                  </span>
-                  {v.color ? (
                     <span
-                      className="size-2 shrink-0 rounded-full"
-                      style={{ backgroundColor: v.color }}
-                    />
-                  ) : null}
-                  <span className="flex-1 truncate font-mono text-[12px]">
-                    {v.value}
-                  </span>
-                  <span className="font-mono text-[11px] text-muted-foreground tabular-nums">
-                    {formatCount(v.count)}
-                  </span>
-                </button>
-              )
-            })}
+                      className={cn(
+                        "flex size-3.5 shrink-0 items-center justify-center rounded-[3px] border transition-colors",
+                        isSelected
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-input bg-background group-hover/facet:border-foreground/50"
+                      )}
+                    >
+                      {isSelected ? (
+                        <svg
+                          viewBox="0 0 12 12"
+                          className="size-2.5"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth={3}
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <polyline points="2,6 5,9 10,3" />
+                        </svg>
+                      ) : null}
+                    </span>
+                    {v.color ? (
+                      <span
+                        className="size-2 shrink-0 rounded-full"
+                        style={{ backgroundColor: v.color }}
+                      />
+                    ) : null}
+                    <span className="flex-1 truncate text-[13px] tracking-tight text-foreground/90">
+                      {v.value}
+                    </span>
+                    <span className="tabular-nums-lining text-[11px] text-muted-foreground">
+                      {formatCount(v.count)}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+            {hasMore ? (
+              <Button
+                variant="ghost"
+                size="xs"
+                onClick={() => setShowAll((s) => !s)}
+                className="mt-1.5 h-9 w-full justify-start rounded-md px-2.5 text-[12px] text-muted-foreground transition-colors duration-150 hover:text-foreground"
+              >
+                {showAll
+                  ? "Show less"
+                  : `Show ${group.values.length - 6} more`}
+              </Button>
+            ) : null}
           </div>
-          {hasMore ? (
-            <Button
-              variant="ghost"
-              size="xs"
-              onClick={() => setShowAll((s) => !s)}
-              className="mt-1 h-7 w-full justify-start px-2 text-[12px] text-muted-foreground hover:text-foreground"
-            >
-              {showAll
-                ? "Show less"
-                : `Show ${group.values.length - 6} more`}
-            </Button>
-          ) : null}
         </div>
-      ) : null}
+      </div>
     </div>
   )
 }

@@ -1,47 +1,28 @@
 "use client"
 
 import * as React from "react"
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  ResponsiveContainer,
-  Tooltip as RechartsTooltip,
-  XAxis,
-  YAxis,
-} from "recharts"
-import {
-  ArrowUpRightIcon,
-  AtomIcon,
-  BadgeAlertIcon,
-  ChevronDownIcon,
-  ColumnsIcon,
-  DownloadIcon,
-  EyeIcon,
-  EyeOffIcon,
-  HelpCircleIcon,
-  PinIcon,
-  RefreshCwIcon,
-  SaveIcon,
-  Settings2Icon,
-  SparklesIcon,
-  WrapTextIcon,
-} from "lucide-react"
+import { DownloadIcon, WrapTextIcon, CompassIcon, ArrowLeftIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+import { SidebarTrigger } from "@/components/ui/sidebar"
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import { QueryBar } from "@/components/observability/query-bar"
 import { LogDetail } from "@/components/observability/log-detail"
+import { LogColumnsPicker } from "@/components/observability/log-columns-picker"
+import { LogTable } from "@/components/observability/log-table"
+import { TimeseriesChart } from "@/components/observability/timeseries-chart"
+import {
+  DEFAULT_VISIBLE_COLUMN_IDS,
+  discoverLogColumns,
+  mergeColumnOrder,
+  orderVisibleColumns,
+  type LogColumnDef,
+} from "@/lib/log-columns"
 import {
   type LogEntry,
   type LogLevel,
@@ -49,99 +30,95 @@ import {
 import { useLogsStore } from "@/lib/logs-store"
 import { useLogsData } from "@/lib/logs-data-context"
 
-const LEVEL_COLOR: Record<LogLevel, string> = {
-  trace: "#71717a",
-  debug: "#0ea5e9",
-  info: "#10b981",
-  warn: "#f59e0b",
-  error: "#ef4444",
-  fatal: "#d946ef",
+const RANGE_LABELS: Record<string, string> = {
+  "5m": "Last 5 minutes",
+  "15m": "Last 15 minutes",
+  "30m": "Last 30 minutes",
+  "1h": "Last 1 hour",
+  "6h": "Last 6 hours",
+  "24h": "Last 24 hours",
+  "7d": "Last 7 days",
+  "30d": "Last 30 days",
 }
-
-const LEVEL_BAR: Record<LogLevel, string> = {
-  trace: "bg-zinc-500",
-  debug: "bg-sky-500",
-  info: "bg-emerald-500",
-  warn: "bg-amber-500",
-  error: "bg-rose-500",
-  fatal: "bg-fuchsia-500",
-}
-
-const LEVEL_PILL: Record<LogLevel, string> = {
-  trace:
-    "border-zinc-500/40 bg-zinc-500/15 text-zinc-700 dark:text-zinc-200",
-  debug: "border-sky-500/40 bg-sky-500/15 text-sky-700 dark:text-sky-200",
-  info: "border-emerald-500/40 bg-emerald-500/15 text-emerald-700 dark:text-emerald-200",
-  warn: "border-amber-500/45 bg-amber-500/20 text-amber-800 dark:text-amber-200",
-  error:
-    "border-rose-500/45 bg-rose-500/20 text-rose-700 dark:text-rose-200",
-  fatal:
-    "border-fuchsia-500/45 bg-fuchsia-500/20 text-fuchsia-700 dark:text-fuchsia-200",
-}
-
-const LEVELS: LogLevel[] = ["trace", "debug", "info", "warn", "error", "fatal"]
 
 export default function LogsPage() {
   const {
     query,
     setQuery,
-    selection,
     range,
     setRange,
-    paused,
-    setPaused,
+    selection,
+    appliedQuery,
+    appliedSelection,
+    applyFilters,
   } = useLogsStore()
 
   const {
     logs: sourceLogs,
+    totalHits,
+    hasMoreOlder,
+    hasMoreNewer,
     loading: logsLoading,
+    chartLogs,
     refetch,
-    dataSource,
+    loadOlder,
+    loadNewer,
+    contextLog,
+    setContextLog,
   } = useLogsData()
 
   const [selected, setSelected] = React.useState<LogEntry | null>(null)
   const [chartHidden, setChartHidden] = React.useState(false)
-  const [wrap, setWrap] = React.useState(false)
+  const [wrap, setWrap] = React.useState(true)
+  const [zoomRange, setZoomRange] = React.useState<{ start: number; end: number } | null>(null)
+  const [visibleColumnIds, setVisibleColumnIds] = React.useState<string[]>(
+    DEFAULT_VISIBLE_COLUMN_IDS
+  )
+  const [columnOrder, setColumnOrder] = React.useState<string[]>(
+    DEFAULT_VISIBLE_COLUMN_IDS
+  )
+
+  const allColumns = React.useMemo(
+    () => discoverLogColumns(sourceLogs),
+    [sourceLogs]
+  )
+
+  const visibleColumns = React.useMemo(
+    () => orderVisibleColumns(allColumns, visibleColumnIds),
+    [allColumns, visibleColumnIds]
+  )
+
+  React.useEffect(() => {
+    setColumnOrder((prev) => mergeColumnOrder(prev, allColumns))
+    setVisibleColumnIds((prev) => {
+      const valid = new Set(allColumns.map((c) => c.id))
+      const next = prev.filter((id) => valid.has(id))
+      return next.length > 0 ? next : DEFAULT_VISIBLE_COLUMN_IDS
+    })
+  }, [allColumns])
 
   const filtered = React.useMemo(() => {
-    const q = query.trim().toLowerCase()
-    return sourceLogs.filter((log) => {
-      if (q) {
-        const matches =
-          log.message.toLowerCase().includes(q) ||
-          log.service.toLowerCase().includes(q) ||
-          log.host.toLowerCase().includes(q) ||
-          log.traceId.toLowerCase().includes(q)
-        if (!matches) return false
-      }
-      const sel = selection
-      if (sel.level && sel.level.size > 0 && !sel.level.has(log.level))
-        return false
-      if (sel.service && sel.service.size > 0 && !sel.service.has(log.service))
-        return false
-      if (sel.host && sel.host.size > 0 && !sel.host.has(log.host)) return false
-      if (
-        sel.environment &&
-        sel.environment.size > 0 &&
-        !sel.environment.has(log.environment)
-      )
-        return false
-      const pid = String(log.attributes.project_id ?? "")
-      if (sel.project_id && sel.project_id.size > 0) {
-        if (!pid || !sel.project_id.has(pid)) return false
-      }
-      const regionAttr = String(log.attributes.region ?? "")
-      if (
-        sel.api_region &&
-        sel.api_region.size > 0 &&
-        (!regionAttr || !sel.api_region.has(regionAttr))
-      )
-        return false
-      return true
-    })
-  }, [query, selection, sourceLogs])
+    // Zoom range takes priority if active, otherwise use all sourceLogs
+    let result = sourceLogs
+    if (zoomRange) {
+      result = result.filter((l) => {
+        const t = new Date(l.timestamp).getTime()
+        return t >= zoomRange.start && t < zoomRange.end
+      })
+    }
+    return result
+  }, [sourceLogs, zoomRange])
 
-  const histogram = React.useMemo(() => buildHistogram(filtered), [filtered])
+  const handleRun = React.useCallback(() => {
+    setZoomRange(null)
+    applyFilters()
+    void refetch({ range, query, selection })
+  }, [applyFilters, query, refetch, range, selection])
+
+  const histogram = React.useMemo(
+    () => buildHistogram(chartLogs),
+    [chartLogs]
+  )
 
   React.useEffect(() => {
     setSelected((prev) => {
@@ -152,14 +129,14 @@ export default function LogsPage() {
 
   const totalRecords = React.useMemo(
     () =>
-      filtered.reduce(
+      chartLogs.reduce(
         (acc, l) => {
           acc[l.level] = (acc[l.level] ?? 0) + 1
           return acc
         },
         {} as Record<LogLevel, number>
       ),
-    [filtered]
+    [chartLogs]
   )
 
   return (
@@ -170,54 +147,136 @@ export default function LogsPage() {
           selected ? "grid-cols-1 xl:grid-cols-[1fr_440px]" : "grid-cols-1"
         )}
       >
-        <section className="flex min-h-0 min-w-0 flex-col overflow-hidden">
-          <div className="relative z-30 border-b border-border/60 bg-background px-3 py-2">
-            <QueryBar
-              className="w-full"
-              value={query}
-              onChange={setQuery}
-              range={range}
-              onRangeChange={setRange}
-              paused={paused}
-              onPauseChange={setPaused}
-              onRun={() => {
-                refetch().catch(() => {})
-              }}
-            />
-          </div>
-
-          {chartHidden ? null : (
-            <VolumeChart data={histogram} totals={totalRecords} />
+        <section className="flex min-h-0 min-w-0 flex-col overflow-hidden font-sans">
+          {contextLog ? (
+            <div className="relative z-30 flex items-center justify-between gap-4 border-b border-border/60 bg-primary/5 px-4 py-3 backdrop-blur-[2px]">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-primary/15 text-primary">
+                  <CompassIcon className="size-4" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[13px] font-semibold tracking-tight text-foreground flex items-center gap-1.5">
+                    Viewing Context: ±50 Logs around anchor
+                    <span className="font-mono text-[11px] bg-primary/10 text-primary px-1.5 py-0.5 rounded">
+                      {contextLog.id}
+                    </span>
+                  </p>
+                  <p className="text-[11px] text-muted-foreground truncate">
+                    Active filters temporarily suspended. Origin service: <strong className="font-medium text-foreground/85">{contextLog.service}</strong> at <strong className="font-medium text-foreground/85">{new Date(contextLog.timestamp).toLocaleTimeString()}</strong>
+                  </p>
+                </div>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-8 gap-1.5 text-[12px] shrink-0 font-medium"
+                onClick={() => setContextLog(null)}
+              >
+                <ArrowLeftIcon className="size-3.5" />
+                Exit Context
+              </Button>
+            </div>
+          ) : (
+            <div className="relative z-30 flex items-start gap-3 border-b border-border/60 bg-muted/15 px-4 py-3 backdrop-blur-[2px]">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <SidebarTrigger
+                    className="size-8 shrink-0"
+                    aria-label="Toggle facets"
+                  />
+                </TooltipTrigger>
+                <TooltipContent side="bottom">Toggle facets</TooltipContent>
+              </Tooltip>
+              <QueryBar
+                className="min-w-0 flex-1"
+                value={query}
+                onChange={setQuery}
+                range={range}
+                onRangeChange={setRange}
+                onRun={handleRun}
+              />
+            </div>
           )}
 
-          <ResultsHeader
-            count={filtered.length}
-            totalRecords={sourceLogs.length}
-            loading={logsLoading}
-            apiLive={dataSource === "api"}
-            wrap={wrap}
-            setWrap={setWrap}
-            chartHidden={chartHidden}
-            onToggleChart={() => setChartHidden((c) => !c)}
-            onRefresh={() => {
-              refetch().catch(() => {})
-            }}
+          <TimeseriesChart
+            data={histogram}
+            totals={totalRecords}
+            rangeLabel={RANGE_LABELS[range] ?? range}
+            collapsed={chartHidden}
+            onCollapsedChange={setChartHidden}
+            onBucketClick={(start, end) => setZoomRange({ start, end })}
           />
 
-          {/* <WatchdogBanner /> */}
+          <ResultsHeader
+            loadedCount={filtered.length}
+            totalHits={zoomRange ? filtered.length : totalHits}
+            hasMoreOlder={zoomRange ? false : hasMoreOlder}
+            hasMoreNewer={zoomRange ? false : hasMoreNewer}
+            loading={logsLoading}
+            wrap={wrap}
+            setWrap={setWrap}
+            columns={allColumns}
+            visibleColumnIds={visibleColumnIds}
+            columnOrder={columnOrder}
+            onVisibleColumnIdsChange={setVisibleColumnIds}
+            onColumnOrderChange={setColumnOrder}
+          />
 
-          <div className="min-h-0 flex-1 overflow-hidden">
+          {zoomRange ? (
+            <div className="mx-3 mt-2 flex items-center justify-between gap-3 rounded-md border border-primary/20 bg-primary/5 px-3.5 py-1.5 text-[12.5px] text-primary">
+              <span className="flex items-center gap-2">
+                <span className="relative flex size-2">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75"></span>
+                  <span className="relative inline-flex size-2 rounded-full bg-primary"></span>
+                </span>
+                <span>
+                  Filtered to timeseries slice:{" "}
+                  <strong className="font-semibold">
+                    {new Date(zoomRange.start).toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </strong>{" "}
+                  to{" "}
+                  <strong className="font-semibold">
+                    {new Date(zoomRange.end).toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </strong>
+                </span>
+              </span>
+              <Button
+                variant="ghost"
+                size="xs"
+                className="h-6 px-2 text-[11px] text-primary hover:bg-primary/10 hover:text-primary"
+                onClick={() => setZoomRange(null)}
+              >
+                Clear slice
+              </Button>
+            </div>
+          ) : null}
+
+          <div className="min-h-0 flex-1 overflow-hidden p-3 pt-2">
             <LogTable
               logs={filtered}
+              visibleColumns={visibleColumns}
               selectedId={selected?.id}
               onSelect={setSelected}
               wrap={wrap}
+              hasMoreOlder={zoomRange ? false : hasMoreOlder}
+              hasMoreNewer={zoomRange ? false : hasMoreNewer}
+              onLoadOlder={() => void loadOlder()}
+              onLoadNewer={() => void loadNewer()}
+              loading={logsLoading}
+              contextLogId={contextLog?.id}
+              onViewContext={setContextLog}
             />
           </div>
         </section>
 
         {selected ? (
-          <aside className="hidden border-l xl:block">
+          <aside className="hidden animate-in fade-in-0 slide-in-from-right-2 border-l border-border/60 duration-200 xl:block">
             <LogDetail entry={selected} onClose={() => setSelected(null)} />
           </aside>
         ) : null}
@@ -227,375 +286,76 @@ export default function LogsPage() {
 }
 
 function ResultsHeader({
-  count,
-  totalRecords,
+  loadedCount,
+  totalHits,
+  hasMoreOlder,
+  hasMoreNewer,
   loading,
-  apiLive,
   wrap,
   setWrap,
-  chartHidden,
-  onToggleChart,
-  onRefresh,
+  columns,
+  visibleColumnIds,
+  columnOrder,
+  onVisibleColumnIdsChange,
+  onColumnOrderChange,
 }: {
-  count: number
-  totalRecords: number
+  loadedCount: number
+  totalHits: number
+  hasMoreOlder: boolean
+  hasMoreNewer: boolean
   loading: boolean
-  apiLive: boolean
   wrap: boolean
   setWrap: (v: boolean) => void
-  chartHidden: boolean
-  onToggleChart: () => void
-  onRefresh: () => void
+  columns: LogColumnDef[]
+  visibleColumnIds: string[]
+  columnOrder: string[]
+  onVisibleColumnIdsChange: (ids: string[]) => void
+  onColumnOrderChange: (order: string[]) => void
 }) {
+  const isPaged = hasMoreOlder || hasMoreNewer
   return (
-    <div className="flex h-9 items-center gap-2 border-b border-border/60 bg-muted/20 px-3">
-      <span className="font-mono text-[12.5px] tabular-nums">
+    <div className="flex min-h-12 items-center gap-4 border-b border-border/60 bg-muted/20 px-4 py-2">
+      <span className="tabular-nums-lining text-[13px]">
         <strong className="font-semibold text-foreground">
-          {loading ? "…" : count.toLocaleString()}
+          {loading
+            ? "…"
+            : isPaged
+              ? `Showing ${loadedCount.toLocaleString()} of ${totalHits.toLocaleString()}`
+              : loadedCount.toLocaleString()}
         </strong>
         <span className="text-muted-foreground">
-          {" "}
-          of {loading ? "…" : totalRecords.toLocaleString()} records
+          {loading ? "" : " logs"}
         </span>
       </span>
-      <Badge
-        variant="outline"
-        className="h-5 gap-1 border-border/60 px-1.5 font-mono text-[11px] text-muted-foreground"
-      >
-        {apiLive ? "API" : "mock"} · sampled 100%
-      </Badge>
-      <span className="text-[11.5px] text-muted-foreground">
-        {loading ? "Loading…" : "Last refreshed just now"}
-      </span>
 
-      <div className="ml-auto flex items-center gap-0.5">
+      <div className="ml-auto flex items-center gap-1">
         <Button
           variant="ghost"
           size="xs"
-          className="h-7 gap-1.5 text-[12px] text-muted-foreground hover:text-foreground"
-          onClick={onToggleChart}
-        >
-          {chartHidden ? (
-            <>
-              <EyeIcon /> Show chart
-            </>
-          ) : (
-            <>
-              <EyeOffIcon /> Hide chart
-            </>
-          )}
-        </Button>
-        <Button
-          variant="ghost"
-          size="xs"
-          className="h-7 gap-1.5 text-[12px] text-muted-foreground hover:text-foreground"
+          className="h-8 gap-1.5 rounded-md px-2.5 text-[12px] text-muted-foreground transition-colors duration-150 hover:bg-muted/80 hover:text-foreground"
           onClick={() => setWrap(!wrap)}
         >
           <WrapTextIcon /> {wrap ? "No wrap" : "Wrap lines"}
         </Button>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              size="xs"
-              className="h-7 gap-1.5 text-[12px] text-muted-foreground hover:text-foreground"
-            >
-              <ColumnsIcon /> Columns
-              <ChevronDownIcon className="size-3" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Visible columns</DropdownMenuLabel>
-            <DropdownMenuItem>Timestamp ✓</DropdownMenuItem>
-            <DropdownMenuItem>Status ✓</DropdownMenuItem>
-            <DropdownMenuItem>Service ✓</DropdownMenuItem>
-            <DropdownMenuItem>Host</DropdownMenuItem>
-            <DropdownMenuItem>Trace</DropdownMenuItem>
-            <DropdownMenuItem>Region</DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>Reset</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <LogColumnsPicker
+          columns={columns}
+          visibleIds={visibleColumnIds}
+          columnOrder={columnOrder}
+          onVisibleChange={onVisibleColumnIdsChange}
+          onColumnOrderChange={onColumnOrderChange}
+        />
         <Button
           variant="ghost"
           size="xs"
-          className="h-7 gap-1.5 text-[12px] text-muted-foreground hover:text-foreground"
+          className="h-8 gap-1.5 rounded-md px-2.5 text-[12px] text-muted-foreground transition-colors duration-150 hover:bg-muted/80 hover:text-foreground"
         >
           <DownloadIcon /> Export
         </Button>
-        <Button
-          variant="ghost"
-          size="icon-xs"
-          aria-label="Refresh"
-          className="h-7 w-7 text-muted-foreground hover:text-foreground"
-          onClick={onRefresh}
-          disabled={loading}
-        >
-          <RefreshCwIcon className={cn(loading && "animate-spin")} />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon-xs"
-          className="h-7 w-7 text-muted-foreground hover:text-foreground"
-        >
-          <Settings2Icon />
-        </Button>
       </div>
     </div>
   )
 }
 
-function WatchdogBanner() {
-  return (
-    <div className="flex h-9 items-center gap-2 border-b border-border/60 bg-violet-500/[0.06] px-3 text-[12.5px]">
-      <span className="flex size-5 items-center justify-center rounded bg-violet-500/20">
-        <SparklesIcon className="size-3 text-violet-600 dark:text-violet-300" />
-      </span>
-      <span className="text-foreground/90">
-        <strong className="font-semibold text-foreground">Watchdog</strong>{" "}
-        detected an{" "}
-        <span className="font-semibold text-rose-600 dark:text-rose-400">
-          error spike
-        </span>{" "}
-        on{" "}
-        <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-[11.5px] font-medium text-foreground">
-          payments-service
-        </code>{" "}
-        — 4.2× baseline in last 5m
-      </span>
-      <Button
-        variant="ghost"
-        size="xs"
-        className="ml-auto h-7 gap-1 text-[12px] text-violet-700 hover:text-violet-800 dark:text-violet-300 dark:hover:text-violet-200"
-      >
-        Investigate <ArrowUpRightIcon />
-      </Button>
-      <Button
-        variant="ghost"
-        size="icon-xs"
-        className="h-7 w-7 text-muted-foreground hover:text-foreground"
-      >
-        <HelpCircleIcon />
-      </Button>
-    </div>
-  )
-}
-
-function LogTable({
-  logs,
-  selectedId,
-  onSelect,
-  wrap,
-}: {
-  logs: LogEntry[]
-  selectedId?: string
-  onSelect: (l: LogEntry) => void
-  wrap: boolean
-}) {
-  return (
-    <div className="h-full w-full overflow-auto font-mono text-[12.5px] leading-snug">
-      <table
-        className={cn(
-          "border-separate border-spacing-0",
-          wrap ? "w-full min-w-[1100px]" : "w-max min-w-full"
-        )}
-      >
-        <thead className="sticky top-0 z-10 bg-background/95 backdrop-blur">
-          <tr className="text-[10.5px] tracking-[0.06em] text-muted-foreground uppercase">
-            <th className="sticky left-0 z-10 w-1.5 border-b border-border/60 bg-background/95 backdrop-blur" />
-            <th className="border-b border-border/60 px-2.5 py-2 text-left font-semibold whitespace-nowrap">
-              Timestamp
-            </th>
-            <th className="border-b border-border/60 px-2.5 py-2 text-left font-semibold whitespace-nowrap">
-              Status
-            </th>
-            <th className="border-b border-border/60 px-2.5 py-2 text-left font-semibold whitespace-nowrap">
-              Service
-            </th>
-            <th className="border-b border-border/60 px-2.5 py-2 text-left font-semibold whitespace-nowrap">
-              Host
-            </th>
-            <th className="w-full border-b border-border/60 px-2.5 py-2 text-left font-semibold whitespace-nowrap">
-              Message
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {logs.slice(0, 350).map((log) => {
-            const ts = new Date(log.timestamp)
-            const active = selectedId === log.id
-            return (
-              <tr
-                key={log.id}
-                onClick={() => onSelect(log)}
-                className={cn(
-                  "group/row cursor-pointer transition-colors",
-                  active ? "bg-primary/5" : "hover:bg-muted/40"
-                )}
-              >
-                <td
-                  className={cn(
-                    "sticky left-0 z-[1] w-1.5 border-b border-border/40 align-top",
-                    LEVEL_BAR[log.level],
-                    active
-                      ? "bg-primary/5"
-                      : "bg-background group-hover/row:bg-muted/40"
-                  )}
-                />
-                <td className="border-b border-border/40 px-2.5 py-1.5 align-top whitespace-nowrap text-foreground/80 tabular-nums">
-                  {formatHms(ts)}
-                  <span className="ml-0.5 text-[11px] text-muted-foreground">
-                    .{String(ts.getUTCMilliseconds()).padStart(3, "0")}
-                  </span>
-                </td>
-                <td className="border-b border-border/40 px-2.5 py-1.5 align-top whitespace-nowrap">
-                  <span className={cn("pill-status", LEVEL_PILL[log.level])}>
-                    {log.level}
-                  </span>
-                </td>
-                <td className="border-b border-border/40 px-2.5 py-1.5 align-top whitespace-nowrap font-medium text-foreground">
-                  {log.service}
-                </td>
-                <td className="border-b border-border/40 px-2.5 py-1.5 align-top whitespace-nowrap text-muted-foreground">
-                  {log.host}
-                </td>
-                <td
-                  className={cn(
-                    "border-b border-border/40 px-2.5 py-1.5 align-top text-foreground/90",
-                    wrap
-                      ? "break-words whitespace-pre-wrap"
-                      : "whitespace-nowrap"
-                  )}
-                >
-                  {log.message}
-                </td>
-              </tr>
-            )
-          })}
-        </tbody>
-      </table>
-
-      {logs.length === 0 ? (
-        <div className="flex flex-col items-center gap-1 p-12 text-center text-sm text-muted-foreground">
-          <BadgeAlertIcon className="size-6" />
-          <p className="font-medium text-foreground">
-            No logs match your query
-          </p>
-          <p className="text-xs">
-            Try widening the time range or removing some filters.
-          </p>
-        </div>
-      ) : null}
-    </div>
-  )
-}
-
-function VolumeChart({
-  data,
-  totals,
-}: {
-  data: ReturnType<typeof buildHistogram>
-  totals: Record<LogLevel, number>
-}) {
-  return (
-    <div className="border-b border-border/60 bg-background">
-      <div className="flex h-9 items-center gap-3 px-3">
-        <span className="flex items-center gap-1.5">
-          <AtomIcon className="size-3.5 text-muted-foreground" />
-          <span className="text-[12.5px] font-semibold tracking-tight">
-            Timeseries
-          </span>
-          <span className="text-[11.5px] text-muted-foreground">
-            · Last 30 minutes
-          </span>
-        </span>
-        <span className="ml-auto flex flex-wrap items-center gap-3">
-          {LEVELS.map((l) => (
-            <span
-              key={l}
-              className="inline-flex items-center gap-1.5 font-mono text-[11px]"
-            >
-              <span
-                className="size-2 rounded-full"
-                style={{ backgroundColor: LEVEL_COLOR[l] }}
-              />
-              <span className="font-medium text-muted-foreground uppercase">
-                {l}
-              </span>
-              <span className="font-semibold text-foreground tabular-nums">
-                {totals[l]?.toLocaleString() ?? 0}
-              </span>
-            </span>
-          ))}
-        </span>
-        <Button
-          variant="ghost"
-          size="icon-xs"
-          className="h-7 w-7 text-muted-foreground hover:text-foreground"
-          aria-label="Pin"
-        >
-          <PinIcon />
-        </Button>
-      </div>
-      <div className="h-32 px-2 pt-1 pb-1">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
-            <CartesianGrid
-              vertical={false}
-              stroke="color-mix(in oklab, var(--foreground) 8%, transparent)"
-              strokeDasharray="2 4"
-            />
-            <XAxis
-              dataKey="bucket"
-              tickLine={false}
-              axisLine={false}
-              fontSize={10}
-              tickMargin={6}
-              minTickGap={32}
-              stroke="color-mix(in oklab, var(--foreground) 55%, transparent)"
-            />
-            <YAxis
-              tickLine={false}
-              axisLine={false}
-              width={32}
-              fontSize={10}
-              stroke="color-mix(in oklab, var(--foreground) 55%, transparent)"
-            />
-            <RechartsTooltip
-              cursor={{
-                fill: "color-mix(in oklab, var(--foreground) 6%, transparent)",
-              }}
-              contentStyle={{
-                borderRadius: 6,
-                fontSize: 11,
-                padding: "6px 8px",
-                background: "var(--popover)",
-                border: "1px solid var(--border)",
-              }}
-            />
-            {LEVELS.map((l, i) => (
-              <Bar
-                key={l}
-                dataKey={l}
-                stackId="x"
-                fill={LEVEL_COLOR[l]}
-                radius={i === LEVELS.length - 1 ? [2, 2, 0, 0] : 0}
-              />
-            ))}
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
-    </div>
-  )
-}
-
-function formatHms(d: Date) {
-  return [
-    String(d.getUTCHours()).padStart(2, "0"),
-    String(d.getUTCMinutes()).padStart(2, "0"),
-    String(d.getUTCSeconds()).padStart(2, "0"),
-  ].join(":")
-}
 
 function formatHm(d: Date) {
   return [
@@ -625,12 +385,10 @@ function buildHistogram(items: LogEntry[]) {
     const bucketStart = earliest + step * i
     return {
       bucket: formatHm(new Date(bucketStart)),
-      trace: 0,
-      debug: 0,
       info: 0,
       warn: 0,
       error: 0,
-      fatal: 0,
+      none: 0,
     }
   })
 
@@ -640,8 +398,13 @@ function buildHistogram(items: LogEntry[]) {
       buckets - 1,
       Math.max(0, Math.floor((t - earliest) / step))
     )
-    ;(out[idx] as Record<string, number | string>)[item.level] =
-      ((out[idx] as Record<string, number | string>)[item.level] as number) + 1
+    if (item.level === "info" || item.level === "warn" || item.level === "error") {
+        (out[idx] as Record<string, number | string>)[item.level] =
+        ((out[idx] as Record<string, number | string>)[item.level] as number) + 1
+    } else {
+        (out[idx] as Record<string, number | string>)["none"] =
+        ((out[idx] as Record<string, number | string>)["none"] as number) + 1
+    }
   }
 
   return out

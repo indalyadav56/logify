@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import {
   ChevronsLeftIcon,
   ChevronsRightIcon,
@@ -12,6 +12,7 @@ import {
   PlusCircleIcon,
   ScrollTextIcon,
   SearchIcon,
+  SettingsIcon,
   SparklesIcon,
 } from "lucide-react"
 
@@ -41,37 +42,49 @@ type NavItem = {
   label: string
   badge?: { kind: "live" | "count"; value: string }
   exact?: boolean
+  kbdShortcut?: string
+  /** Navigates but never shows active state (e.g. Search → logs) */
+  suppressActive?: boolean
 }
 
 type NavSection = {
-  label: string
   items: NavItem[]
 }
 
-const SECTIONS: NavSection[] = [
+const UTIL_ITEMS: NavItem[] = [
   {
-    label: "Workspace",
-    items: [
-      {
-        href: "/dashboard",
-        icon: LayoutDashboardIcon,
-        label: "Dashboard",
-        exact: true,
-      },
-    ],
+    href: "/dashboard/logs",
+    icon: SearchIcon,
+    label: "Search",
+    kbdShortcut: "K",
+    suppressActive: true,
   },
   {
-    label: "Observe",
+    href: "/dashboard/assist",
+    icon: SparklesIcon,
+    label: "Assist",
+    kbdShortcut: "I",
+    exact: true,
+  },
+]
+
+const SECTIONS: NavSection[] = [
+  {
     items: [
       {
-        href: "/dashboard/ai-insights",
-        icon: SparklesIcon,
-        label: "AI insights",
+        href: "/dashboard/dashboards",
+        icon: LayoutDashboardIcon,
+        label: "Dashboards",
       },
       {
         href: "/dashboard/logs",
         icon: ScrollTextIcon,
         label: "Logs",
+      },
+      {
+        href: "/dashboard/settings",
+        icon: SettingsIcon,
+        label: "Settings",
       },
     ],
   },
@@ -81,6 +94,7 @@ const STORAGE_KEY = "logify:appbar-expanded"
 
 export function AppBar() {
   const pathname = usePathname()
+  const router = useRouter()
   const [workspaces, setWorkspaces] =
     React.useState<WorkspaceSummary[]>(DEFAULT_WORKSPACES)
   const [workspace, setWorkspace] = React.useState<WorkspaceSummary>(
@@ -110,13 +124,30 @@ export function AppBar() {
     })
   }, [])
 
+  React.useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (!(e.metaKey || e.ctrlKey)) return
+      const key = e.key.toLowerCase()
+      if (key === "i") {
+        e.preventDefault()
+        router.push("/dashboard/assist")
+      }
+      if (key === "k") {
+        e.preventDefault()
+        router.push("/dashboard/logs")
+      }
+    }
+    window.addEventListener("keydown", onKeyDown)
+    return () => window.removeEventListener("keydown", onKeyDown)
+  }, [router])
+
   return (
     <aside
       data-slot="app-bar"
       data-state={expanded ? "expanded" : "collapsed"}
       className={cn(
-        "flex h-svh shrink-0 flex-col gap-1 border-r bg-sidebar/70 py-2",
-        "transition-[width] duration-200 ease-out",
+        "flex h-svh shrink-0 flex-col gap-1 border-r border-sidebar-border bg-sidebar py-2",
+        "transition-[width] duration-300 ease-[cubic-bezier(0.33,1,0.68,1)] motion-reduce:transition-none",
         expanded ? "w-[224px]" : "w-[52px]"
       )}
     >
@@ -130,72 +161,29 @@ export function AppBar() {
 
       <SectionDivider expanded={expanded} />
 
-      <QuickAction
-        expanded={expanded}
-        pathname={pathname}
-        icon={SearchIcon}
-        label="Search"
-        kbd={
-          <span className="ml-auto inline-flex items-center gap-0.5">
-            <Kbd>
-              <CommandIcon className="size-2.5" />K
-            </Kbd>
-          </span>
-        }
-        tooltip={
-          <span className="flex items-center gap-2">
-            Search
-            <Kbd>
-              <CommandIcon className="size-2.5" />K
-            </Kbd>
-          </span>
-        }
-      />
-      <QuickAction
-        expanded={expanded}
-        pathname={pathname}
-        href="/dashboard/ai-insights"
-        icon={SparklesIcon}
-        label="AI insights"
-        dot="bg-violet-500"
-        tooltip="AI insights"
-      />
-      <QuickAction
-        expanded={expanded}
-        pathname={pathname}
-        icon={Grid3x3Icon}
-        label="Apps"
-        tooltip="Apps"
-      />
-
       <nav
         aria-label="Primary navigation"
         className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto overscroll-contain"
       >
-        {SECTIONS.map((section, idx) => (
-          <React.Fragment key={section.label}>
-            {idx === 0 ? (
-              <SectionDivider expanded={expanded} />
-            ) : (
-              <SectionDivider expanded={expanded} dense />
-            )}
-            {expanded ? (
-              <div className="text-eyebrow px-3 pt-2 pb-1.5">
-                {section.label}
-              </div>
-            ) : null}
-            <div className="flex flex-col items-stretch gap-0.5 px-1.5">
-              {section.items.map((item) => (
-                <NavLink
-                  key={item.href}
-                  item={item}
-                  pathname={pathname}
-                  expanded={expanded}
-                />
-              ))}
-            </div>
-          </React.Fragment>
+        {UTIL_ITEMS.map((item) => (
+          <NavLink
+            key={`util-${item.label}`}
+            item={item}
+            pathname={pathname}
+            expanded={expanded}
+          />
         ))}
+        <SectionDivider expanded={expanded} dense />
+        {SECTIONS.map((section) =>
+          section.items.map((item) => (
+            <NavLink
+              key={item.href}
+              item={item}
+              pathname={pathname}
+              expanded={expanded}
+            />
+          ))
+        )}
       </nav>
 
       <SectionDivider expanded={expanded} />
@@ -209,7 +197,7 @@ export function AppBar() {
         >
           <ThemeToggle />
           {expanded ? (
-            <span className="ml-2 text-[13px] font-medium text-muted-foreground">
+            <span className="ml-2 text-[13px] font-medium text-muted-foreground/90">
               Theme
             </span>
           ) : null}
@@ -224,7 +212,7 @@ export function AppBar() {
         aria-label={expanded ? "Collapse navigation" : "Expand navigation"}
         title={expanded ? "Collapse" : "Expand"}
         className={cn(
-          "mx-1.5 mt-1 flex h-8 items-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
+          "mx-1.5 mt-1 flex h-8 items-center rounded-md text-muted-foreground transition-colors duration-150 ease-out hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
           expanded ? "justify-start gap-2.5 px-2" : "justify-center"
         )}
       >
@@ -291,7 +279,7 @@ function WorkspaceTrigger({
           className={cn(
             "group/ws flex items-center rounded-md transition-colors",
             expanded
-              ? "mx-1.5 h-9 gap-2 px-1.5 hover:bg-muted/60"
+              ? "mx-1.5 h-9 gap-2 px-1.5 hover:bg-sidebar-accent/80"
               : "mx-auto size-9 justify-center"
           )}
           aria-label="Workspace"
@@ -299,7 +287,7 @@ function WorkspaceTrigger({
           <Logomark className={cn(expanded ? "size-8" : "size-9")} />
           {expanded ? (
             <span className="flex min-w-0 flex-col items-start leading-tight">
-              <span className="truncate text-[13px] font-semibold text-foreground">
+              <span className="truncate text-[13px] font-semibold text-sidebar-foreground">
                 {workspace.name}
               </span>
               <span className="truncate text-[11.5px] font-medium text-muted-foreground">
@@ -373,8 +361,8 @@ function QuickAction({
       (href !== "/" && pathname.startsWith(`${href}/`)))
 
   const className = cn(
-    "relative flex items-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
-    active && "bg-primary/10 text-foreground",
+    "relative flex items-center rounded-md text-sidebar-foreground/80 transition-colors duration-150 ease-out hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+    active && "bg-sidebar-accent text-sidebar-accent-foreground shadow-sm",
     expanded
       ? "mx-1.5 h-9 justify-start gap-2.5 px-2"
       : "mx-auto size-9 justify-center"
@@ -429,7 +417,8 @@ function NavLink({
   pathname: string
   expanded: boolean
 }) {
-  const active = isActive(pathname, item.href, item.exact)
+  const active =
+    !item.suppressActive && isActive(pathname, item.href, item.exact)
   const Icon = item.icon
 
   const badgeNode = item.badge ? (
@@ -457,26 +446,31 @@ function NavLink({
       aria-label={item.label}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "group/nav relative flex items-center rounded-md transition-colors",
+        "group/nav relative flex items-center rounded-md transition-colors duration-150 ease-out",
         expanded ? "h-9 gap-2.5 px-2" : "size-9 justify-center self-center",
         active
-          ? "bg-primary/10 text-foreground"
-          : "text-muted-foreground hover:bg-muted hover:text-foreground"
+          ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-sm"
+          : "text-sidebar-foreground/75 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
       )}
     >
       <Icon className="size-4 shrink-0" />
       {expanded ? (
-        <span className="truncate text-[13px] font-medium">
+        <span className="truncate text-[13px] font-medium text-sidebar-foreground">
           {item.label}
         </span>
       ) : null}
       {badgeNode}
+      {expanded && item.kbdShortcut ? (
+        <Kbd className="ml-auto font-mono text-[10px] opacity-70">
+          ⌘{item.kbdShortcut}
+        </Kbd>
+      ) : null}
       {active ? (
         <span
           aria-hidden
           className={cn(
-            "absolute h-5 w-1 rounded-r-full bg-primary",
-            expanded ? "-left-1.5 top-2" : "-left-2 top-2"
+            "absolute h-5 w-0.5 rounded-full bg-sidebar-primary",
+            expanded ? "-left-1 top-2" : "-left-2 top-2"
           )}
         />
       ) : null}
@@ -495,8 +489,8 @@ function NavLink({
             className={cn(
               "inline-flex h-4 items-center rounded px-1 font-mono text-[10px]",
               item.badge.kind === "live"
-                ? "bg-emerald-500/20 text-emerald-300"
-                : "bg-rose-500/20 text-rose-300"
+                ? "bg-primary/15 text-primary"
+                : "bg-destructive/15 text-destructive"
             )}
           >
             {item.badge.value}
@@ -515,12 +509,12 @@ function UserTrigger({ expanded }: { expanded: boolean }) {
           type="button"
           aria-label="Account"
           className={cn(
-            "flex items-center rounded-md transition-colors hover:bg-muted",
+            "flex max-w-full items-center rounded-md text-sidebar-foreground transition-colors duration-150 ease-out hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
             expanded ? "h-9 gap-2 px-1.5" : "mx-auto size-9 justify-center"
           )}
         >
-          <Avatar className="size-8 rounded-md">
-            <AvatarFallback className="rounded-md bg-emerald-600 text-[11.5px] font-semibold text-white">
+          <Avatar className="size-8 rounded-md ring-1 ring-sidebar-border">
+            <AvatarFallback className="rounded-md bg-sidebar-primary text-[11.5px] font-semibold text-sidebar-primary-foreground">
               AM
             </AvatarFallback>
           </Avatar>
@@ -544,7 +538,12 @@ function UserTrigger({ expanded }: { expanded: boolean }) {
           </span>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem>Account settings</DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link href="/dashboard/settings/account">Account settings</Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link href="/dashboard/settings">Organization settings</Link>
+        </DropdownMenuItem>
         <DropdownMenuItem>Keyboard shortcuts</DropdownMenuItem>
         <DropdownMenuItem>Switch organization</DropdownMenuItem>
         <DropdownMenuSeparator />

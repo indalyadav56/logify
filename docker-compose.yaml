@@ -260,25 +260,25 @@ services:
   #     - logify-net
 
   # ── Web Frontend ───────────────────────────────────────
-  # web:
-  #   profiles: ["app"]
-  #   build:
-  #     context: .
-  #     dockerfile: deployments/docker/Dockerfile.web
-  #   container_name: logify_web
-  #   restart: unless-stopped
-  #   ports:
-  #     - "${WEB_PORT:-3000}:80"
-  #   depends_on:
-  #     backend:
-  #       condition: service_started
-  #   networks:
-  #     - logify-net
-  #   logging:
-  #     driver: json-file
-  #     options:
-  #       max-size: "10m"
-  #       max-file: "3"
+  web:
+    profiles: ["app"]
+    build:
+      context: .
+      dockerfile: deployments/docker/Dockerfile.web
+    container_name: logify_web
+    restart: unless-stopped
+    ports:
+      - "${WEB_PORT:-3000}:80"
+    depends_on:
+      backend:
+        condition: service_started
+    networks:
+      - logify-net
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   # ========================================================
   # Dev Tools (--profile dev)
@@ -373,6 +373,19 @@ services:
   #     - temporal
   #   environment:
   #     TEMPORAL_ADDRESS: temporal:7233
+
+  vault:
+    image: hashicorp/vault:latest
+    container_name: vault
+    restart: unless-stopped
+    ports:
+      - "8200:8200"
+    environment:
+      VAULT_DEV_ROOT_TOKEN_ID: root
+      VAULT_DEV_LISTEN_ADDRESS: "0.0.0.0:8200"
+    cap_add:
+      - IPC_LOCK
+    command: vault server -dev
 
 # ========================================================
 # Volumes

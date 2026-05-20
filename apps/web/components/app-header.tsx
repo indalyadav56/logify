@@ -3,20 +3,19 @@
 import * as React from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import {
-  BellIcon,
-  BookOpenIcon,
-  CommandIcon,
-  PlusCircleIcon,
-  SearchIcon,
-} from "lucide-react"
+import { BookOpenIcon, PlusCircleIcon } from "lucide-react"
 
-import { SidebarTrigger } from "@/components/ui/sidebar"
+import { cn } from "@/lib/utils"
 import { Separator } from "@/components/ui/separator"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Kbd } from "@/components/ui/kbd"
-import { ThemeToggle } from "@/components/theme-toggle"
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb"
 import {
   Tooltip,
   TooltipContent,
@@ -27,85 +26,91 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { LogIngestionSetupDialog } from "@/components/observability/log-ingestion-setup-dialog"
+import { getDashboardById } from "@/lib/dashboards/mock-data"
+import { getRoleById } from "@/lib/settings/mock-data"
 
 const TITLES: Record<string, string> = {
   "/dashboard": "Dashboard",
-  "/dashboard/ai-insights": "AI insights",
   "/dashboard/logs": "Logs",
+  "/dashboard/dashboards": "Dashboards",
+  "/dashboard/assist": "Assist",
+  "/dashboard/settings": "Settings",
+  "/dashboard/settings/account": "Account",
+  "/dashboard/settings/users": "Users",
+  "/dashboard/settings/api-keys": "API keys",
+  "/dashboard/settings/roles": "Roles",
 }
 
 const ENVIRONMENTS = [
-  { id: "production", label: "Production", color: "bg-emerald-500" },
-  { id: "staging", label: "Staging", color: "bg-amber-500" },
-  { id: "development", label: "Development", color: "bg-sky-500" },
+  {
+    id: "production",
+    label: "Production",
+    dot: "bg-primary shadow-[0_0_0_2px_color-mix(in_oklab,var(--background)_92%,transparent)]",
+  },
+  {
+    id: "staging",
+    label: "Staging",
+    dot: "bg-amber-500/90 shadow-[0_0_0_2px_color-mix(in_oklab,var(--background)_92%,transparent)]",
+  },
+  {
+    id: "development",
+    label: "Development",
+    dot: "bg-sky-500/90 shadow-[0_0_0_2px_color-mix(in_oklab,var(--background)_92%,transparent)]",
+  },
 ]
 
 export function AppHeader() {
   const pathname = usePathname()
-  const title = TITLES[pathname] ?? toTitle(pathname)
+  const title = resolveTitle(pathname)
+  const showIngestion = pathname.startsWith("/dashboard/logs")
+  const isDashboardsView = Boolean(
+    pathname.match(/^\/dashboard\/dashboards\/[^/]+$/)
+  )
+  const isAssistView = pathname.startsWith("/dashboard/assist")
   const [env, setEnv] = React.useState(ENVIRONMENTS[0])
-  const hasFacets = pathname.startsWith("/dashboard/logs")
+  const [ingestionOpen, setIngestionOpen] = React.useState(false)
 
   return (
-    <header className="sticky top-0 z-30 flex h-[52px] shrink-0 items-center gap-2 border-b border-border/60 bg-background/85 px-3 backdrop-blur-md">
-      {hasFacets ? (
-        <>
-          <SidebarTrigger className="-ml-1 size-8" />
-          <Separator
-            orientation="vertical"
-            className="mx-0.5 h-4 bg-border/60"
-          />
-        </>
-      ) : null}
-
-      <Link
-        href="/"
-        className="hidden items-center gap-1.5 text-[13px] text-muted-foreground transition-colors hover:text-foreground md:inline-flex"
+    <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-3 border-b border-border bg-card px-4">
+      <Breadcrumb
+        className={cn(
+          "hidden min-w-0 md:block",
+          (isDashboardsView || isAssistView) && "md:hidden"
+        )}
       >
-        Logify
-      </Link>
-      <span className="hidden text-muted-foreground/40 md:inline">/</span>
-      <span className="text-[13.5px] font-semibold tracking-tight">
+        <BreadcrumbList className="gap-1 sm:gap-1.5">
+          <BreadcrumbItem>
+            <BreadcrumbLink asChild>
+              <Link
+                href="/"
+                className="text-[13px] font-medium text-muted-foreground"
+              >
+                Logify
+              </Link>
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator className="text-muted-foreground/45 [&>svg]:size-3" />
+          <BreadcrumbItem>
+            <BreadcrumbPage className="text-[13.5px] font-semibold tracking-tight">
+              {title}
+            </BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
+
+      <span
+        className={cn(
+          "min-w-0 truncate text-[13.5px] font-semibold tracking-tight",
+          (isDashboardsView || isAssistView) && "hidden md:hidden"
+        )}
+      >
         {title}
       </span>
 
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            size="xs"
-            className="ml-1.5 h-7 gap-1.5 px-2 text-[12px] font-medium text-muted-foreground hover:text-foreground"
-          >
-            <span className={`size-1.5 rounded-full ${env.color}`} />
-            <span>env: {env.id}</span>
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="w-44">
-          <DropdownMenuLabel className="text-[11px]">
-            Environment
-          </DropdownMenuLabel>
-          {ENVIRONMENTS.map((e) => (
-            <DropdownMenuItem
-              key={e.id}
-              onClick={() => setEnv(e)}
-              className="gap-2"
-            >
-              <span className={`size-1.5 rounded-full ${e.color}`} />
-              <span>{e.label}</span>
-              {e.id === env.id ? (
-                <span className="ml-auto text-[10px] text-muted-foreground">
-                  current
-                </span>
-              ) : null}
-            </DropdownMenuItem>
-          ))}
-        </DropdownMenuContent>
-      </DropdownMenu>
-
-      <div className="ml-auto flex items-center gap-1">
+      <div className="ml-auto flex items-center gap-2">
         <Tooltip>
           <TooltipTrigger asChild>
             <Button variant="ghost" size="icon-sm" aria-label="Docs">
@@ -120,16 +125,44 @@ export function AppHeader() {
           className="mx-1 h-4 bg-border/60"
         />
 
-        <Button
-          size="sm"
-          variant="default"
-          className="h-8 gap-1.5 px-3 text-[12.5px] font-medium"
-        >
-          <PlusCircleIcon /> New
-        </Button>
+        {showIngestion ? (
+          <Button
+            size="sm"
+            variant="default"
+            className="h-8 gap-1.5 px-3 text-[12.5px] font-medium"
+            onClick={() => setIngestionOpen(true)}
+          >
+            <PlusCircleIcon /> New
+          </Button>
+        ) : null}
       </div>
+
+      <LogIngestionSetupDialog
+        open={ingestionOpen}
+        onOpenChange={setIngestionOpen}
+      />
     </header>
   )
+}
+
+function resolveTitle(pathname: string) {
+  if (TITLES[pathname]) return TITLES[pathname]
+
+  const dashMatch = pathname.match(/^\/dashboard\/dashboards\/([^/]+)$/)
+  if (dashMatch) {
+    return getDashboardById(dashMatch[1])?.name ?? "Dashboard"
+  }
+
+  const roleMatch = pathname.match(/^\/dashboard\/settings\/roles\/([^/]+)$/)
+  if (roleMatch) {
+    return getRoleById(roleMatch[1])?.name ?? "Role"
+  }
+
+  if (pathname.startsWith("/dashboard/settings")) {
+    return "Settings"
+  }
+
+  return toTitle(pathname)
 }
 
 function toTitle(path: string) {

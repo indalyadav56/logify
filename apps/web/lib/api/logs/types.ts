@@ -3,6 +3,10 @@ export type LogsSearchBody = {
   tenant_id: string
   from: string
   to: string
+  limit?: number
+  cursor?: string
+  body_contains?: string
+  sort_desc?: boolean
 }
 
 /** Payload item from `POST /v1/logs/search`. */
@@ -26,4 +30,7 @@ export type RemoteLogRecord = {
 
 export type RemoteLogsSearchResponse = {
   logs: RemoteLogRecord[]
+  total?: number
+  next_cursor?: string
+  took_ms?: number
 }

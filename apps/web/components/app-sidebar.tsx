@@ -9,16 +9,9 @@ import { Facets, type FacetGroup } from "@/components/observability/facets"
 import { useLogsStore } from "@/lib/logs-store"
 import { useLogsData } from "@/lib/logs-data-context"
 import { type LogLevel } from "@/lib/mock-data"
+import { LOG_LEVEL_CHART } from "@/lib/log-levels"
 
 const LEVELS: LogLevel[] = ["trace", "debug", "info", "warn", "error", "fatal"]
-const LEVEL_COLOR: Record<LogLevel, string> = {
-  trace: "#71717a",
-  debug: "#0ea5e9",
-  info: "#10b981",
-  warn: "#f59e0b",
-  error: "#ef4444",
-  fatal: "#d946ef",
-}
 
 export function AppSidebar() {
   const { open, openMobile, isMobile } = useSidebar()
@@ -32,13 +25,13 @@ export function AppSidebar() {
     <aside
       data-state={visible ? "open" : "closed"}
       className={cn(
-        "hidden h-full shrink-0 overflow-hidden border-r border-border/60 bg-sidebar/40",
-        "transition-[width] duration-200 ease-out",
-        "data-[state=closed]:w-0 data-[state=open]:w-[272px]",
+        "hidden h-full shrink-0 overflow-hidden border-r border-sidebar-border bg-sidebar",
+        "transition-[width] duration-300 ease-[cubic-bezier(0.33,1,0.68,1)] motion-reduce:transition-none",
+        "data-[state=closed]:w-0 data-[state=open]:w-[280px]",
         "md:flex md:flex-col"
       )}
     >
-      <div className="flex h-full w-[272px] min-h-0 flex-col overflow-hidden">
+      <div className="flex h-full w-[280px] min-h-0 flex-col overflow-hidden">
         <LogsFacetsContent />
       </div>
     </aside>
@@ -58,7 +51,7 @@ function LogsFacetsContent() {
         values: LEVELS.map((l) => ({
           value: l,
           count: facetLogs.filter((x) => x.level === l).length,
-          color: LEVEL_COLOR[l],
+          color: LOG_LEVEL_CHART[l],
         })),
       },
       {
