@@ -80,6 +80,7 @@ export const MOCK_ROLES: Role[] = [
 export const MOCK_USERS: OrgUser[] = [
   {
     id: "usr-1",
+    projectId: "prod",
     email: "avery@logify.io",
     fullName: "Avery Moore",
     roleId: "role-admin",
@@ -90,6 +91,7 @@ export const MOCK_USERS: OrgUser[] = [
   },
   {
     id: "usr-2",
+    projectId: "prod",
     email: "jordan.kim@acme.io",
     fullName: "Jordan Kim",
     roleId: "role-editor",
@@ -100,6 +102,7 @@ export const MOCK_USERS: OrgUser[] = [
   },
   {
     id: "usr-3",
+    projectId: "prod",
     email: "sam.rivera@acme.io",
     fullName: "Sam Rivera",
     roleId: "role-sre",
@@ -110,6 +113,7 @@ export const MOCK_USERS: OrgUser[] = [
   },
   {
     id: "usr-4",
+    projectId: "stage",
     email: "taylor.nguyen@acme.io",
     fullName: "Taylor Nguyen",
     roleId: "role-viewer",
@@ -120,6 +124,7 @@ export const MOCK_USERS: OrgUser[] = [
   },
   {
     id: "usr-5",
+    projectId: "sand",
     email: "casey.patel@acme.io",
     fullName: "Casey Patel",
     roleId: "role-viewer",
@@ -133,12 +138,25 @@ export const MOCK_USERS: OrgUser[] = [
 export const MOCK_INVITES: UserInvite[] = [
   {
     id: "inv-1",
+    projectId: "prod",
+    projectName: "Logify Production",
     email: "morgan.lee@acme.io",
     roleId: "role-editor",
     roleName: "Editor",
     invitedBy: "Avery Moore",
     expiresAt: "2026-05-27T10:00:00Z",
     createdAt: "2026-05-13T10:00:00Z",
+  },
+  {
+    id: "inv-2",
+    projectId: "stage",
+    projectName: "Logify Staging",
+    email: "riley.chen@acme.io",
+    roleId: "role-viewer",
+    roleName: "Viewer",
+    invitedBy: "Avery Moore",
+    expiresAt: "2026-05-28T10:00:00Z",
+    createdAt: "2026-05-14T10:00:00Z",
   },
 ]
 

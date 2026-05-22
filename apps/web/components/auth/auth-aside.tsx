@@ -5,22 +5,20 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 
 export function AuthAside() {
   return (
-    <aside className="relative hidden overflow-hidden bg-[oklch(0.14_0.03_252)] lg:flex lg:flex-col">
+    <aside className="relative hidden overflow-hidden bg-[var(--auth-panel)] lg:flex lg:flex-col">
       <BackgroundFx />
 
       <div className="relative z-10 flex flex-1 flex-col justify-between p-12">
         <div>
-          <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11.5px] text-white/70 backdrop-blur">
-            <span className="size-1.5 rounded-full bg-sky-400" />
+          <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11.5px] text-white/70 backdrop-blur-sm">
+            <span className="size-1.5 rounded-full bg-primary" />
             Trusted by 4,200+ engineering teams
           </span>
 
           <h2 className="mt-6 max-w-md text-balance text-3xl font-semibold tracking-tight text-white">
             Observability that{" "}
-            <span className="bg-gradient-to-br from-sky-300 to-cyan-400 bg-clip-text text-transparent">
-              answers
-            </span>{" "}
-            before you ask.
+            <span className="text-brand-gradient-on-dark">answers</span> before
+            you ask.
           </h2>
           <p className="mt-3 max-w-md text-[14px] leading-relaxed text-white/60">
             Logs, metrics and traces in one AI-native platform. Set up in five
@@ -47,7 +45,7 @@ function FeatureBullets() {
     <ul className="mt-12 space-y-2.5 text-[13.5px] text-white/75">
       {items.map((t) => (
         <li key={t} className="flex items-start gap-2.5">
-          <span className="mt-2 inline-block size-1.5 shrink-0 rounded-full bg-sky-400" />
+          <span className="mt-2 inline-block size-1.5 shrink-0 rounded-full bg-primary" />
           <span>{t}</span>
         </li>
       ))}
@@ -57,7 +55,7 @@ function FeatureBullets() {
 
 function Quote() {
   return (
-    <figure className="relative mt-12 rounded-xl border border-white/10 bg-white/[0.04] p-5 backdrop-blur">
+    <figure className="relative mt-12 rounded-xl border border-white/10 bg-white/[0.04] p-5 backdrop-blur-sm">
       <QuoteIcon className="absolute top-4 right-4 size-8 text-white/10" />
       <blockquote className="text-[13.5px] leading-relaxed text-white/85">
         “We replaced three vendors with Logify in a week. Our on-call burnout
@@ -66,7 +64,7 @@ function Quote() {
       </blockquote>
       <figcaption className="mt-4 flex items-center gap-3">
         <Avatar className="size-8">
-          <AvatarFallback className="bg-sky-500/20 text-[10.5px] font-semibold text-sky-200">
+          <AvatarFallback className="bg-primary/20 text-[10.5px] font-semibold text-primary-foreground">
             SM
           </AvatarFallback>
         </Avatar>
@@ -86,16 +84,9 @@ function Quote() {
 function BackgroundFx() {
   return (
     <div aria-hidden className="pointer-events-none absolute inset-0">
-      <div
-        className="absolute inset-0 opacity-50 [mask-image:radial-gradient(ellipse_at_top_left,#000_30%,transparent_70%)]"
-        style={{
-          backgroundImage:
-            "linear-gradient(to right, rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.05) 1px, transparent 1px)",
-          backgroundSize: "44px 44px",
-        }}
-      />
-      <div className="absolute -top-40 left-[-10%] h-[420px] w-[520px] rounded-full bg-sky-500/25 blur-[120px]" />
-      <div className="absolute top-1/2 right-[-12%] h-[320px] w-[420px] rounded-full bg-cyan-400/15 blur-[120px]" />
+      <div className="absolute inset-0 bg-grid-subtle opacity-40 [mask-image:radial-gradient(ellipse_at_top_left,#000_30%,transparent_70%)]" />
+      <div className="absolute -top-40 left-[-10%] h-[420px] w-[520px] rounded-full bg-primary/25 blur-[120px]" />
+      <div className="absolute top-1/2 right-[-12%] h-[320px] w-[420px] rounded-full bg-brand/15 blur-[120px]" />
     </div>
   )
 }

@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import Script from "next/script"
 import { IBM_Plex_Sans, JetBrains_Mono } from "next/font/google"
 import "./globals.css"
 
@@ -42,6 +43,10 @@ export default function RootLayout({
       )}
     >
       <body className="min-h-full bg-background text-foreground">
+        <Script
+          id="theme-init"
+          strategy="beforeInteractive"
+        >{`(function(){try{var t=localStorage.getItem("theme")||"dark";if(t==="system"){t=window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"}document.documentElement.classList.remove("light","dark");document.documentElement.classList.add(t)}catch(e){}})();`}</Script>
         <ThemeProvider
           attribute="class"
           defaultTheme="dark"

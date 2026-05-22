@@ -46,13 +46,13 @@ export function LoginForm() {
   }
 
   return (
-    <div>
+    <div className="rounded-xl border border-border/70 bg-card/90 p-6 shadow-sm backdrop-blur-sm sm:p-7">
       <div className="mb-7 text-center">
         <h1 className="text-[22px] font-semibold tracking-tight text-foreground">
           Welcome back
         </h1>
         <p className="mt-1.5 text-[13px] text-muted-foreground">
-          Sign in to continue to your Logify workspace.
+          Sign in to continue to your Logify project.
         </p>
       </div>
 
@@ -73,7 +73,6 @@ export function LoginForm() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             aria-invalid={Boolean(errors.email)}
-            className="h-10 rounded-xl"
             required
           />
           {errors.email ? (
@@ -118,7 +117,7 @@ export function LoginForm() {
         <Button
           type="submit"
           size="lg"
-          className="h-11 w-full gap-1.5 rounded-xl text-sm"
+          className="h-11 w-full gap-1.5"
           disabled={submitting}
         >
           {submitting ? (
@@ -180,7 +179,7 @@ function PasswordInput({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         aria-invalid={invalid}
-        className={cn("h-10 rounded-xl pr-10")}
+        className="pr-10"
         required
       />
       <button

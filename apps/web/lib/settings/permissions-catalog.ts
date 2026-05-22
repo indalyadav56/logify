@@ -1,12 +1,12 @@
 /** Mirrors backend role domain permission catalog. */
 export const PERMISSION_RESOURCES = [
   { id: "log", label: "Logs", description: "Search, export, and manage log data" },
-  { id: "project", label: "Projects", description: "Workspaces and project configuration" },
+  { id: "project", label: "Projects", description: "Project settings and configuration" },
   { id: "alert", label: "Alerts", description: "Alert rules and notification policies" },
   { id: "notification", label: "Notifications", description: "Channels and delivery settings" },
-  { id: "user", label: "Users", description: "Invite and manage organization members" },
+  { id: "user", label: "Project Members", description: "Invite and manage project members and permissions" },
   { id: "role", label: "Roles", description: "Custom roles and permission assignments" },
-  { id: "tenant", label: "Organization", description: "Org settings and billing profile" },
+  { id: "tenant", label: "Project Profile", description: "Project general settings and billing" },
   { id: "billing", label: "Billing", description: "Plans, invoices, and usage" },
   {
     id: "api_keys",

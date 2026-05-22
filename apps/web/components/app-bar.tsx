@@ -17,8 +17,10 @@ import {
 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
-import { DEFAULT_WORKSPACES, type WorkspaceSummary } from "@/lib/workspace"
-import { CreateWorkspaceDialog } from "@/components/workspace/create-workspace-dialog"
+import type { ProjectSummary } from "@/lib/project"
+import { useProjectStore } from "@/lib/project-store"
+import { LogifyMark } from "@/components/marketing/logo"
+import { CreateProjectDialog } from "@/components/project/create-project-dialog"
 import {
   Tooltip,
   TooltipContent,
@@ -95,12 +97,8 @@ const STORAGE_KEY = "logify:appbar-expanded"
 export function AppBar() {
   const pathname = usePathname()
   const router = useRouter()
-  const [workspaces, setWorkspaces] =
-    React.useState<WorkspaceSummary[]>(DEFAULT_WORKSPACES)
-  const [workspace, setWorkspace] = React.useState<WorkspaceSummary>(
-    DEFAULT_WORKSPACES[0]
-  )
-  const [createWorkspaceOpen, setCreateWorkspaceOpen] = React.useState(false)
+  const { projects, project, setProject, addProject } = useProjectStore()
+  const [createProjectOpen, setCreateProjectOpen] = React.useState(false)
   const [expanded, setExpanded] = React.useState(false)
 
   React.useEffect(() => {
@@ -146,17 +144,17 @@ export function AppBar() {
       data-slot="app-bar"
       data-state={expanded ? "expanded" : "collapsed"}
       className={cn(
-        "flex h-svh shrink-0 flex-col gap-1 border-r border-sidebar-border bg-sidebar py-2",
+        "flex h-svh shrink-0 flex-col gap-1 border-r border-sidebar-border bg-sidebar py-2 shadow-[1px_0_0_0_color-mix(in_oklch,var(--foreground)_4%,transparent)]",
         "transition-[width] duration-300 ease-[cubic-bezier(0.33,1,0.68,1)] motion-reduce:transition-none",
         expanded ? "w-[224px]" : "w-[52px]"
       )}
     >
-      <WorkspaceTrigger
+      <ProjectTrigger
         expanded={expanded}
-        workspace={workspace}
-        workspaces={workspaces}
-        onPick={setWorkspace}
-        onRequestCreate={() => setCreateWorkspaceOpen(true)}
+        project={project}
+        projects={projects}
+        onPick={setProject}
+        onRequestCreate={() => setCreateProjectOpen(true)}
       />
 
       <SectionDivider expanded={expanded} />
@@ -226,14 +224,11 @@ export function AppBar() {
         ) : null}
       </button>
 
-      <CreateWorkspaceDialog
-        open={createWorkspaceOpen}
-        onOpenChange={setCreateWorkspaceOpen}
-        takenIds={workspaces.map((w) => w.id)}
-        onCreated={(w) => {
-          setWorkspaces((prev) => [...prev, w])
-          setWorkspace(w)
-        }}
+      <CreateProjectDialog
+        open={createProjectOpen}
+        onOpenChange={setCreateProjectOpen}
+        takenIds={projects.map((p) => p.id)}
+        onCreated={addProject}
       />
     </aside>
   )
@@ -258,17 +253,17 @@ function SectionDivider({
   )
 }
 
-function WorkspaceTrigger({
+function ProjectTrigger({
   expanded,
-  workspace,
-  workspaces,
+  project,
+  projects,
   onPick,
   onRequestCreate,
 }: {
   expanded: boolean
-  workspace: WorkspaceSummary
-  workspaces: WorkspaceSummary[]
-  onPick: (w: WorkspaceSummary) => void
+  project: ProjectSummary
+  projects: ProjectSummary[]
+  onPick: (p: ProjectSummary) => void
   onRequestCreate: () => void
 }) {
   return (
@@ -282,16 +277,16 @@ function WorkspaceTrigger({
               ? "mx-1.5 h-9 gap-2 px-1.5 hover:bg-sidebar-accent/80"
               : "mx-auto size-9 justify-center"
           )}
-          aria-label="Workspace"
+          aria-label="Project"
         >
-          <Logomark className={cn(expanded ? "size-8" : "size-9")} />
+          <LogifyMark className={cn(expanded ? "size-8" : "size-9")} />
           {expanded ? (
             <span className="flex min-w-0 flex-col items-start leading-tight">
               <span className="truncate text-[13px] font-semibold text-sidebar-foreground">
-                {workspace.name}
+                {project.name}
               </span>
               <span className="truncate text-[11.5px] font-medium text-muted-foreground">
-                {workspace.role}
+                {project.role}
               </span>
             </span>
           ) : null}
@@ -299,24 +294,24 @@ function WorkspaceTrigger({
       </DropdownMenuTrigger>
       <DropdownMenuContent side="right" align="start" className="w-60">
         <DropdownMenuLabel className="text-[11px]">
-          Workspace
+          Project
         </DropdownMenuLabel>
-        {workspaces.map((w) => (
+        {projects.map((p) => (
           <DropdownMenuItem
-            key={w.id}
-            onClick={() => onPick(w)}
+            key={p.id}
+            onClick={() => onPick(p)}
             className="gap-2"
           >
             <span className="flex size-7 items-center justify-center rounded-md bg-muted text-[10px] font-semibold">
-              {w.initials}
+              {p.initials}
             </span>
             <span className="flex flex-col">
-              <span className="text-sm">{w.name}</span>
+              <span className="text-sm">{p.name}</span>
               <span className="text-[10.5px] text-muted-foreground">
-                {w.role}
+                {p.role}
               </span>
             </span>
-            {w.id === workspace.id ? (
+            {p.id === project.id ? (
               <span className="ml-auto text-[10px] text-muted-foreground">
                 current
               </span>
@@ -329,7 +324,7 @@ function WorkspaceTrigger({
           onSelect={() => onRequestCreate()}
         >
           <PlusCircleIcon className="size-4 text-muted-foreground" />
-          Create workspace
+          Create project
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -542,10 +537,10 @@ function UserTrigger({ expanded }: { expanded: boolean }) {
           <Link href="/dashboard/settings/account">Account settings</Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link href="/dashboard/settings">Organization settings</Link>
+          <Link href="/dashboard/settings">Project settings</Link>
         </DropdownMenuItem>
         <DropdownMenuItem>Keyboard shortcuts</DropdownMenuItem>
-        <DropdownMenuItem>Switch organization</DropdownMenuItem>
+        <DropdownMenuItem>Switch project</DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem className="text-destructive">
           Sign out
@@ -560,27 +555,3 @@ function isActive(pathname: string, href: string, exact?: boolean) {
   return pathname === href || pathname.startsWith(href + "/")
 }
 
-function Logomark({ className }: { className?: string }) {
-  return (
-    <span
-      aria-hidden
-      className={cn(
-        "relative flex shrink-0 items-center justify-center overflow-hidden rounded-[6px] bg-foreground text-background shadow-sm",
-        className
-      )}
-    >
-      <svg
-        viewBox="0 0 24 24"
-        className="size-[55%]"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth={2.4}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <path d="M5 4v15a1 1 0 0 0 1 1h13" />
-        <path d="M5 4l3 6 4-3 4 5 3-3" />
-      </svg>
-    </span>
-  )
-}

@@ -6,23 +6,23 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 
+	"github.com/indalyadav56/logify/apps/backend/internal/project/application"
+	"github.com/indalyadav56/logify/apps/backend/internal/project/domain"
 	"github.com/indalyadav56/logify/apps/backend/internal/server/http/middleware"
-	"github.com/indalyadav56/logify/apps/backend/internal/workspace/application"
-	"github.com/indalyadav56/logify/apps/backend/internal/workspace/domain"
 	"github.com/indalyadav56/logify/apps/backend/pkg/response"
 	"github.com/indalyadav56/logify/apps/backend/pkg/validator"
 )
 
-type WorkspaceHandler struct {
-	service application.WorkspaceService
+type ProjectHandler struct {
+	service application.ProjectService
 }
 
-func NewWorkspaceHandler(service application.WorkspaceService) *WorkspaceHandler {
-	return &WorkspaceHandler{service: service}
+func NewProjectHandler(service application.ProjectService) *ProjectHandler {
+	return &ProjectHandler{service: service}
 }
 
 // CreateWorkspace handles POST /v1/workspaces
-func (h *WorkspaceHandler) CreateWorkspace(c *gin.Context) {
+func (h *ProjectHandler) CreateWorkspace(c *gin.Context) {
 	var input application.CreateWorkspaceInput
 	if !validator.ValidateRequest(c, &input) {
 		return
@@ -44,7 +44,7 @@ func (h *WorkspaceHandler) CreateWorkspace(c *gin.Context) {
 }
 
 // GetWorkspace handles GET /v1/workspaces/:id
-func (h *WorkspaceHandler) GetWorkspace(c *gin.Context) {
+func (h *ProjectHandler) GetWorkspace(c *gin.Context) {
 	id, ok := parseUUIDParam(c, "id")
 	if !ok {
 		return
@@ -59,7 +59,7 @@ func (h *WorkspaceHandler) GetWorkspace(c *gin.Context) {
 }
 
 // ListWorkspaces handles GET /v1/workspaces[?tenant_id=...]
-func (h *WorkspaceHandler) ListWorkspaces(c *gin.Context) {
+func (h *ProjectHandler) ListWorkspaces(c *gin.Context) {
 	var tenantID *uuid.UUID
 	if v := c.Query("tenant_id"); v != "" {
 		id, err := uuid.Parse(v)
@@ -79,7 +79,7 @@ func (h *WorkspaceHandler) ListWorkspaces(c *gin.Context) {
 }
 
 // UpdateWorkspace handles PUT /v1/workspaces/:id
-func (h *WorkspaceHandler) UpdateWorkspace(c *gin.Context) {
+func (h *ProjectHandler) UpdateWorkspace(c *gin.Context) {
 	id, ok := parseUUIDParam(c, "id")
 	if !ok {
 		return
@@ -99,7 +99,7 @@ func (h *WorkspaceHandler) UpdateWorkspace(c *gin.Context) {
 }
 
 // DeleteWorkspace handles DELETE /v1/workspaces/:id
-func (h *WorkspaceHandler) DeleteWorkspace(c *gin.Context) {
+func (h *ProjectHandler) DeleteWorkspace(c *gin.Context) {
 	id, ok := parseUUIDParam(c, "id")
 	if !ok {
 		return
@@ -113,7 +113,7 @@ func (h *WorkspaceHandler) DeleteWorkspace(c *gin.Context) {
 }
 
 // writeError maps domain errors to HTTP responses with a consistent envelope.
-func (h *WorkspaceHandler) writeError(c *gin.Context, err error, fallback string) {
+func (h *ProjectHandler) writeError(c *gin.Context, err error, fallback string) {
 	switch {
 	case errors.Is(err, domain.ErrWorkspaceNotFound):
 		response.NotFound(c, "Workspace not found")

@@ -39,7 +39,7 @@ const TITLES: Record<string, string> = {
   "/dashboard/assist": "Assist",
   "/dashboard/settings": "Settings",
   "/dashboard/settings/account": "Account",
-  "/dashboard/settings/users": "Users",
+  "/dashboard/settings/users": "Members",
   "/dashboard/settings/api-keys": "API keys",
   "/dashboard/settings/roles": "Roles",
 }
@@ -74,7 +74,7 @@ export function AppHeader() {
   const [ingestionOpen, setIngestionOpen] = React.useState(false)
 
   return (
-    <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-3 border-b border-border bg-card px-4">
+    <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-3 border-b border-border/80 bg-background/90 px-4 backdrop-blur-md supports-[backdrop-filter]:bg-background/75">
       <Breadcrumb
         className={cn(
           "hidden min-w-0 md:block",

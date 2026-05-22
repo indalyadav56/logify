@@ -7,8 +7,8 @@ import (
 	jwtpkg "github.com/indalyadav56/logify/apps/backend/pkg/jwt"
 )
 
-func RegisterRoutes(router *gin.RouterGroup, handler *WorkspaceHandler, jwt *jwtpkg.JWT) {
-	g := router.Group("/v1/workspaces")
+func RegisterRoutes(router *gin.RouterGroup, handler *ProjectHandler, jwt *jwtpkg.JWT) {
+	g := router.Group("/v1/projects")
 	g.Use(middleware.AuthMiddleware(jwt))
 	{
 		g.GET("", handler.ListWorkspaces)

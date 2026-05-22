@@ -30,13 +30,13 @@ export function MarketingNav() {
   return (
     <header
       className={cn(
-        "sticky top-0 z-50 w-full transition-colors duration-200",
+        "sticky top-0 z-50 w-full transition-[border-color,background-color,box-shadow] duration-200",
         scrolled
-          ? "border-b border-border/60 bg-background/80 backdrop-blur-xl"
+          ? "border-b border-border/70 bg-background/90 shadow-sm backdrop-blur-xl"
           : "border-b border-transparent bg-transparent"
       )}
     >
-      <div className="mx-auto flex h-14 max-w-7xl items-center gap-6 px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto flex h-[3.25rem] max-w-7xl items-center gap-6 px-4 sm:px-6 lg:px-8">
         <Link
           href="/"
           className="inline-flex items-center gap-2 text-foreground"

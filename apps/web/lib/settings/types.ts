@@ -16,8 +16,9 @@ export type Role = {
 
 export type UserStatus = "active" | "invited" | "suspended"
 
-export type OrgUser = {
+export type ProjectMember = {
   id: string
+  projectId: string
   email: string
   fullName: string
   roleId: string
@@ -27,15 +28,24 @@ export type OrgUser = {
   createdAt: string
 }
 
-export type UserInvite = {
+/** @deprecated Use ProjectMember */
+export type OrgUser = ProjectMember
+
+export type ProjectMemberInvite = {
   id: string
+  projectId: string
+  projectName: string
   email: string
   roleId: string
   roleName: string
   invitedBy: string
+  permissions?: Permission[]
   expiresAt: string
   createdAt: string
 }
+
+/** @deprecated Use ProjectMemberInvite */
+export type UserInvite = ProjectMemberInvite
 
 export type AccountProfile = {
   fullName: string

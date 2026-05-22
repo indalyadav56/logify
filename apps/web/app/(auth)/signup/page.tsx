@@ -3,7 +3,7 @@ import type { Metadata } from "next"
 import { SignupForm } from "@/components/auth/signup-form"
 
 export const metadata: Metadata = {
-  title: "Create your Logify workspace",
+  title: "Create your Logify project",
   description:
     "Start your free 30-day Logify trial. No credit card required.",
 }

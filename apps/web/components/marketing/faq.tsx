@@ -23,7 +23,7 @@ const QA: { q: string; a: string }[] = [
   },
   {
     q: "How does pricing work?",
-    a: "Pro is $29 per host per month for hosts, traces and metrics, plus $0.50 / GB ingested for logs with usage-based retention. There are no per-user charges and you can cap spend per workspace.",
+    a: "Pro is $29 per host per month for hosts, traces and metrics, plus $0.50 / GB ingested for logs with usage-based retention. There are no per-user charges and you can cap spend per project.",
   },
   {
     q: "Is my data secure?",

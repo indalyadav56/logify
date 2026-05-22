@@ -11,6 +11,7 @@ import {
 import { toast } from "sonner"
 
 import { cn } from "@/lib/utils"
+import { useProjectStore } from "@/lib/project-store"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -39,7 +40,7 @@ import {
 import { InviteUserDialog } from "@/components/settings/invite-user-dialog"
 import { SettingsSection } from "@/components/settings/settings-section"
 import { MOCK_INVITES, MOCK_ROLES, MOCK_USERS } from "@/lib/settings/mock-data"
-import type { OrgUser, UserStatus } from "@/lib/settings/types"
+import type { ProjectMember, ProjectMemberInvite, UserStatus } from "@/lib/settings/types"
 
 function formatRelative(iso: string) {
   const d = new Date(iso)
@@ -58,16 +59,31 @@ const STATUS_STYLES: Record<UserStatus, string> = {
   suspended: "bg-muted text-muted-foreground",
 }
 
+function createInviteId() {
+  return `inv-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
+}
+
 export function UsersManagementPanel() {
+  const { project } = useProjectStore()
   const [users, setUsers] = React.useState(MOCK_USERS)
-  const [invites] = React.useState(MOCK_INVITES)
+  const [invites, setInvites] = React.useState(MOCK_INVITES)
   const [search, setSearch] = React.useState("")
   const [statusFilter, setStatusFilter] = React.useState<string>("all")
   const [inviteOpen, setInviteOpen] = React.useState(false)
 
+  const projectUsers = React.useMemo(
+    () => users.filter((u) => u.projectId === project.id),
+    [users, project.id]
+  )
+
+  const projectInvites = React.useMemo(
+    () => invites.filter((inv) => inv.projectId === project.id),
+    [invites, project.id]
+  )
+
   const filtered = React.useMemo(() => {
     const q = search.trim().toLowerCase()
-    return users.filter((u) => {
+    return projectUsers.filter((u) => {
       if (statusFilter !== "all" && u.status !== statusFilter) return false
       if (!q) return true
       return (
@@ -76,7 +92,7 @@ export function UsersManagementPanel() {
         u.roleName.toLowerCase().includes(q)
       )
     })
-  }, [users, search, statusFilter])
+  }, [projectUsers, search, statusFilter])
 
   const changeRole = (userId: string, roleId: string) => {
     const role = MOCK_ROLES.find((r) => r.id === roleId)
@@ -86,18 +102,57 @@ export function UsersManagementPanel() {
         u.id === userId ? { ...u, roleId, roleName: role.name } : u
       )
     )
-    toast.success("Role updated")
+    toast.success("Role updated for this project")
+  }
+
+  const handleInvited = (
+    payload: Omit<ProjectMemberInvite, "id" | "createdAt" | "expiresAt">
+  ) => {
+    const now = new Date()
+    const expires = new Date(now)
+    expires.setDate(expires.getDate() + 7)
+
+    setInvites((prev) => [
+      ...prev,
+      {
+        ...payload,
+        id: createInviteId(),
+        createdAt: now.toISOString(),
+        expiresAt: expires.toISOString(),
+      },
+    ])
   }
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-5">
+      <div className="flex items-center gap-3 rounded-lg border border-border/60 bg-muted/20 px-4 py-3">
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-muted text-[11px] font-semibold">
+          {project.initials}
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-[13px] font-medium text-foreground">
+            {project.name}
+          </p>
+          <p className="text-[12px] text-muted-foreground">
+            Members and invitations are scoped to this project only.
+          </p>
+        </div>
+        <Badge variant="secondary" className="shrink-0 text-[10.5px]">
+          {filtered.length} member{filtered.length === 1 ? "" : "s"}
+        </Badge>
+      </div>
+
       <SettingsSection
         title="Members"
-        description="Manage who has access to this organization."
+        description={`People with access to ${project.name}.`}
         action={
-          <Button size="sm" className="h-8 gap-1.5" onClick={() => setInviteOpen(true)}>
+          <Button
+            size="sm"
+            className="h-8 gap-1.5"
+            onClick={() => setInviteOpen(true)}
+          >
             <PlusIcon className="size-3.5" />
-            Invite user
+            Invite to project
           </Button>
         }
       >
@@ -112,7 +167,7 @@ export function UsersManagementPanel() {
             />
           </div>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="h-9 w-full sm:w-[140px] text-[13px]">
+            <SelectTrigger className="h-9 w-full text-[13px] sm:w-[140px]">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
@@ -124,43 +179,67 @@ export function UsersManagementPanel() {
           </Select>
         </div>
 
-        <div className="overflow-hidden rounded-md border border-border">
-          <Table>
-            <TableHeader>
-              <TableRow className="hover:bg-transparent">
-                <TableHead className="text-[12px]">User</TableHead>
-                <TableHead className="text-[12px]">Role</TableHead>
-                <TableHead className="text-[12px]">Status</TableHead>
-                <TableHead className="text-[12px]">Last active</TableHead>
-                <TableHead className="w-12" />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filtered.map((user) => (
-                <UserRow
-                  key={user.id}
-                  user={user}
-                  onChangeRole={changeRole}
-                  onSuspend={() =>
-                    toast.message("User suspended", { description: user.email })
-                  }
-                />
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-        <p className="mt-3 text-[12px] text-muted-foreground">
-          Showing {filtered.length} of {users.length} members
-        </p>
+        {filtered.length === 0 ? (
+          <div className="rounded-md border border-dashed border-border px-4 py-10 text-center">
+            <p className="text-[13px] font-medium text-foreground">
+              No members in this project yet
+            </p>
+            <p className="mt-1 text-[12px] text-muted-foreground">
+              Invite someone to collaborate on {project.name}.
+            </p>
+            <Button
+              size="sm"
+              className="mt-4 h-8 gap-1.5"
+              onClick={() => setInviteOpen(true)}
+            >
+              <PlusIcon className="size-3.5" />
+              Invite to project
+            </Button>
+          </div>
+        ) : (
+          <>
+            <div className="overflow-hidden rounded-md border border-border">
+              <Table>
+                <TableHeader>
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead className="text-[12px]">Member</TableHead>
+                    <TableHead className="text-[12px]">Project role</TableHead>
+                    <TableHead className="text-[12px]">Status</TableHead>
+                    <TableHead className="text-[12px]">Last active</TableHead>
+                    <TableHead className="w-12" />
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filtered.map((user) => (
+                    <UserRow
+                      key={user.id}
+                      user={user}
+                      onChangeRole={changeRole}
+                      onSuspend={() =>
+                        toast.message("Member suspended", {
+                          description: user.email,
+                        })
+                      }
+                    />
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+            <p className="mt-3 text-[12px] text-muted-foreground">
+              Showing {filtered.length} of {projectUsers.length} members in{" "}
+              {project.name}
+            </p>
+          </>
+        )}
       </SettingsSection>
 
-      {invites.length > 0 ? (
+      {projectInvites.length > 0 ? (
         <SettingsSection
           title="Pending invitations"
-          description="Invites that have not been accepted yet."
+          description={`Invites awaiting acceptance for ${project.name}.`}
         >
           <ul className="divide-y divide-border/60 rounded-md border border-border">
-            {invites.map((inv) => (
+            {projectInvites.map((inv) => (
               <li
                 key={inv.id}
                 className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
@@ -170,9 +249,14 @@ export function UsersManagementPanel() {
                     <MailIcon className="size-4" />
                   </span>
                   <div className="min-w-0">
-                    <p className="truncate text-[13px] font-medium">{inv.email}</p>
+                    <p className="truncate text-[13px] font-medium">
+                      {inv.email}
+                    </p>
                     <p className="text-[12px] text-muted-foreground">
                       {inv.roleName} · invited by {inv.invitedBy}
+                      {inv.permissions?.length
+                        ? " · custom permissions"
+                        : null}
                     </p>
                   </div>
                 </div>
@@ -197,7 +281,11 @@ export function UsersManagementPanel() {
         </SettingsSection>
       ) : null}
 
-      <InviteUserDialog open={inviteOpen} onOpenChange={setInviteOpen} />
+      <InviteUserDialog
+        open={inviteOpen}
+        onOpenChange={setInviteOpen}
+        onInvited={handleInvited}
+      />
     </div>
   )
 }
@@ -207,7 +295,7 @@ function UserRow({
   onChangeRole,
   onSuspend,
 }: {
-  user: OrgUser
+  user: ProjectMember
   onChangeRole: (userId: string, roleId: string) => void
   onSuspend: () => void
 }) {
@@ -216,7 +304,9 @@ function UserRow({
       <TableCell>
         <div className="min-w-0">
           <p className="truncate text-[13px] font-medium">{user.fullName}</p>
-          <p className="truncate text-[12px] text-muted-foreground">{user.email}</p>
+          <p className="truncate text-[12px] text-muted-foreground">
+            {user.email}
+          </p>
         </div>
       </TableCell>
       <TableCell>
@@ -239,12 +329,15 @@ function UserRow({
       <TableCell>
         <Badge
           variant="secondary"
-          className={cn("rounded-md text-[10px] font-medium", STATUS_STYLES[user.status])}
+          className={cn(
+            "rounded-md text-[10px] font-medium",
+            STATUS_STYLES[user.status]
+          )}
         >
           {user.status}
         </Badge>
       </TableCell>
-      <TableCell className="tabular-nums-lining text-[12px] text-muted-foreground">
+      <TableCell className="text-[12px] text-muted-foreground tabular-nums-lining">
         {formatRelative(user.lastActiveAt)}
       </TableCell>
       <TableCell>
@@ -259,7 +352,7 @@ function UserRow({
             <DropdownMenuSeparator />
             <DropdownMenuItem className="text-destructive" onClick={onSuspend}>
               <UserXIcon className="size-3.5" />
-              Suspend user
+              Remove from project
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

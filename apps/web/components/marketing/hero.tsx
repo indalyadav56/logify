@@ -23,9 +23,7 @@ export function Hero() {
 
           <h1 className="mt-6 text-balance text-4xl font-semibold tracking-tight text-foreground sm:text-5xl lg:text-6xl">
             Observability that{" "}
-            <span className="bg-gradient-to-br from-emerald-300 via-emerald-400 to-teal-500 bg-clip-text text-transparent">
-              answers
-            </span>{" "}
+            <span className="text-brand-gradient">answers</span>{" "}
             before you ask.
           </h1>
 
@@ -57,15 +55,15 @@ export function Hero() {
 
           <ul className="mt-5 flex flex-wrap items-center justify-center gap-x-5 gap-y-1 text-[12px] text-muted-foreground">
             <li className="inline-flex items-center gap-1.5">
-              <span className="size-1.5 rounded-full bg-emerald-500" />
+              <span className="size-1.5 rounded-full bg-primary" />
               No credit card required
             </li>
             <li className="inline-flex items-center gap-1.5">
-              <span className="size-1.5 rounded-full bg-emerald-500" />
+              <span className="size-1.5 rounded-full bg-primary" />
               5-minute setup
             </li>
             <li className="inline-flex items-center gap-1.5">
-              <span className="size-1.5 rounded-full bg-emerald-500" />
+              <span className="size-1.5 rounded-full bg-primary" />
               SOC 2 · ISO 27001 · HIPAA
             </li>
           </ul>
@@ -74,7 +72,7 @@ export function Hero() {
         <div className="relative mx-auto mt-14 max-w-6xl">
           <div
             aria-hidden
-            className="absolute -inset-x-10 -inset-y-8 -z-10 rounded-[2rem] bg-gradient-to-br from-emerald-500/20 via-emerald-500/0 to-cyan-400/10 blur-2xl"
+            className="absolute -inset-x-10 -inset-y-8 -z-10 rounded-[2rem] bg-gradient-to-br from-primary/20 via-primary/0 to-brand/10 blur-2xl"
           />
           <DashboardPreview />
         </div>
@@ -89,18 +87,11 @@ function BackgroundFx() {
       aria-hidden
       className="pointer-events-none absolute inset-0 -z-10 overflow-hidden"
     >
-      <div
-        className="absolute inset-0 opacity-[0.6] [mask-image:radial-gradient(ellipse_at_top,#000_30%,transparent_70%)]"
-        style={{
-          backgroundImage:
-            "linear-gradient(to right, color-mix(in oklch, var(--foreground) 6%, transparent) 1px, transparent 1px), linear-gradient(to bottom, color-mix(in oklch, var(--foreground) 6%, transparent) 1px, transparent 1px)",
-          backgroundSize: "44px 44px",
-        }}
-      />
+      <div className="absolute inset-0 bg-grid-subtle opacity-60 [mask-image:radial-gradient(ellipse_at_top,#000_30%,transparent_70%)]" />
       <div className="absolute -top-40 left-1/2 -translate-x-1/2">
-        <div className="h-[420px] w-[820px] rounded-full bg-emerald-500/30 blur-[120px]" />
+        <div className="h-[420px] w-[820px] rounded-full bg-primary/25 blur-[120px]" />
       </div>
-      <div className="absolute top-1/3 right-[-12%] h-[320px] w-[420px] rounded-full bg-cyan-400/15 blur-[120px]" />
+      <div className="absolute top-1/3 right-[-12%] h-[320px] w-[420px] rounded-full bg-brand/15 blur-[120px]" />
     </div>
   )
 }

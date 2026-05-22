@@ -5,7 +5,7 @@ export default function GeneralSettingsPage() {
   return (
     <SettingsShell
       title="General"
-      description="Organization identity, security policies, and notification defaults."
+      description="Project identity, security policies, and notification defaults."
     >
       <GeneralSettingsPanel />
     </SettingsShell>

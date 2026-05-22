@@ -9,10 +9,12 @@ import { AppSidebar } from "@/components/app-sidebar"
 import { AppHeader } from "@/components/app-header"
 import { LogsStoreProvider } from "@/lib/logs-store"
 import { LogsDataProvider } from "@/lib/logs-data-context"
+import { ProjectStoreProvider } from "@/lib/project-store"
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <TooltipProvider delayDuration={150}>
+      <ProjectStoreProvider>
       <LogsStoreProvider>
         <LogsDataProvider>
           <SidebarProvider
@@ -32,6 +34,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </SidebarProvider>
         </LogsDataProvider>
       </LogsStoreProvider>
+      </ProjectStoreProvider>
     </TooltipProvider>
   )
 }

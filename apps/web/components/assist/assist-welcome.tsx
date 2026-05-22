@@ -33,7 +33,7 @@ export function AssistWelcome() {
             </h2>
             <p className="mt-1.5 text-[13px] leading-relaxed text-muted-foreground">
               Ask questions in plain language across logs, dashboards, and
-              alerts. Assist uses your workspace context and suggests queries,
+              alerts. Assist uses your project context and suggests queries,
               root-cause summaries, and next steps.
             </p>
             <a

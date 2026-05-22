@@ -45,10 +45,10 @@ import (
 	// Notification
 	notificationHTTP "github.com/indalyadav56/logify/apps/backend/internal/notification/transport/http"
 
-	// Workspace
-	workspaceApp "github.com/indalyadav56/logify/apps/backend/internal/workspace/application"
-	workspacePG "github.com/indalyadav56/logify/apps/backend/internal/workspace/infrastructure/postgres"
-	workspaceHTTP "github.com/indalyadav56/logify/apps/backend/internal/workspace/transport/http"
+	// project
+	projectApp "github.com/indalyadav56/logify/apps/backend/internal/project/application"
+	projectPG "github.com/indalyadav56/logify/apps/backend/internal/project/infrastructure/postgres"
+	projectHTTP "github.com/indalyadav56/logify/apps/backend/internal/project/transport/http"
 )
 
 type ServerContainer struct {
@@ -91,8 +91,8 @@ type ServerContainer struct {
 	NotificationDashboardHandler notificationHTTP.NotificationDashboardHandler
 
 	// Workspace bounded context
-	WorkspaceService workspaceApp.WorkspaceService
-	WorkspaceHandler *workspaceHTTP.WorkspaceHandler
+	WorkspaceService projectApp.ProjectService
+	WorkspaceHandler *projectHTTP.ProjectHandler
 }
 
 func NewServerContainer(ctx context.Context, cfg *config.Config, log *zap.Logger) (*ServerContainer, error) {
@@ -211,14 +211,14 @@ func (c *ServerContainer) initNotification() {
 }
 
 func (c *ServerContainer) initWorkspace() {
-	repo := workspacePG.NewWorkspaceRepository(c.postgresDB)
-	c.WorkspaceService = workspaceApp.NewWorkspaceService(repo, c.Logger)
-	c.WorkspaceHandler = workspaceHTTP.NewWorkspaceHandler(c.WorkspaceService)
+	repo := projectPG.NewProjectRepository(c.postgresDB)
+	c.WorkspaceService = projectApp.NewProjectService(repo, c.Logger)
+	c.WorkspaceHandler = projectHTTP.NewProjectHandler(c.WorkspaceService)
 }
 
 func (c *ServerContainer) RegisterAllRoutes(e *gin.Engine) {
 	authHTTP.RegisterRoutes(&e.RouterGroup, c.AuthHandler)
 	ingestHTTP.RegisterRoutes(&e.RouterGroup, c.IngestHandler)
 	searchHTTP.RegisterRoutes(&e.RouterGroup, c.SearchHandler)
-	workspaceHTTP.RegisterRoutes(&e.RouterGroup, c.WorkspaceHandler, c.JWT)
+	projectHTTP.RegisterRoutes(&e.RouterGroup, c.WorkspaceHandler, c.JWT)
 }

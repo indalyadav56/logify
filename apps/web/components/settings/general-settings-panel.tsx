@@ -29,7 +29,7 @@ export function GeneralSettingsPanel() {
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-5">
       <SettingsSection
         title="Organization"
-        description="Workspace identity and defaults applied across Logify."
+        description="Project identity and defaults applied across Logify."
       >
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Organization name">

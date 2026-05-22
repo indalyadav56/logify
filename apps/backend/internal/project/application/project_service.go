@@ -8,12 +8,10 @@ import (
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 
-	"github.com/indalyadav56/logify/apps/backend/internal/workspace/domain"
+	"github.com/indalyadav56/logify/apps/backend/internal/project/domain"
 )
 
-// WorkspaceService is the application-facing entry point for the workspace
-// bounded context.
-type WorkspaceService interface {
+type ProjectService interface {
 	CreateWorkspace(ctx context.Context, input CreateWorkspaceInput) (*WorkspaceOutput, error)
 	GetWorkspace(ctx context.Context, id uuid.UUID) (*WorkspaceOutput, error)
 	ListWorkspaces(ctx context.Context, tenantID *uuid.UUID) ([]*WorkspaceOutput, error)
@@ -21,21 +19,20 @@ type WorkspaceService interface {
 	DeleteWorkspace(ctx context.Context, id uuid.UUID) error
 }
 
-type workspaceService struct {
-	repo   domain.WorkspaceRepository
+type projectService struct {
+	repo   domain.ProjectRepository
 	logger *zap.Logger
 }
 
-// NewWorkspaceService returns a WorkspaceService backed by the given repository.
-func NewWorkspaceService(repo domain.WorkspaceRepository, logger *zap.Logger) WorkspaceService {
-	return &workspaceService{
+func NewProjectService(repo domain.ProjectRepository, logger *zap.Logger) ProjectService {
+	return &projectService{
 		repo:   repo,
 		logger: logger.Named("workspace_service"),
 	}
 }
 
-func (s *workspaceService) CreateWorkspace(ctx context.Context, input CreateWorkspaceInput) (*WorkspaceOutput, error) {
-	ws := domain.NewWorkspace(input.TenantID, input.Name, input.Description)
+func (s *projectService) CreateWorkspace(ctx context.Context, input CreateWorkspaceInput) (*WorkspaceOutput, error) {
+	ws := domain.NewProject(input.TenantID, input.Name, input.Description)
 
 	if err := s.repo.Create(ctx, ws); err != nil {
 		if errors.Is(err, domain.ErrWorkspaceAlreadyExists) {
@@ -53,7 +50,7 @@ func (s *workspaceService) CreateWorkspace(ctx context.Context, input CreateWork
 	return toWorkspaceOutput(ws), nil
 }
 
-func (s *workspaceService) GetWorkspace(ctx context.Context, id uuid.UUID) (*WorkspaceOutput, error) {
+func (s *projectService) GetWorkspace(ctx context.Context, id uuid.UUID) (*WorkspaceOutput, error) {
 	ws, err := s.repo.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
@@ -61,7 +58,7 @@ func (s *workspaceService) GetWorkspace(ctx context.Context, id uuid.UUID) (*Wor
 	return toWorkspaceOutput(ws), nil
 }
 
-func (s *workspaceService) ListWorkspaces(ctx context.Context, tenantID *uuid.UUID) ([]*WorkspaceOutput, error) {
+func (s *projectService) ListWorkspaces(ctx context.Context, tenantID *uuid.UUID) ([]*WorkspaceOutput, error) {
 	items, err := s.repo.List(ctx, tenantID)
 	if err != nil {
 		s.logger.Error("failed to list workspaces", zap.Error(err))
@@ -74,7 +71,7 @@ func (s *workspaceService) ListWorkspaces(ctx context.Context, tenantID *uuid.UU
 	return out, nil
 }
 
-func (s *workspaceService) UpdateWorkspace(ctx context.Context, id uuid.UUID, input UpdateWorkspaceInput) (*WorkspaceOutput, error) {
+func (s *projectService) UpdateWorkspace(ctx context.Context, id uuid.UUID, input UpdateWorkspaceInput) (*WorkspaceOutput, error) {
 	ws, err := s.repo.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
@@ -97,7 +94,7 @@ func (s *workspaceService) UpdateWorkspace(ctx context.Context, id uuid.UUID, in
 	return toWorkspaceOutput(ws), nil
 }
 
-func (s *workspaceService) DeleteWorkspace(ctx context.Context, id uuid.UUID) error {
+func (s *projectService) DeleteWorkspace(ctx context.Context, id uuid.UUID) error {
 	if err := s.repo.Delete(ctx, id); err != nil {
 		if !errors.Is(err, domain.ErrWorkspaceNotFound) {
 			s.logger.Error("failed to delete workspace",
@@ -111,7 +108,7 @@ func (s *workspaceService) DeleteWorkspace(ctx context.Context, id uuid.UUID) er
 	return nil
 }
 
-func toWorkspaceOutput(w *domain.Workspace) *WorkspaceOutput {
+func toWorkspaceOutput(w *domain.Project) *WorkspaceOutput {
 	return &WorkspaceOutput{
 		ID:          w.ID,
 		TenantID:    w.TenantID,

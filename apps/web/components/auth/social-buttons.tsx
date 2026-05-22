@@ -16,12 +16,11 @@ export function SocialButtons({ mode }: { mode: "login" | "signup" }) {
   }
 
   return (
-    <div className="grid grid-cols-2 gap-2">
+    <div className="grid grid-cols-2 gap-2.5">
       <Button
         type="button"
         variant="outline"
-        size="sm"
-        className="h-10 gap-2 rounded-xl"
+        className="h-10 gap-2 text-[13px]"
         onClick={() => notReady("Google")}
       >
         <RiGoogleFill className="size-4" />
@@ -30,8 +29,7 @@ export function SocialButtons({ mode }: { mode: "login" | "signup" }) {
       <Button
         type="button"
         variant="outline"
-        size="sm"
-        className="h-10 gap-2 rounded-xl"
+        className="h-10 gap-2 text-[13px]"
         onClick={() => notReady("GitHub")}
       >
         <RiGithubFill className="size-4" />
@@ -41,11 +39,15 @@ export function SocialButtons({ mode }: { mode: "login" | "signup" }) {
   )
 }
 
-export function OrSeparator({ label = "or continue with email" }: { label?: string }) {
+export function OrSeparator({
+  label = "or continue with email",
+}: {
+  label?: string
+}) {
   return (
-    <div className="relative my-5 flex items-center">
+    <div className="relative my-6 flex items-center">
       <span className="h-px flex-1 bg-border" />
-      <span className="px-3 text-[11px] tracking-wider text-muted-foreground uppercase">
+      <span className="px-3 text-[10.5px] font-medium tracking-wider text-muted-foreground uppercase">
         {label}
       </span>
       <span className="h-px flex-1 bg-border" />

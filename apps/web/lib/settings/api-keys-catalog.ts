@@ -29,7 +29,7 @@ export const API_KEY_SCOPES: {
   {
     id: "projects.read",
     label: "Read projects",
-    description: "List workspaces and project metadata",
+    description: "List projects and metadata",
   },
   {
     id: "admin",

@@ -67,10 +67,10 @@ export function SignupForm() {
   }
 
   return (
-    <div>
+    <div className="rounded-xl border border-border/70 bg-card/90 p-6 shadow-sm backdrop-blur-sm sm:p-7">
       <div className="mb-7 text-center">
         <h1 className="text-[22px] font-semibold tracking-tight text-foreground">
-          Create your workspace
+          Create your project
         </h1>
         <p className="mt-1.5 text-[13px] text-muted-foreground">
           Free 30-day trial · No credit card required
@@ -93,7 +93,6 @@ export function SignupForm() {
             value={name}
             onChange={(e) => setName(e.target.value)}
             aria-invalid={Boolean(errors.name)}
-            className="h-10 rounded-xl"
             required
           />
           {errors.name ? (
@@ -114,7 +113,6 @@ export function SignupForm() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             aria-invalid={Boolean(errors.email)}
-            className="h-10 rounded-xl"
             required
           />
           {errors.email ? (
@@ -135,7 +133,7 @@ export function SignupForm() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               aria-invalid={Boolean(errors.password)}
-              className="h-10 rounded-xl pr-10"
+              className="pr-10"
               required
             />
             <button
@@ -160,7 +158,7 @@ export function SignupForm() {
                 key={c.label}
                 className={cn(
                   "inline-flex items-center gap-1.5 text-[11px] transition-colors",
-                  c.passed ? "text-emerald-500" : "text-muted-foreground"
+                  c.passed ? "text-primary" : "text-muted-foreground"
                 )}
               >
                 {c.passed ? (
@@ -209,16 +207,16 @@ export function SignupForm() {
         <Button
           type="submit"
           size="lg"
-          className="h-11 w-full gap-1.5 rounded-xl text-sm"
+          className="h-11 w-full gap-1.5"
           disabled={submitting}
         >
           {submitting ? (
             <>
-              <LoaderIcon className="size-4 animate-spin" /> Creating workspace…
+              <LoaderIcon className="size-4 animate-spin" /> Creating project…
             </>
           ) : (
             <>
-              Create workspace <ArrowRightIcon className="size-4" />
+              Create project <ArrowRightIcon className="size-4" />
             </>
           )}
         </Button>
@@ -252,8 +250,8 @@ function PasswordStrength({ score }: { score: number }) {
     "bg-rose-500",
     "bg-rose-500",
     "bg-amber-400",
-    "bg-emerald-500",
-    "bg-emerald-500",
+    "bg-primary",
+    "bg-primary",
   ]
   return (
     <div className="mt-1.5 flex items-center gap-2">

@@ -27,7 +27,7 @@ const LOGOS: { name: string; mark: React.ReactNode }[] = [
     name: "Acme Cloud",
     mark: (
       <span className="text-[18px] font-bold tracking-tight">
-        acme<span className="text-emerald-400">.</span>cloud
+        acme<span className="text-primary">.</span>cloud
       </span>
     ),
   },

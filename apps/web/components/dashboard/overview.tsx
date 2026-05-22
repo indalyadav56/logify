@@ -122,7 +122,7 @@ function PageHeader() {
             variant="outline"
             className="h-6 gap-1.5 border-border/60 bg-background"
           >
-            <span className="size-1.5 animate-pulse rounded-full bg-emerald-500" />
+            <span className="size-1.5 animate-pulse rounded-full bg-primary" />
             <span className="text-[11px] font-medium text-muted-foreground">
               Live · 8.4k ev/s
             </span>
@@ -290,7 +290,7 @@ function IngestionPanel({ className }: { className?: string }) {
         <Stat label="Warns" value="182k" highlight="text-amber-400" />
         <Stat label="p95 ingest" value="47 ms" />
         <span className="ml-auto inline-flex items-center gap-1.5">
-          <span className="size-1.5 animate-pulse rounded-full bg-emerald-500" />
+          <span className="size-1.5 animate-pulse rounded-full bg-primary" />
           live
         </span>
       </div>

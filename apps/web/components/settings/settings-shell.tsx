@@ -28,7 +28,7 @@ const NAV = [
   },
   {
     href: "/dashboard/settings/users",
-    label: "Users",
+    label: "Members",
     icon: UsersIcon,
   },
   {
@@ -63,7 +63,7 @@ export function SettingsShell({
 
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden md:flex-row">
-      <div className="flex w-full shrink-0 flex-col border-b border-border bg-muted/15 md:hidden">
+      <div className="flex w-full shrink-0 flex-col border-b border-border/80 bg-background/90 backdrop-blur-md md:hidden">
         <div className="px-4 py-3">
           <p className="text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
             Settings
@@ -90,7 +90,7 @@ export function SettingsShell({
         </div>
       </div>
 
-      <aside className="hidden w-[220px] shrink-0 flex-col border-r border-border bg-muted/15 md:flex">
+      <aside className="hidden w-[220px] shrink-0 flex-col border-r border-border/80 bg-sidebar md:flex">
         <div className="border-b border-border/60 px-4 py-4">
           <p className="text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
             Settings
@@ -128,7 +128,7 @@ export function SettingsShell({
       </aside>
 
       <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-        <header className="shrink-0 border-b border-border/60 bg-muted/10 px-4 py-4 sm:px-6">
+        <header className="shrink-0 border-b border-border/80 bg-background/90 px-4 py-4 backdrop-blur-md sm:px-6">
           <h1 className="text-[17px] font-semibold tracking-tight text-foreground">
             {title}
           </h1>

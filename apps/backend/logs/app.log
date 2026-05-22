@@ -108,3 +108,15 @@
 {"level":"info","timestamp":"2026-05-20T08:25:25.937+0530","caller":"server/main.go:65","message":"Received shutdown signal","service":"auth-service","environment":"dev","signal":"interrupt"}
 {"level":"info","timestamp":"2026-05-20T08:25:25.938+0530","caller":"server/main.go:65","message":"Shutting down HTTP server...","service":"auth-service","environment":"dev"}
 {"level":"info","timestamp":"2026-05-20T08:25:25.939+0530","caller":"server/main.go:65","message":"HTTP server exited gracefully","service":"auth-service","environment":"dev"}
+{"level":"info","timestamp":"2026-05-21T08:20:23.719+0530","caller":"runtime/asm_arm64.s:1447","message":"HTTP server starting","service":"auth-service","environment":"dev","addr":":8080"}
+{"level":"info","timestamp":"2026-05-21T08:20:28.900+0530","caller":"server/main.go:65","message":"Received shutdown signal","service":"auth-service","environment":"dev","signal":"interrupt"}
+{"level":"info","timestamp":"2026-05-21T08:20:28.901+0530","caller":"server/main.go:65","message":"Shutting down HTTP server...","service":"auth-service","environment":"dev"}
+{"level":"info","timestamp":"2026-05-21T08:20:28.901+0530","caller":"server/main.go:65","message":"HTTP server exited gracefully","service":"auth-service","environment":"dev"}
+{"level":"info","timestamp":"2026-05-21T08:21:09.970+0530","caller":"runtime/asm_arm64.s:1447","message":"HTTP server starting","service":"auth-service","environment":"dev","addr":":8080"}
+{"level":"info","timestamp":"2026-05-21T10:27:36.927+0530","caller":"server/main.go:65","message":"Received shutdown signal","service":"auth-service","environment":"dev","signal":"interrupt"}
+{"level":"info","timestamp":"2026-05-21T10:27:36.931+0530","caller":"server/main.go:65","message":"Shutting down HTTP server...","service":"auth-service","environment":"dev"}
+{"level":"info","timestamp":"2026-05-21T10:27:36.933+0530","caller":"server/main.go:65","message":"HTTP server exited gracefully","service":"auth-service","environment":"dev"}
+{"level":"info","timestamp":"2026-05-21T12:50:58.121+0530","caller":"runtime/asm_arm64.s:1447","message":"HTTP server starting","service":"auth-service","environment":"dev","addr":":8080"}
+{"level":"info","timestamp":"2026-05-21T12:58:51.914+0530","caller":"server/main.go:65","message":"Received shutdown signal","service":"auth-service","environment":"dev","signal":"interrupt"}
+{"level":"info","timestamp":"2026-05-21T12:58:51.916+0530","caller":"server/main.go:65","message":"Shutting down HTTP server...","service":"auth-service","environment":"dev"}
+{"level":"info","timestamp":"2026-05-21T12:58:51.917+0530","caller":"server/main.go:65","message":"HTTP server exited gracefully","service":"auth-service","environment":"dev"}

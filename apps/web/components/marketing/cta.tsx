@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 export function FinalCta() {
   return (
     <section className="mx-auto max-w-7xl px-4 pb-24 sm:px-6 lg:px-8">
-      <div className="relative overflow-hidden rounded-3xl border border-primary/30 bg-gradient-to-br from-emerald-500/10 via-emerald-500/5 to-cyan-500/10 px-6 py-14 text-center sm:px-12 sm:py-20">
+      <div className="relative overflow-hidden rounded-2xl border border-primary/25 bg-gradient-to-br from-primary/10 via-primary/5 to-brand/10 px-6 py-14 text-center shadow-sm sm:px-12 sm:py-20">
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0 -z-10 [mask-image:radial-gradient(ellipse_at_center,#000_30%,transparent_70%)]"

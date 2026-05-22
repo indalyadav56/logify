@@ -10,7 +10,7 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/indalyadav56/logify/apps/backend/internal/workspace/domain"
+	"github.com/indalyadav56/logify/apps/backend/internal/project/domain"
 )
 
 // pgUniqueViolation is the SQLSTATE for a UNIQUE constraint violation.
@@ -21,12 +21,11 @@ type workspaceRepository struct {
 	db *pgxpool.Pool
 }
 
-// NewWorkspaceRepository constructs a PostgreSQL-backed workspace repository.
-func NewWorkspaceRepository(db *pgxpool.Pool) domain.WorkspaceRepository {
+func NewProjectRepository(db *pgxpool.Pool) domain.ProjectRepository {
 	return &workspaceRepository{db: db}
 }
 
-func (r *workspaceRepository) Create(ctx context.Context, ws *domain.Workspace) error {
+func (r *workspaceRepository) Create(ctx context.Context, ws *domain.Project) error {
 	const query = `
 		INSERT INTO workspaces (id, tenant_id, name, description, created_at, updated_at)
 		VALUES ($1, $2, $3, $4, $5, $6)
@@ -45,13 +44,13 @@ func (r *workspaceRepository) Create(ctx context.Context, ws *domain.Workspace) 
 	return nil
 }
 
-func (r *workspaceRepository) GetByID(ctx context.Context, id uuid.UUID) (*domain.Workspace, error) {
+func (r *workspaceRepository) GetByID(ctx context.Context, id uuid.UUID) (*domain.Project, error) {
 	const query = `
 		SELECT id, tenant_id, name, COALESCE(description, ''), created_at, updated_at
 		FROM workspaces
 		WHERE id = $1
 	`
-	var ws domain.Workspace
+	var ws domain.Project
 	err := r.db.QueryRow(ctx, query, id).Scan(
 		&ws.ID,
 		&ws.TenantID,
@@ -69,7 +68,7 @@ func (r *workspaceRepository) GetByID(ctx context.Context, id uuid.UUID) (*domai
 	return &ws, nil
 }
 
-func (r *workspaceRepository) List(ctx context.Context, tenantID *uuid.UUID) ([]*domain.Workspace, error) {
+func (r *workspaceRepository) List(ctx context.Context, tenantID *uuid.UUID) ([]*domain.Project, error) {
 	const baseQuery = `
 		SELECT id, tenant_id, name, COALESCE(description, ''), created_at, updated_at
 		FROM workspaces
@@ -87,9 +86,9 @@ func (r *workspaceRepository) List(ctx context.Context, tenantID *uuid.UUID) ([]
 	}
 	defer rows.Close()
 
-	out := make([]*domain.Workspace, 0)
+	out := make([]*domain.Project, 0)
 	for rows.Next() {
-		var ws domain.Workspace
+		var ws domain.Project
 		if err := rows.Scan(
 			&ws.ID,
 			&ws.TenantID,
@@ -105,7 +104,7 @@ func (r *workspaceRepository) List(ctx context.Context, tenantID *uuid.UUID) ([]
 	return out, rows.Err()
 }
 
-func (r *workspaceRepository) Update(ctx context.Context, ws *domain.Workspace) error {
+func (r *workspaceRepository) Update(ctx context.Context, ws *domain.Project) error {
 	const query = `
 		UPDATE workspaces
 		SET name = $2,

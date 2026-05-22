@@ -193,7 +193,7 @@ export function AiInsightsPage() {
               Ask Logify AI
             </CardTitle>
             <CardDescription className="text-[12.5px]">
-              Natural language across your workspace — same data plane as
+              Natural language across your project — same data plane as
               Davis-style correlation.
             </CardDescription>
           </CardHeader>

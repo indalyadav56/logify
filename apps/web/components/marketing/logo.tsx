@@ -9,7 +9,7 @@ export function LogifyMark({ className }: { className?: string }) {
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       aria-hidden="true"
-      className={cn("size-7", className)}
+      className={cn("size-7 shrink-0", className)}
     >
       <defs>
         <linearGradient
@@ -20,8 +20,8 @@ export function LogifyMark({ className }: { className?: string }) {
           y2="30"
           gradientUnits="userSpaceOnUse"
         >
-          <stop offset="0" stopColor="oklch(0.78 0.19 150)" />
-          <stop offset="1" stopColor="oklch(0.45 0.16 165)" />
+          <stop offset="0" stopColor="oklch(0.62 0.14 228)" />
+          <stop offset="1" stopColor="oklch(0.45 0.14 232)" />
         </linearGradient>
       </defs>
       <rect
@@ -54,15 +54,22 @@ export function LogifyMark({ className }: { className?: string }) {
 export function LogifyLogo({
   className,
   withWordmark = true,
+  wordmarkClassName,
 }: {
   className?: string
   withWordmark?: boolean
+  wordmarkClassName?: string
 }) {
   return (
-    <span className={cn("inline-flex items-center gap-2", className)}>
+    <span className={cn("inline-flex items-center gap-2.5", className)}>
       <LogifyMark />
       {withWordmark ? (
-        <span className="text-[15px] font-semibold tracking-tight">
+        <span
+          className={cn(
+            "text-[15px] font-semibold tracking-tight text-foreground",
+            wordmarkClassName
+          )}
+        >
           Logify
         </span>
       ) : null}

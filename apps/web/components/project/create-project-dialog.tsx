@@ -4,7 +4,7 @@ import * as React from "react"
 import { LoaderIcon } from "lucide-react"
 import { toast } from "sonner"
 
-import type { WorkspaceSummary } from "@/lib/workspace"
+import type { ProjectSummary } from "@/lib/project"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -21,8 +21,8 @@ import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
 type Props = Readonly<{
   open: boolean
   onOpenChange: (open: boolean) => void
-  onCreated: (workspace: WorkspaceSummary) => void
-  /** Existing workspace ids / URL slugs — blocks duplicates. */
+  onCreated: (project: ProjectSummary) => void
+  /** Existing project ids / URL slugs — blocks duplicates. */
   takenIds?: readonly string[]
 }>
 
@@ -38,7 +38,7 @@ const PLANS = [
   { id: "enterprise", label: "Enterprise — contact sales" },
 ] as const
 
-export function CreateWorkspaceDialog({
+export function CreateProjectDialog({
   open,
   onOpenChange,
   onCreated,
@@ -72,12 +72,12 @@ export function CreateWorkspaceDialog({
     e.preventDefault()
     const trimmed = name.trim()
     if (trimmed.length < 2) {
-      toast.error("Enter a workspace name (at least 2 characters).")
+      toast.error("Enter a project name (at least 2 characters).")
       return
     }
     let s = slug.trim() || slugify(trimmed)
     if (!s) {
-      toast.error("Add a few letters to your workspace name to set a URL.")
+      toast.error("Add a few letters to your project name to set a URL.")
       return
     }
     if (!isValidSlug(s)) {
@@ -94,17 +94,17 @@ export function CreateWorkspaceDialog({
     setSubmitting(true)
     await new Promise((r) => setTimeout(r, 600))
 
-    const ws: WorkspaceSummary = {
+    const proj: ProjectSummary = {
       id: s,
       name: trimmed,
       role: "Admin",
       initials: initialsFromName(trimmed),
     }
 
-    toast.success("Workspace created", {
+    toast.success("Project created", {
       description: `${trimmed} is ready. You're the Admin.`,
     })
-    onCreated(ws)
+    onCreated(proj)
     onOpenChange(false)
     setSubmitting(false)
   }
@@ -118,10 +118,10 @@ export function CreateWorkspaceDialog({
         <div className="border-b border-border/60 bg-muted/30 px-6 py-5">
           <DialogHeader className="gap-1">
             <DialogTitle className="text-[17px]">
-              Create a workspace
+              Create a project
             </DialogTitle>
             <DialogDescription className="text-[13px]">
-              Workspaces isolate data, members, and billing. You can invite your
+              Projects isolate data, members, and billing. You can invite your
               team after setup.
             </DialogDescription>
           </DialogHeader>
@@ -130,7 +130,7 @@ export function CreateWorkspaceDialog({
         <form onSubmit={onSubmit} className="flex flex-col gap-5 px-6 py-5">
           <div className="space-y-2">
             <Label htmlFor="ws-name" className="text-[12.5px]">
-              Workspace name
+              Project name
             </Label>
             <Input
               id="ws-name"
@@ -182,7 +182,7 @@ export function CreateWorkspaceDialog({
                   setSlugManual(true)
                   setSlug(e.target.value.toLowerCase())
                 }}
-                placeholder={slugify(name || "my-workspace")}
+                placeholder={slugify(name || "my-project")}
                 className="h-10 flex-1 rounded-none border-0 bg-transparent px-3 shadow-none focus-visible:ring-0"
               />
             </div>
@@ -252,7 +252,7 @@ export function CreateWorkspaceDialog({
                   <LoaderIcon className="size-4 animate-spin" /> Creating…
                 </>
               ) : (
-                "Create workspace"
+                "Create project"
               )}
             </Button>
           </DialogFooter>
