@@ -1,8 +1,13 @@
 package domain
 
-import "context"
+import (
+	"context"
+)
 
 type RefreshTokenRepository interface {
 	Create(ctx context.Context, refreshToken *RefreshToken) error
 	GetByToken(ctx context.Context, token string) (*RefreshToken, error)
+}
+type SessionRepository interface {
+	Create(ctx context.Context, session *Session) error
 }

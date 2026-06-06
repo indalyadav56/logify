@@ -24,7 +24,7 @@ func NewUserRepository(db *pgxpool.Pool) domain.UserRepository {
 
 func (r *userRepository) Create(ctx context.Context, user *domain.User) error {
 	const query = `
-		INSERT INTO users (id, email, full_name, password_hash, is_active)
+		INSERT INTO auth.users (id, email, full_name, password_hash, is_active)
 		VALUES ($1, $2, $3, $4, $5)
 		RETURNING id, created_at, updated_at
 	`
@@ -44,7 +44,7 @@ func (r *userRepository) Create(ctx context.Context, user *domain.User) error {
 func (r *userRepository) GetByEmail(ctx context.Context, email string) (*domain.User, error) {
 	const query = `
 		SELECT id, email, full_name, password_hash, is_active, created_at, updated_at
-		FROM users
+		FROM auth.users
 		WHERE email = $1 AND deleted_at IS NULL
 	`
 	var u domain.User
@@ -69,7 +69,7 @@ func (r *userRepository) GetByEmail(ctx context.Context, email string) (*domain.
 func (r *userRepository) GetByID(ctx context.Context, id uuid.UUID) (*domain.User, error) {
 	const query = `
 		SELECT id, email, full_name, password_hash, is_active, created_at, updated_at
-		FROM users
+		FROM auth.users
 		WHERE id = $1 AND deleted_at IS NULL
 	`
 	var u domain.User

@@ -1,6 +1,6 @@
 -- +goose Up
 
-CREATE TABLE roles (
+CREATE TABLE auth.roles (
     id UUID PRIMARY KEY DEFAULT uuidv7 (),
     key VARCHAR(50) NOT NULL UNIQUE CHECK (key ~ '^[a-z][a-z0-9_]*$'),
     name VARCHAR(100) NOT NULL,
@@ -9,12 +9,12 @@ CREATE TABLE roles (
         scope IN ('platform', 'workspace')
     ),
     is_system BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT (now() AT TIME ZONE 'utc'),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT (now() AT TIME ZONE 'utc')
+    created_at TIMESTAMPTZ NOT NULL DEFAULT(now() AT TIME ZONE 'utc'),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT(now() AT TIME ZONE 'utc')
 );
 
 INSERT INTO
-    roles (
+    auth.roles (
         key,
         name,
         description,
@@ -69,4 +69,4 @@ VALUES
 );
 
 -- +goose Down
-DROP TABLE IF EXISTS roles;
+DROP TABLE IF EXISTS auth.roles;

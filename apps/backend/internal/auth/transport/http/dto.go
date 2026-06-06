@@ -22,7 +22,6 @@ type TokenResponse struct {
 	AccessToken  string       `json:"access_token"`
 	RefreshToken string       `json:"refresh_token"`
 	TokenType    string       `json:"token_type"`
-	ExpiresAt    time.Time    `json:"expires_at"`
 	User         UserResponse `json:"user"`
 }
 
@@ -38,7 +37,6 @@ type SessionResponse struct {
 	IPAddress string    `json:"ip_address"`
 	UserAgent string    `json:"user_agent"`
 	CreatedAt time.Time `json:"created_at"`
-	ExpiresAt time.Time `json:"expires_at"`
 	Current   bool      `json:"current"`
 }
 

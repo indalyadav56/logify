@@ -64,6 +64,7 @@ type ServerContainer struct {
 
 	// Auth
 	AuthRepo    *authRepo.RefreshTokenRepository
+	SessionRepo *authRepo.SessionRepository
 	AuthService application.AuthService
 	AuthHandler *authHTTP.AuthHandler
 
@@ -177,6 +178,7 @@ func (c *ServerContainer) initAuth() error {
 		TokenDuration:    c.Config.Auth.JWT.AccessTokenTTL,
 	})
 
+	c.SessionRepo = authRepo.NewSessionRepository(c.postgresDB)
 	c.AuthRepo = authRepo.NewRefreshTokenRepository(c.postgresDB)
 
 	issuer, err := authService.NewTokenIssuer(authService.TokenIssuerConfig{
@@ -189,7 +191,7 @@ func (c *ServerContainer) initAuth() error {
 		return err
 	}
 
-	c.AuthService = authService.NewAuthService(c.Logger, issuer, c.AuthRepo, c.UserService)
+	c.AuthService = authService.NewAuthService(c.Logger, issuer, c.AuthRepo, c.SessionRepo, c.UserService)
 	c.AuthHandler = authHTTP.NewAuthHandler(c.AuthService)
 	return nil
 }

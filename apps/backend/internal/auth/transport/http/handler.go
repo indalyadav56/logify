@@ -19,7 +19,18 @@ func NewAuthHandler(service application.AuthService) *AuthHandler {
 	return &AuthHandler{svc: service}
 }
 
-// Register handles POST /api/v1/auth/register.
+// Register handles user registration.
+// @Summary      Register a new user
+// @Description  Create a new user account and return JWT access and refresh tokens.
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Param        request  body      RegisterRequest  true  "Registration request details"
+// @Success      201      {object}  response.APIResponse{data=TokenResponse} "Successfully registered and authenticated"
+// @Failure      400      {object}  response.APIResponse{error=string} "Invalid JSON or missing fields"
+// @Failure      409      {object}  response.APIResponse{error=string} "Email already in use"
+// @Failure      500      {object}  response.APIResponse{error=string} "Internal server error"
+// @Router       /v1/auth/register [post]
 func (h *AuthHandler) Register(c *gin.Context) {
 	var req RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -49,7 +60,18 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	})
 }
 
-// Login handles POST /api/v1/auth/login.
+// Login handles user authentication.
+// @Summary      Login a user
+// @Description  Authenticate user credentials and return JWT tokens.
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Param        request  body      LoginRequest  true  "Login credentials"
+// @Success      200      {object}  response.APIResponse{data=TokenResponse} "Successfully authenticated"
+// @Failure      400      {object}  response.APIResponse{error=string} "Invalid input format"
+// @Failure      401      {object}  response.APIResponse{error=string} "Invalid credentials"
+// @Failure      500      {object}  response.APIResponse{error=string} "Internal server error"
+// @Router       /v1/auth/login [post]
 func (h *AuthHandler) Login(c *gin.Context) {
 	var req LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -74,7 +96,16 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	response.OK(c, "Login successful", toTokenResponse(tokens))
 }
 
-// RefreshToken handles POST /api/v1/auth/refresh-token.
+// RefreshToken handles refreshing JWT access tokens.
+// @Summary      Refresh token
+// @Description  Generate a new access token using a valid refresh token.
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Param        request  body      RefreshTokenRequest  true  "Refresh token payload"
+// @Success      200      {object}  response.APIResponse{data=TokenResponse} "Token refreshed successfully"
+// @Failure      400      {object}  response.APIResponse{error=string} "Invalid request body"
+// @Router       /v1/auth/refresh-token [post]
 func (h *AuthHandler) RefreshToken(c *gin.Context) {
 	var req RefreshTokenRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -83,7 +114,16 @@ func (h *AuthHandler) RefreshToken(c *gin.Context) {
 	}
 }
 
-// Logout handles POST /api/v1/auth/logout.
+// Logout invalidates a user session.
+// @Summary      Logout a user
+// @Description  Revoke the refresh token and clear user session.
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Param        request  body      LogoutRequest  true  "Logout payload"
+// @Success      200      {object}  response.APIResponse "Logged out successfully"
+// @Failure      400      {object}  response.APIResponse{error=string} "Invalid request body"
+// @Router       /v1/auth/logout [post]
 func (h *AuthHandler) Logout(c *gin.Context) {
 	var req LogoutRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -108,7 +148,6 @@ func toTokenResponse(t *application.TokenOutput) TokenResponse {
 		AccessToken:  t.AccessToken,
 		RefreshToken: t.RefreshToken,
 		TokenType:    t.TokenType,
-		ExpiresAt:    t.ExpiresAt,
 		User: UserResponse{
 			ID:       t.User.ID.String(),
 			Email:    t.User.Email,

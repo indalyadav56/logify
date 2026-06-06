@@ -11,6 +11,12 @@ import (
 	"github.com/indalyadav56/logify/apps/backend/pkg/logger"
 )
 
+// @title           Logify API
+// @version         1.0
+// @description     This is the Logify backend API server.
+// @host            localhost:8080
+// @BasePath        /
+
 func main() {
 	if err := run(); err != nil {
 		fmt.Fprintf(os.Stderr, "failed to start server: %v\n", err)

@@ -69,7 +69,6 @@ func (t *TokenIssuer) RefreshTokenTTL() time.Duration { return t.refreshTokenTTL
 // hash via domain.NewRefreshToken.
 func (t *TokenIssuer) Issue(userID uuid.UUID, email, role string) (out *TokenOutput, plainRefresh string, err error) {
 	now := t.now().UTC()
-	accessExp := now.Add(t.accessTokenTTL)
 
 	// Note: pkg/jwt.GenerateToken sets "exp" itself based on its configured
 	// TokenDuration; we don't pass it in the map.
@@ -97,7 +96,6 @@ func (t *TokenIssuer) Issue(userID uuid.UUID, email, role string) (out *TokenOut
 		AccessToken:  accessToken,
 		RefreshToken: plainRefresh,
 		TokenType:    "Bearer",
-		ExpiresAt:    accessExp,
 	}, plainRefresh, nil
 }
 

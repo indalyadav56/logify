@@ -1,5 +1,5 @@
 -- +goose Up
-CREATE TABLE IF NOT EXISTS permissions (
+CREATE TABLE IF NOT EXISTS auth.permissions (
     id UUID PRIMARY KEY DEFAULT uuidv7 (),
     key VARCHAR(100) NOT NULL UNIQUE CHECK (
         key ~ '^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+$'
@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS permissions (
 );
 
 INSERT INTO
-    permissions (key, description, scope)
+    auth.permissions (key, description, scope)
 VALUES
     -- Platform-level (super admin only)
     (
@@ -109,4 +109,4 @@ VALUES
 );
 
 -- +goose Down
-DROP TABLE IF EXISTS permissions;
+DROP TABLE IF EXISTS auth.permissions;

@@ -3,10 +3,12 @@ package application
 import (
 	"context"
 	"errors"
+	"net"
 	"time"
 
 	"go.uber.org/zap"
 
+	"github.com/google/uuid"
 	"github.com/indalyadav56/logify/apps/backend/internal/auth/domain"
 	userApp "github.com/indalyadav56/logify/apps/backend/internal/user/application"
 	userDomain "github.com/indalyadav56/logify/apps/backend/internal/user/domain"
@@ -18,25 +20,28 @@ type AuthService interface {
 }
 
 type authService struct {
-	logger    *zap.Logger
-	tokens    *TokenIssuer
-	tokenRepo domain.RefreshTokenRepository
-	userSrv   userApp.UserService
-	now       func() time.Time
+	logger      *zap.Logger
+	tokens      *TokenIssuer
+	tokenRepo   domain.RefreshTokenRepository
+	sessionRepo domain.SessionRepository
+	userSrv     userApp.UserService
+	now         func() time.Time
 }
 
 func NewAuthService(
 	logger *zap.Logger,
 	tokens *TokenIssuer,
 	tokenRepo domain.RefreshTokenRepository,
+	sessionRepo domain.SessionRepository,
 	userSrv userApp.UserService,
 ) AuthService {
 	return &authService{
-		logger:    logger.Named("auth_service"),
-		tokens:    tokens,
-		tokenRepo: tokenRepo,
-		userSrv:   userSrv,
-		now:       time.Now,
+		logger:      logger.Named("auth_service"),
+		tokens:      tokens,
+		tokenRepo:   tokenRepo,
+		sessionRepo: sessionRepo,
+		userSrv:     userSrv,
+		now:         time.Now,
 	}
 }
 
@@ -54,7 +59,18 @@ func (s *authService) Register(ctx context.Context, input RegisterInput) (*Token
 		return nil, err
 	}
 
-	tokens, err := s.issueAndPersist(ctx, user)
+	// session
+	session := &domain.Session{
+		UserID:    user.ID,
+		UserAgent: "test-agent",
+		IPAddress: net.IPv4(0, 0, 0, 0),
+	}
+	err = s.sessionRepo.Create(ctx, session)
+	if err != nil {
+		return nil, err
+	}
+
+	tokens, err := s.issueAndPersist(ctx, user, session.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +89,7 @@ func (s *authService) Login(ctx context.Context, input LoginInput) (*TokenOutput
 		return nil, err
 	}
 
-	tokens, err := s.issueAndPersist(ctx, user)
+	tokens, err := s.issueAndPersist(ctx, user, uuid.New())
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +98,7 @@ func (s *authService) Login(ctx context.Context, input LoginInput) (*TokenOutput
 	return tokens, nil
 }
 
-func (s *authService) issueAndPersist(ctx context.Context, user *userApp.UserOutput) (*TokenOutput, error) {
+func (s *authService) issueAndPersist(ctx context.Context, user *userApp.UserOutput, sessionID uuid.UUID) (*TokenOutput, error) {
 	role := string(user.Role)
 	if role == "" {
 		role = string(userDomain.RoleMember)
@@ -94,7 +110,7 @@ func (s *authService) issueAndPersist(ctx context.Context, user *userApp.UserOut
 		return nil, err
 	}
 
-	rt := domain.NewRefreshToken(user.ID, plainRefresh, s.now().Add(s.tokens.RefreshTokenTTL()))
+	rt := domain.NewRefreshToken(user.ID, sessionID, plainRefresh, s.now().Add(s.tokens.RefreshTokenTTL()))
 	if err := s.tokenRepo.Create(ctx, rt); err != nil {
 		s.logger.Error("persist refresh token failed", zap.String("user_id", user.ID.String()), zap.Error(err))
 		return nil, err

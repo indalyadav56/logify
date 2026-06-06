@@ -6,6 +6,10 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/indalyadav56/logify/apps/backend/internal/di"
 	"github.com/indalyadav56/logify/apps/backend/pkg/logger"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
+
+	// _ "github.com/indalyadav56/logify/apps/backend/docs/swagger"
 )
 
 // Router is responsible for setting up all routes
@@ -31,6 +35,9 @@ func (r *Router) Setup(engine *gin.Engine) error {
 	engine.GET("/readyz", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ready"})
 	})
+
+	// Swagger
+	engine.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	// routes
 	r.container.RegisterAllRoutes(engine)

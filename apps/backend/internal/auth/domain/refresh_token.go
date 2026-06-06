@@ -14,8 +14,8 @@ var ErrRefreshTokenNotFound = errors.New("refresh token not found")
 type RefreshToken struct {
 	ID        uuid.UUID `json:"id"`
 	UserID    uuid.UUID `json:"user_id"`
-	TokenHash string    `json:"-" db:"token_hash"`
-	ExpiresAt time.Time `json:"expires_at"`
+	TokenHash string    `json:"token"`
+	SessionID uuid.UUID `json:"session_id"`
 	CreatedAt time.Time `json:"created_at"`
 }
 
@@ -24,11 +24,11 @@ func HashRefreshToken(raw string) string {
 	return hex.EncodeToString(sum[:])
 }
 
-func NewRefreshToken(userID uuid.UUID, rawToken string, expiresAt time.Time) *RefreshToken {
+func NewRefreshToken(userID, sessionID uuid.UUID, rawToken string, expiresAt time.Time) *RefreshToken {
 	return &RefreshToken{
 		ID:        uuid.New(),
 		UserID:    userID,
 		TokenHash: HashRefreshToken(rawToken),
-		ExpiresAt: expiresAt,
+		SessionID: sessionID,
 	}
 }

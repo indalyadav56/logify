@@ -1,5 +1,5 @@
 -- +goose Up
-CREATE TABLE if not exists workspaces (
+CREATE TABLE if not exists projects (
     id UUID PRIMARY KEY DEFAULT uuidv7 (),
     name VARCHAR(255) NOT NULL,
     description TEXT,
@@ -11,10 +11,10 @@ CREATE TABLE if not exists workspaces (
             'deleted'
         )
     ),
-    created_at TIMESTAMPTZ NOT NULL DEFAULT (now() AT TIME ZONE 'utc'),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT (now() AT TIME ZONE 'utc'),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT(now() AT TIME ZONE 'utc'),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT(now() AT TIME ZONE 'utc'),
     deleted_at TIMESTAMPTZ
 );
 
 -- +goose Down
-DROP TABLE IF EXISTS workspaces;
+DROP TABLE IF EXISTS projects;

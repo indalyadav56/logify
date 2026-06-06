@@ -25,7 +25,6 @@ func (h *userManagementHandler) InviteUser(c *gin.Context) {
 		"email":      "newuser@example.com",
 		"role":       "member",
 		"invited_by": "usr_01jv4kqz8p3e5f7g9m2n",
-		"expires_at": "2026-05-14T10:00:00Z",
 		"created_at": "2026-05-07T10:00:00Z",
 	})
 }

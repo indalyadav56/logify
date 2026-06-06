@@ -3,7 +3,7 @@
         migrate-reset migrate-status migrate-version migrate-create \
         migrate-ch migrate-up-ch migrate-up-by-one-ch migrate-down-ch \
         migrate-redo-ch migrate-reset-ch migrate-status-ch migrate-version-ch \
-        migrate-create-ch
+        migrate-create-ch swagger
 
 # Application
 APP_NAME     := logify-backend
@@ -183,6 +183,11 @@ migrate-version-ch:
 ## migrate-create-ch: Create a new ClickHouse SQL migration. Usage: make migrate-create-ch NAME=add_foo
 migrate-create-ch:
 	@$(MAKE) migrate-create MIGRATE_DRIVER=clickhouse NAME=$(NAME)
+
+## swagger: Generate Swagger documentation from Go code comments
+swagger:
+	@echo "▶ Generating Swagger documentation..."
+	@go run github.com/swaggo/swag/cmd/swag init -g cmd/server/main.go -o docs/swagger
 
 ## help: Show this help message
 help:
