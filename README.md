@@ -1,6 +1,3 @@
-roles:
-users
--> is_super_admin
+# Logify
 
-workspace_members
--> owner/admin/member/viewer
+![Architecture Diagram](./diagram.png)
