@@ -14,6 +14,7 @@ import {
 import { toast } from "sonner"
 
 import { cn } from "@/lib/utils"
+import { useAuth } from "@/lib/auth-store"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -32,6 +33,7 @@ type Errors = {
 
 export function SignupForm() {
   const router = useRouter()
+  const { register } = useAuth()
   const [name, setName] = React.useState("")
   const [email, setEmail] = React.useState("")
   const [password, setPassword] = React.useState("")
@@ -59,11 +61,18 @@ export function SignupForm() {
     e.preventDefault()
     if (!validate()) return
     setSubmitting(true)
-    await new Promise((r) => setTimeout(r, 800))
-    toast.success(`Welcome to Logify, ${name.split(" ")[0]}!`, {
-      description: "Your free 30-day Pro trial just started.",
-    })
-    router.push("/dashboard")
+    try {
+      await register(name.trim(), email, password)
+      toast.success(`Welcome to Logify, ${name.split(" ")[0]}!`, {
+        description: "Your free 30-day Pro trial just started.",
+      })
+      router.replace("/dashboard")
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Couldn't create your account."
+      )
+      setSubmitting(false)
+    }
   }
 
   return (

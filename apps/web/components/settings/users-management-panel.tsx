@@ -64,7 +64,13 @@ function createInviteId() {
 }
 
 export function UsersManagementPanel() {
-  const { project } = useProjectStore()
+  const { project: activeProject } = useProjectStore()
+  const project = activeProject ?? {
+    id: "",
+    name: "your project",
+    role: "Member",
+    initials: "—",
+  }
   const [users, setUsers] = React.useState(MOCK_USERS)
   const [invites, setInvites] = React.useState(MOCK_INVITES)
   const [search, setSearch] = React.useState("")

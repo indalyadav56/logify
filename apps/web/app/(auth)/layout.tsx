@@ -3,7 +3,7 @@ import Link from "next/link"
 import { ArrowLeftIcon } from "lucide-react"
 
 import { LogifyLogo } from "@/components/marketing/logo"
-import { AuthAside } from "@/components/auth/auth-aside"
+import { RedirectIfAuthed } from "@/components/auth/redirect-if-authed"
 
 export default function AuthLayout({
   children,
@@ -11,9 +11,8 @@ export default function AuthLayout({
   children: React.ReactNode
 }>) {
   return (
-    <div className="relative grid min-h-svh grid-cols-1 bg-background lg:grid-cols-[1fr_minmax(0,480px)]">
-      <AuthAside />
-
+    <RedirectIfAuthed>
+    <div className="relative min-h-svh bg-background">
       <main className="relative flex min-h-svh flex-col bg-background">
         <div
           aria-hidden
@@ -57,5 +56,7 @@ export default function AuthLayout({
         </footer>
       </main>
     </div>
+    </RedirectIfAuthed>
   )
 }
+

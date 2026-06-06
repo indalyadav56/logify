@@ -105,7 +105,8 @@ export function Facets({
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search facets"
+            placeholder="Search facets…"
+            aria-label="Search facets"
             className="h-9 bg-background pl-8 text-[12.5px]"
           />
           {search ? (
@@ -150,8 +151,6 @@ function FacetGroupBlock({
   const visible = showAll ? group.values : group.values.slice(0, 6)
   const hasMore = group.values.length > 6
 
-  const total = group.values.reduce((a, v) => a + v.count, 0)
-
   return (
     <div className="border-b border-border/40 last:border-b-0">
       <button
@@ -167,10 +166,11 @@ function FacetGroupBlock({
         <span className="text-[12.5px] font-semibold tracking-tight text-sidebar-foreground">
           {group.label}
         </span>
-        <span className="tabular-nums-lining ml-auto text-[11px] font-medium text-muted-foreground">
-          {selected.size > 0 ? `${selected.size}/` : ""}
-          {formatCount(total)}
-        </span>
+        {selected.size > 0 ? (
+          <span className="tabular-nums-lining ml-auto inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-md bg-primary/15 px-1.5 text-[11px] font-semibold text-primary">
+            {selected.size}
+          </span>
+        ) : null}
       </button>
 
       <div
@@ -189,6 +189,7 @@ function FacetGroupBlock({
                     key={v.value}
                     type="button"
                     onClick={() => onToggle(v.value)}
+                    aria-pressed={isSelected}
                     className={cn(
                       "group/facet flex h-9 items-center gap-2.5 rounded-md px-2.5 text-left text-[12.5px] transition-colors duration-150 ease-out",
                       isSelected
@@ -201,7 +202,7 @@ function FacetGroupBlock({
                         "flex size-3.5 shrink-0 items-center justify-center rounded-[3px] border transition-colors",
                         isSelected
                           ? "border-primary bg-primary text-primary-foreground"
-                          : "border-input bg-background group-hover/facet:border-foreground/50"
+                          : "border-muted-foreground/45 bg-background group-hover/facet:border-foreground/60"
                       )}
                     >
                       {isSelected ? (
@@ -213,6 +214,7 @@ function FacetGroupBlock({
                           strokeWidth={3}
                           strokeLinecap="round"
                           strokeLinejoin="round"
+                          aria-hidden="true"
                         >
                           <polyline points="2,6 5,9 10,3" />
                         </svg>
@@ -220,15 +222,13 @@ function FacetGroupBlock({
                     </span>
                     {v.color ? (
                       <span
+                        aria-hidden
                         className="size-2 shrink-0 rounded-full"
                         style={{ backgroundColor: v.color }}
                       />
                     ) : null}
                     <span className="flex-1 truncate text-[13px] tracking-tight text-foreground/90">
                       {v.value}
-                    </span>
-                    <span className="tabular-nums-lining text-[11px] text-muted-foreground">
-                      {formatCount(v.count)}
                     </span>
                   </button>
                 )
@@ -251,10 +251,4 @@ function FacetGroupBlock({
       </div>
     </div>
   )
-}
-
-function formatCount(n: number): string {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
-  if (n >= 1_000) return `${(n / 1_000).toFixed(n >= 10_000 ? 0 : 1)}K`
-  return String(n)
 }

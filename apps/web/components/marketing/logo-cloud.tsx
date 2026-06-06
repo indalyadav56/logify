@@ -10,9 +10,7 @@ const LOGOS: { name: string; mark: React.ReactNode }[] = [
   {
     name: "Vector",
     mark: (
-      <span className="text-[18px] font-semibold tracking-tight">
-        ▲ vector
-      </span>
+      <span className="text-[18px] font-semibold tracking-tight">▲ vector</span>
     ),
   },
   {
@@ -38,16 +36,12 @@ const LOGOS: { name: string; mark: React.ReactNode }[] = [
   {
     name: "Quanta",
     mark: (
-      <span className="text-[18px] font-semibold tracking-tight">
-        ◇ Quanta
-      </span>
+      <span className="text-[18px] font-semibold tracking-tight">◇ Quanta</span>
     ),
   },
   {
     name: "Rivet",
-    mark: (
-      <span className="text-[18px] font-mono font-medium">{`{rivet}`}</span>
-    ),
+    mark: <span className="font-mono text-[18px] font-medium">{`{rivet}`}</span>,
   },
   {
     name: "Polar",
@@ -64,18 +58,34 @@ export function LogoCloud() {
         <p className="text-center text-[11.5px] font-semibold tracking-[0.18em] text-muted-foreground uppercase">
           Trusted by engineering teams shipping at scale
         </p>
-        <div className="mt-7 grid grid-cols-2 items-center justify-items-center gap-x-8 gap-y-7 text-muted-foreground/80 sm:grid-cols-4 lg:grid-cols-8">
-          {LOGOS.map((l) => (
-            <div
-              key={l.name}
-              className="opacity-60 grayscale transition-all hover:opacity-100 hover:grayscale-0"
-              aria-label={l.name}
-            >
-              {l.mark}
-            </div>
-          ))}
+
+        <div className="marquee-mask mt-8 flex overflow-hidden">
+          <div className="animate-marquee flex shrink-0 items-center gap-x-14 pr-14">
+            {LOGOS.map((l) => (
+              <LogoItem key={l.name} name={l.name} mark={l.mark} />
+            ))}
+          </div>
+          <div
+            aria-hidden
+            className="animate-marquee flex shrink-0 items-center gap-x-14 pr-14"
+          >
+            {LOGOS.map((l) => (
+              <LogoItem key={`${l.name}-dup`} name={l.name} mark={l.mark} />
+            ))}
+          </div>
         </div>
       </div>
     </section>
+  )
+}
+
+function LogoItem({ name, mark }: { name: string; mark: React.ReactNode }) {
+  return (
+    <div
+      className="text-muted-foreground/70 opacity-70 grayscale transition-all hover:opacity-100 hover:grayscale-0"
+      aria-label={name}
+    >
+      {mark}
+    </div>
   )
 }

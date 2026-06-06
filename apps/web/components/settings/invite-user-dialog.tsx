@@ -47,7 +47,14 @@ export function InviteUserDialog({
   onOpenChange: (open: boolean) => void
   onInvited?: (invite: InvitePayload) => void
 }) {
-  const { project: currentProject, projects } = useProjectStore()
+  const { project: activeProject, projects } = useProjectStore()
+  const currentProject = activeProject ??
+    projects[0] ?? {
+      id: "",
+      name: "your project",
+      role: "Member",
+      initials: "—",
+    }
   const [selectedProjectId, setSelectedProjectId] = React.useState(
     currentProject.id
   )

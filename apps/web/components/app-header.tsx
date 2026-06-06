@@ -42,6 +42,7 @@ const TITLES: Record<string, string> = {
   "/dashboard/settings/users": "Members",
   "/dashboard/settings/api-keys": "API keys",
   "/dashboard/settings/roles": "Roles",
+  "/dashboard/settings/billing": "Billing",
 }
 
 const ENVIRONMENTS = [
@@ -104,7 +105,10 @@ export function AppHeader() {
       <span
         className={cn(
           "min-w-0 truncate text-[13.5px] font-semibold tracking-tight",
-          (isDashboardsView || isAssistView) && "hidden md:hidden"
+          // On md+ the breadcrumb shows the title; only fall back to this plain
+          // label on mobile, except in the dashboards/assist views where the
+          // breadcrumb is hidden and this is the sole title.
+          !(isDashboardsView || isAssistView) && "md:hidden"
         )}
       >
         {title}

@@ -10,6 +10,7 @@ import { Testimonial } from "@/components/marketing/testimonial"
 import { Pricing } from "@/components/marketing/pricing"
 import { Faq } from "@/components/marketing/faq"
 import { FinalCta } from "@/components/marketing/cta"
+import { Reveal } from "@/components/marketing/reveal"
 
 export default function LandingPage() {
   return (
@@ -17,15 +18,33 @@ export default function LandingPage() {
       <div id="platform">
         <Hero />
       </div>
-      <LogoCloud />
-      <FeaturesGrid />
-      <LiveDemo />
-      <Integrations />
-      <Stats />
-      <Testimonial />
-      <Pricing />
-      <Faq />
-      <FinalCta />
+      <Reveal>
+        <LogoCloud />
+      </Reveal>
+      <Reveal>
+        <FeaturesGrid />
+      </Reveal>
+      <Reveal>
+        <LiveDemo />
+      </Reveal>
+      <Reveal>
+        <Integrations />
+      </Reveal>
+      <Reveal>
+        <Stats />
+      </Reveal>
+      <Reveal>
+        <Testimonial />
+      </Reveal>
+      <Reveal>
+        <Pricing />
+      </Reveal>
+      <Reveal>
+        <Faq />
+      </Reveal>
+      <Reveal>
+        <FinalCta />
+      </Reveal>
     </>
   )
 }

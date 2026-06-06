@@ -108,9 +108,9 @@ POST http://localhost:8080/v1/auth/register
 Content-Type: application/json
 
 {
-  "email": "admin@acme-corp.com",
-  "password": "securepassword123",
-  "tenant_name": "Acme Corp"
+  "full_name": "Indal Kumar",
+  "email": "test@123@example.com",
+  "password": "test@123"
 }
 
 ###
@@ -120,8 +120,8 @@ POST http://localhost:8080/v1/auth/login
 Content-Type: application/json
 
 {
-  "email": "admin@acme-corp.com",
-  "password": "securepassword123"
+  "email": "test@123@example.com",
+  "password": "test@123"
 }
 
 ###

@@ -335,7 +335,7 @@ function ResultsHeader({
           className="h-8 gap-1.5 rounded-md px-2.5 text-[12px] text-muted-foreground transition-colors duration-150 hover:bg-muted/80 hover:text-foreground"
           onClick={() => setWrap(!wrap)}
         >
-          <WrapTextIcon /> {wrap ? "No wrap" : "Wrap lines"}
+          <WrapTextIcon aria-hidden /> {wrap ? "No wrap" : "Wrap lines"}
         </Button>
         <LogColumnsPicker
           columns={columns}
@@ -349,7 +349,7 @@ function ResultsHeader({
           size="xs"
           className="h-8 gap-1.5 rounded-md px-2.5 text-[12px] text-muted-foreground transition-colors duration-150 hover:bg-muted/80 hover:text-foreground"
         >
-          <DownloadIcon /> Export
+          <DownloadIcon aria-hidden /> Export
         </Button>
       </div>
     </div>

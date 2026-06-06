@@ -100,10 +100,14 @@ function FeatureCard({ feature }: { feature: Feature }) {
         feature.highlight && "lg:bg-background"
       )}
     >
-      <div className="inline-flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary ring-1 ring-inset ring-primary/20">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,color-mix(in_oklch,var(--brand)_14%,transparent),transparent_60%)] opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+      />
+      <div className="relative inline-flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary ring-1 ring-inset ring-primary/20 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:scale-105">
         <Icon className="size-4.5" />
       </div>
-      <div>
+      <div className="relative">
         <h3 className="text-[15px] font-semibold tracking-tight text-foreground">
           {feature.title}
         </h3>

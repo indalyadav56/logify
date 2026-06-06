@@ -102,9 +102,9 @@ function PlanCard({ plan }: { plan: Plan }) {
   return (
     <div
       className={cn(
-        "relative flex flex-col rounded-2xl border border-border/60 bg-card/60 p-6 transition-colors",
+        "relative flex flex-col rounded-2xl border border-border/60 bg-card/60 p-6 transition-all hover:-translate-y-0.5 hover:shadow-lg",
         plan.highlight &&
-          "border-primary/50 bg-card shadow-xl shadow-primary/10 ring-1 ring-primary/30"
+          "border-glow border-primary/50 bg-card shadow-xl shadow-primary/10 ring-1 ring-primary/30"
       )}
     >
       {plan.highlight ? (

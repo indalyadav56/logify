@@ -7,6 +7,7 @@ import { ArrowRightIcon, EyeIcon, EyeOffIcon, LoaderIcon } from "lucide-react"
 import { toast } from "sonner"
 
 import { cn } from "@/lib/utils"
+import { useAuth } from "@/lib/auth-store"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -18,6 +19,7 @@ import {
 
 export function LoginForm() {
   const router = useRouter()
+  const { login } = useAuth()
   const [email, setEmail] = React.useState("")
   const [password, setPassword] = React.useState("")
   const [showPassword, setShowPassword] = React.useState(false)
@@ -40,9 +42,14 @@ export function LoginForm() {
     e.preventDefault()
     if (!validate()) return
     setSubmitting(true)
-    await new Promise((r) => setTimeout(r, 700))
-    toast.success("Welcome back to Logify")
-    router.push("/dashboard")
+    try {
+      await login(email, password)
+      toast.success("Welcome back to Logify")
+      router.replace("/dashboard")
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Couldn't sign you in.")
+      setSubmitting(false)
+    }
   }
 
   return (

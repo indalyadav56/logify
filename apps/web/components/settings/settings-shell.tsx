@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation"
 import {
   Building2Icon,
   ChevronRightIcon,
+  CreditCardIcon,
   KeyRoundIcon,
   ShieldIcon,
   UserCogIcon,
@@ -40,6 +41,11 @@ const NAV = [
     href: "/dashboard/settings/roles",
     label: "Roles & permissions",
     icon: ShieldIcon,
+  },
+  {
+    href: "/dashboard/settings/billing",
+    label: "Billing",
+    icon: CreditCardIcon,
   },
 ] as const
 

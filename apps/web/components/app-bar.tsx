@@ -4,12 +4,12 @@ import * as React from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import {
+  CheckIcon,
   ChevronsLeftIcon,
   ChevronsRightIcon,
-  CommandIcon,
-  Grid3x3Icon,
+  ChevronsUpDownIcon,
   LayoutDashboardIcon,
-  PlusCircleIcon,
+  PlusIcon,
   ScrollTextIcon,
   SearchIcon,
   SettingsIcon,
@@ -18,6 +18,7 @@ import {
 
 import { cn } from "@/lib/utils"
 import type { ProjectSummary } from "@/lib/project"
+import { useAuth } from "@/lib/auth-store"
 import { useProjectStore } from "@/lib/project-store"
 import { LogifyMark } from "@/components/marketing/logo"
 import { CreateProjectDialog } from "@/components/project/create-project-dialog"
@@ -36,6 +37,16 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Kbd } from "@/components/ui/kbd"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { ThemeToggle } from "@/components/theme-toggle"
 
 type NavItem = {
@@ -97,7 +108,7 @@ const STORAGE_KEY = "logify:appbar-expanded"
 export function AppBar() {
   const pathname = usePathname()
   const router = useRouter()
-  const { projects, project, setProject, addProject } = useProjectStore()
+  const { projects, project, setProject } = useProjectStore()
   const [createProjectOpen, setCreateProjectOpen] = React.useState(false)
   const [expanded, setExpanded] = React.useState(false)
 
@@ -227,8 +238,6 @@ export function AppBar() {
       <CreateProjectDialog
         open={createProjectOpen}
         onOpenChange={setCreateProjectOpen}
-        takenIds={projects.map((p) => p.id)}
-        onCreated={addProject}
       />
     </aside>
   )
@@ -261,7 +270,7 @@ function ProjectTrigger({
   onRequestCreate,
 }: {
   expanded: boolean
-  project: ProjectSummary
+  project: ProjectSummary | null
   projects: ProjectSummary[]
   onPick: (p: ProjectSummary) => void
   onRequestCreate: () => void
@@ -272,63 +281,111 @@ function ProjectTrigger({
         <button
           type="button"
           className={cn(
-            "group/ws flex items-center rounded-md transition-colors",
+            "group/ws flex items-center rounded-lg transition-colors",
             expanded
-              ? "mx-1.5 h-9 gap-2 px-1.5 hover:bg-sidebar-accent/80"
-              : "mx-auto size-9 justify-center"
+              ? "mx-1.5 h-11 gap-2.5 px-1.5 hover:bg-sidebar-accent/80 data-[state=open]:bg-sidebar-accent/80"
+              : "mx-auto size-9 justify-center hover:bg-sidebar-accent/80 data-[state=open]:bg-sidebar-accent/80"
           )}
-          aria-label="Project"
+          aria-label="Switch project"
         >
-          <LogifyMark className={cn(expanded ? "size-8" : "size-9")} />
+          <LogifyMark className={cn("shrink-0", expanded ? "size-8" : "size-7")} />
           {expanded ? (
-            <span className="flex min-w-0 flex-col items-start leading-tight">
-              <span className="truncate text-[13px] font-semibold text-sidebar-foreground">
-                {project.name}
+            <>
+              <span className="flex min-w-0 flex-1 flex-col items-start leading-tight">
+                <span className="w-full truncate text-[13px] font-semibold text-sidebar-foreground">
+                  {project?.name ?? "Select a project"}
+                </span>
+                <span className="w-full truncate text-[11.5px] font-medium text-muted-foreground">
+                  {project?.role ?? "No project yet"}
+                </span>
               </span>
-              <span className="truncate text-[11.5px] font-medium text-muted-foreground">
-                {project.role}
-              </span>
-            </span>
+              <ChevronsUpDownIcon className="size-4 shrink-0 text-muted-foreground/70 transition-colors group-hover/ws:text-muted-foreground" />
+            </>
           ) : null}
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent side="right" align="start" className="w-60">
-        <DropdownMenuLabel className="text-[11px]">
-          Project
+      <DropdownMenuContent
+        side="right"
+        align="start"
+        sideOffset={8}
+        className="w-72 rounded-xl p-1.5"
+      >
+        <DropdownMenuLabel className="flex items-center justify-between px-2 pt-1.5 pb-1 text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
+          <span>Projects</span>
+          <span className="font-mono text-[10.5px] tracking-normal text-muted-foreground/70">
+            {projects.length}
+          </span>
         </DropdownMenuLabel>
-        {projects.map((p) => (
-          <DropdownMenuItem
-            key={p.id}
-            onClick={() => onPick(p)}
-            className="gap-2"
-          >
-            <span className="flex size-7 items-center justify-center rounded-md bg-muted text-[10px] font-semibold">
-              {p.initials}
-            </span>
-            <span className="flex flex-col">
-              <span className="text-sm">{p.name}</span>
-              <span className="text-[10.5px] text-muted-foreground">
-                {p.role}
-              </span>
-            </span>
-            {p.id === project.id ? (
-              <span className="ml-auto text-[10px] text-muted-foreground">
-                current
-              </span>
-            ) : null}
-          </DropdownMenuItem>
-        ))}
-        <DropdownMenuSeparator />
+        <div className="space-y-0.5">
+          {projects.length === 0 ? (
+            <p className="px-2 py-2 text-[12px] text-muted-foreground">
+              No projects yet. Create your first one below.
+            </p>
+          ) : null}
+          {projects.map((p) => {
+            const current = p.id === project?.id
+            return (
+              <DropdownMenuItem
+                key={p.id}
+                onClick={() => onPick(p)}
+                className={cn(
+                  "gap-2.5 rounded-lg px-2 py-2",
+                  current && "bg-sidebar-accent/60"
+                )}
+              >
+                <span
+                  className={cn(
+                    "flex size-8 shrink-0 items-center justify-center rounded-md text-[11px] font-semibold ring-1 ring-inset",
+                    tileStyle(p.id)
+                  )}
+                >
+                  {p.initials}
+                </span>
+                <span className="flex min-w-0 flex-col">
+                  <span className="truncate text-[13px] font-medium text-foreground">
+                    {p.name}
+                  </span>
+                  <span className="truncate text-[11px] text-muted-foreground">
+                    {p.role}
+                  </span>
+                </span>
+                {current ? (
+                  <CheckIcon className="ml-auto size-4 shrink-0 text-primary" />
+                ) : null}
+              </DropdownMenuItem>
+            )
+          })}
+        </div>
+        <DropdownMenuSeparator className="mx-1 my-1.5" />
         <DropdownMenuItem
-          className="gap-2 font-medium"
+          className="gap-2.5 rounded-lg px-2 py-2 font-medium"
           onSelect={() => onRequestCreate()}
         >
-          <PlusCircleIcon className="size-4 text-muted-foreground" />
-          Create project
+          <span className="flex size-8 shrink-0 items-center justify-center rounded-md border border-dashed border-border text-muted-foreground">
+            <PlusIcon className="size-4" />
+          </span>
+          <span className="text-[13px]">Create project</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   )
+}
+
+const TILE_STYLES = [
+  "bg-sky-500/15 text-sky-600 ring-sky-500/25 dark:text-sky-300",
+  "bg-violet-500/15 text-violet-600 ring-violet-500/25 dark:text-violet-300",
+  "bg-amber-500/15 text-amber-600 ring-amber-500/25 dark:text-amber-300",
+  "bg-emerald-500/15 text-emerald-600 ring-emerald-500/25 dark:text-emerald-300",
+  "bg-rose-500/15 text-rose-600 ring-rose-500/25 dark:text-rose-300",
+]
+
+/** Deterministic accent tile per project id, stable across renders. */
+function tileStyle(id: string) {
+  let hash = 0
+  for (let i = 0; i < id.length; i++) {
+    hash = (hash * 31 + id.charCodeAt(i)) >>> 0
+  }
+  return TILE_STYLES[hash % TILE_STYLES.length]
 }
 
 function QuickAction({
@@ -497,7 +554,21 @@ function NavLink({
 }
 
 function UserTrigger({ expanded }: { expanded: boolean }) {
+  const router = useRouter()
+  const { user, logout } = useAuth()
+  const [confirmOpen, setConfirmOpen] = React.useState(false)
+
+  const name = user?.full_name?.trim() || "Your account"
+  const email = user?.email ?? ""
+  const initials = userInitials(user?.full_name)
+
+  function onSignOut() {
+    logout()
+    router.replace("/login")
+  }
+
   return (
+    <>
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button
@@ -510,27 +581,29 @@ function UserTrigger({ expanded }: { expanded: boolean }) {
         >
           <Avatar className="size-8 rounded-md ring-1 ring-sidebar-border">
             <AvatarFallback className="rounded-md bg-sidebar-primary text-[11.5px] font-semibold text-sidebar-primary-foreground">
-              AM
+              {initials}
             </AvatarFallback>
           </Avatar>
           {expanded ? (
             <span className="flex min-w-0 flex-col items-start leading-tight">
-              <span className="truncate text-[13px] font-semibold">
-                Avery Moore
-              </span>
-              <span className="truncate text-[11.5px] text-muted-foreground">
-                avery@logify.io
-              </span>
+              <span className="truncate text-[13px] font-semibold">{name}</span>
+              {email ? (
+                <span className="truncate text-[11.5px] text-muted-foreground">
+                  {email}
+                </span>
+              ) : null}
             </span>
           ) : null}
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent side="right" align="end" className="w-52">
         <DropdownMenuLabel className="flex flex-col">
-          <span className="text-sm">Avery Moore</span>
-          <span className="text-[10.5px] text-muted-foreground">
-            avery@logify.io
-          </span>
+          <span className="text-sm">{name}</span>
+          {email ? (
+            <span className="truncate text-[10.5px] text-muted-foreground">
+              {email}
+            </span>
+          ) : null}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
@@ -540,14 +613,46 @@ function UserTrigger({ expanded }: { expanded: boolean }) {
           <Link href="/dashboard/settings">Project settings</Link>
         </DropdownMenuItem>
         <DropdownMenuItem>Keyboard shortcuts</DropdownMenuItem>
-        <DropdownMenuItem>Switch project</DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem className="text-destructive">
+        <DropdownMenuItem
+          className="text-destructive focus:text-destructive"
+          onSelect={() => setConfirmOpen(true)}
+        >
           Sign out
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
+
+    <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Sign out of Logify?</AlertDialogTitle>
+          <AlertDialogDescription>
+            You&rsquo;ll be returned to the sign-in page and need to sign in
+            again to access this project.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            className="bg-destructive text-white shadow-sm hover:bg-destructive/90 dark:text-white"
+            onClick={onSignOut}
+          >
+            Sign out
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   )
+}
+
+/** Two-letter initials from a full name, falling back to "LG". */
+function userInitials(fullName?: string) {
+  const parts = fullName?.trim().split(/\s+/).filter(Boolean) ?? []
+  if (parts.length === 0) return "LG"
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase()
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
 }
 
 function isActive(pathname: string, href: string, exact?: boolean) {

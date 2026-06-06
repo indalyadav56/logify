@@ -93,14 +93,14 @@ export function TimeseriesChart({
                 <BarChart
                   data={data}
                   margin={{ top: 6, right: 8, bottom: 4, left: 4 }}
-                  onClick={(state: any) => {
-                    if (
-                      state &&
-                      state.activePayload &&
-                      state.activePayload.length > 0 &&
-                      onBucketClick
-                    ) {
-                      const clicked = state.activePayload[0].payload as TimeseriesBucket
+                  onClick={(state) => {
+                    const payload = (
+                      state as {
+                        activePayload?: { payload: TimeseriesBucket }[]
+                      }
+                    ).activePayload
+                    if (payload && payload.length > 0 && onBucketClick) {
+                      const clicked = payload[0].payload
                       if (
                         typeof clicked.bucketStart === "number" &&
                         typeof clicked.bucketEnd === "number"

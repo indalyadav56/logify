@@ -5,6 +5,7 @@ import "./globals.css"
 
 import { cn } from "@/lib/utils"
 import { ThemeProvider } from "@/components/theme-provider"
+import { AuthProvider } from "@/lib/auth-store"
 import { Toaster } from "@/components/ui/sonner"
 
 const ibmPlexSans = IBM_Plex_Sans({
@@ -53,7 +54,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          {children}
+          <AuthProvider>{children}</AuthProvider>
           <Toaster richColors position="top-right" />
         </ThemeProvider>
       </body>
