@@ -399,33 +399,10 @@ const docTemplate = `{
                 "access_token": {
                     "type": "string"
                 },
-                "expires_at": {
-                    "type": "string"
-                },
                 "refresh_token": {
                     "type": "string"
                 },
                 "token_type": {
-                    "type": "string"
-                },
-                "user": {
-                    "$ref": "#/definitions/http.UserResponse"
-                }
-            }
-        },
-        "http.UserResponse": {
-            "type": "object",
-            "properties": {
-                "email": {
-                    "type": "string"
-                },
-                "full_name": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "role": {
                     "type": "string"
                 }
             }

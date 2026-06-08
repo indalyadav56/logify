@@ -33,10 +33,9 @@ type UserOutput struct {
 
 // TokenOutput is the response returned by Register and Login.
 type TokenOutput struct {
-	AccessToken  string       `json:"access_token"`
-	RefreshToken string       `json:"refresh_token"`
-	TokenType    string       `json:"token_type"`
-	User         AuthUserView `json:"user"`
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+	TokenType    string `json:"token_type"`
 }
 
 // AuthUserView is the safe-to-expose user representation embedded in TokenOutput.

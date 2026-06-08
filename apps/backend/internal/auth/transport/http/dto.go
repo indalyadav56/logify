@@ -19,10 +19,9 @@ type RefreshRequest struct {
 
 // TokenResponse mirrors application.TokenOutput.
 type TokenResponse struct {
-	AccessToken  string       `json:"access_token"`
-	RefreshToken string       `json:"refresh_token"`
-	TokenType    string       `json:"token_type"`
-	User         UserResponse `json:"user"`
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+	TokenType    string `json:"token_type"`
 }
 
 type UserResponse struct {

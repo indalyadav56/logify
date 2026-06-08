@@ -2,16 +2,19 @@ package application
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/base64"
 	"errors"
+	"fmt"
 	"net"
 	"time"
 
 	"go.uber.org/zap"
 
-	"github.com/google/uuid"
 	"github.com/indalyadav56/logify/apps/backend/internal/auth/domain"
 	userApp "github.com/indalyadav56/logify/apps/backend/internal/user/application"
 	userDomain "github.com/indalyadav56/logify/apps/backend/internal/user/domain"
+	"github.com/indalyadav56/logify/apps/backend/pkg/jwt"
 )
 
 type AuthService interface {
@@ -21,7 +24,7 @@ type AuthService interface {
 
 type authService struct {
 	logger      *zap.Logger
-	tokens      *TokenIssuer
+	tokens      *jwt.JWT
 	tokenRepo   domain.RefreshTokenRepository
 	sessionRepo domain.SessionRepository
 	userSrv     userApp.UserService
@@ -30,7 +33,7 @@ type authService struct {
 
 func NewAuthService(
 	logger *zap.Logger,
-	tokens *TokenIssuer,
+	tokens *jwt.JWT,
 	tokenRepo domain.RefreshTokenRepository,
 	sessionRepo domain.SessionRepository,
 	userSrv userApp.UserService,
@@ -70,13 +73,29 @@ func (s *authService) Register(ctx context.Context, input RegisterInput) (*Token
 		return nil, err
 	}
 
-	tokens, err := s.issueAndPersist(ctx, user, session.ID)
+	output := &TokenOutput{}
+	output.TokenType = "Bearer"
+
+	accessToken, err := s.tokens.GenerateToken(map[string]interface{}{
+		"sub":       user.ID.String(),
+		"tenant_id": user.ID.String(), // placeholder until a real tenant model exists
+	})
+	output.AccessToken = accessToken
+
+	plainRefreshToken, err := s.generateRandomToken()
 	if err != nil {
+		return nil, fmt.Errorf("generate refresh token: %w", err)
+	}
+	output.RefreshToken = plainRefreshToken
+
+	rt := domain.NewRefreshToken(user.ID, session.ID, plainRefreshToken)
+	if err := s.tokenRepo.Create(ctx, rt); err != nil {
+		s.logger.Error("persist refresh token failed", zap.String("user_id", user.ID.String()), zap.Error(err))
 		return nil, err
 	}
 
 	s.logger.Info("user registered", zap.String("user_id", user.ID.String()))
-	return tokens, nil
+	return output, nil
 }
 
 func (s *authService) Login(ctx context.Context, input LoginInput) (*TokenOutput, error) {
@@ -89,38 +108,35 @@ func (s *authService) Login(ctx context.Context, input LoginInput) (*TokenOutput
 		return nil, err
 	}
 
-	tokens, err := s.issueAndPersist(ctx, user, uuid.New())
+	output := &TokenOutput{}
+
+	accessToken, err := s.tokens.GenerateToken(map[string]interface{}{
+		"sub":       user.ID.String(),
+		"tenant_id": user.ID.String(), // placeholder until a real tenant model exists
+	})
+	output.AccessToken = accessToken
+	output.TokenType = "Bearer"
+
+	plainRefreshToken, err := s.generateRandomToken()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("generate refresh token: %w", err)
 	}
+	output.RefreshToken = plainRefreshToken
+
+	// rt := domain.NewRefreshToken(user.ID, session.ID, plainRefreshToken)
+	// if err := s.tokenRepo.Create(ctx, rt); err != nil {
+	// 	s.logger.Error("persist refresh token failed", zap.String("user_id", user.ID.String()), zap.Error(err))
+	// 	return nil, err
+	// }
 
 	s.logger.Info("user logged in", zap.String("user_id", user.ID.String()))
-	return tokens, nil
+	return output, nil
 }
 
-func (s *authService) issueAndPersist(ctx context.Context, user *userApp.UserOutput, sessionID uuid.UUID) (*TokenOutput, error) {
-	role := string(user.Role)
-	if role == "" {
-		role = string(userDomain.RoleMember)
+func (s *authService) generateRandomToken() (string, error) {
+	b := make([]byte, 16) // 128 bits
+	if _, err := rand.Read(b); err != nil {
+		return "", err
 	}
-
-	tokens, plainRefresh, err := s.tokens.Issue(user.ID, user.Email, role)
-	if err != nil {
-		s.logger.Error("issue tokens failed", zap.String("user_id", user.ID.String()), zap.Error(err))
-		return nil, err
-	}
-
-	rt := domain.NewRefreshToken(user.ID, sessionID, plainRefresh, s.now().Add(s.tokens.RefreshTokenTTL()))
-	if err := s.tokenRepo.Create(ctx, rt); err != nil {
-		s.logger.Error("persist refresh token failed", zap.String("user_id", user.ID.String()), zap.Error(err))
-		return nil, err
-	}
-
-	tokens.User = AuthUserView{
-		ID:       user.ID,
-		Email:    user.Email,
-		FullName: user.FullName,
-		Role:     role,
-	}
-	return tokens, nil
+	return base64.RawURLEncoding.EncodeToString(b), nil
 }

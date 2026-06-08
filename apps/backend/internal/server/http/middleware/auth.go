@@ -35,8 +35,6 @@ type stdCtxKey string
 const (
 	stdCtxKeyClaims   stdCtxKey = "auth.claims"
 	stdCtxKeyUserID   stdCtxKey = "auth.user_id"
-	stdCtxKeyEmail    stdCtxKey = "auth.email"
-	stdCtxKeyRole     stdCtxKey = "auth.role"
 	stdCtxKeyTenantID stdCtxKey = "auth.tenant_id"
 )
 
@@ -64,8 +62,15 @@ func AuthMiddleware(j *jwtpkg.JWT) gin.HandlerFunc {
 			return
 		}
 
+		// User id is carried in the standard "sub" claim; fall back to the
+		// legacy "user_id" claim for tokens issued before that switch.
+		userID := stringClaim(mapClaims, "sub")
+		if userID == "" {
+			userID = stringClaim(mapClaims, "user_id")
+		}
+
 		claims := &Claims{
-			UserID:   stringClaim(mapClaims, "user_id"),
+			UserID:   userID,
 			Role:     stringClaim(mapClaims, "role"),
 			TenantID: stringClaim(mapClaims, "tenant_id"),
 		}
@@ -81,7 +86,6 @@ func AuthMiddleware(j *jwtpkg.JWT) gin.HandlerFunc {
 		ctx := c.Request.Context()
 		ctx = context.WithValue(ctx, stdCtxKeyClaims, claims)
 		ctx = context.WithValue(ctx, stdCtxKeyUserID, claims.UserID)
-		ctx = context.WithValue(ctx, stdCtxKeyRole, claims.Role)
 		ctx = context.WithValue(ctx, stdCtxKeyTenantID, claims.TenantID)
 		c.Request = c.Request.WithContext(ctx)
 
@@ -143,18 +147,6 @@ func UserUUIDFromContext(ctx context.Context) (uuid.UUID, bool) {
 		return uuid.Nil, false
 	}
 	return id, true
-}
-
-// EmailFromContext returns the authenticated user's email.
-func EmailFromContext(ctx context.Context) (string, bool) {
-	v, ok := ctx.Value(stdCtxKeyEmail).(string)
-	return v, ok && v != ""
-}
-
-// RoleFromContext returns the authenticated user's role.
-func RoleFromContext(ctx context.Context) (string, bool) {
-	v, ok := ctx.Value(stdCtxKeyRole).(string)
-	return v, ok && v != ""
 }
 
 // TenantIDFromContext returns the tenant id (string) the caller belongs to.

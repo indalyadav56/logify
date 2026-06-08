@@ -15,7 +15,6 @@ clients:
       key_file:  "/etc/certs/client.key"
 
 postgres:
-  primary:
     host: "postgres-primary.stage.internal"
     password: "${POSTGRES_PASSWORD}"
     max_open_conns: 50

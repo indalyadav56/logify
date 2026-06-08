@@ -6,25 +6,25 @@ import (
 	"github.com/google/uuid"
 )
 
-// CreateWorkspaceInput is the payload accepted by CreateWorkspace.
+// CreateProjectInput is the payload accepted by CreateProject.
 //
 // Note: once tenant resolution from JWT claims is in place, TenantID should
 // be removed from the wire payload and injected from request context instead.
-type CreateWorkspaceInput struct {
+type CreateProjectInput struct {
 	TenantID    uuid.UUID `json:"tenant_id"`
 	Name        string    `json:"name"                  validate:"required,min=2,max=255"`
 	Description string    `json:"description,omitempty" validate:"omitempty,max=1000"`
 }
 
-// UpdateWorkspaceInput is the payload accepted by UpdateWorkspace. Nil fields
+// UpdateProjectInput is the payload accepted by UpdateProject. Nil fields
 // are preserved (partial update).
-type UpdateWorkspaceInput struct {
+type UpdateProjectInput struct {
 	Name        *string `json:"name,omitempty"        validate:"omitempty,min=2,max=255"`
 	Description *string `json:"description,omitempty" validate:"omitempty,max=1000"`
 }
 
-// WorkspaceOutput is the response DTO returned by the service.
-type WorkspaceOutput struct {
+// ProjectOutput is the response DTO returned by the service.
+type ProjectOutput struct {
 	ID          uuid.UUID `json:"id"`
 	TenantID    uuid.UUID `json:"tenant_id"`
 	Name        string    `json:"name"`

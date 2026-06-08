@@ -24,7 +24,7 @@ func HashRefreshToken(raw string) string {
 	return hex.EncodeToString(sum[:])
 }
 
-func NewRefreshToken(userID, sessionID uuid.UUID, rawToken string, expiresAt time.Time) *RefreshToken {
+func NewRefreshToken(userID, sessionID uuid.UUID, rawToken string) *RefreshToken {
 	return &RefreshToken{
 		ID:        uuid.New(),
 		UserID:    userID,

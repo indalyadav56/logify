@@ -148,11 +148,5 @@ func toTokenResponse(t *application.TokenOutput) TokenResponse {
 		AccessToken:  t.AccessToken,
 		RefreshToken: t.RefreshToken,
 		TokenType:    t.TokenType,
-		User: UserResponse{
-			ID:       t.User.ID.String(),
-			Email:    t.User.Email,
-			FullName: t.User.FullName,
-			Role:     t.User.Role,
-		},
 	}
 }

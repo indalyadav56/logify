@@ -91,9 +91,9 @@ type ServerContainer struct {
 	// Notification bounded context
 	NotificationDashboardHandler notificationHTTP.NotificationDashboardHandler
 
-	// Workspace bounded context
-	WorkspaceService projectApp.ProjectService
-	WorkspaceHandler *projectHTTP.ProjectHandler
+	// Project bounded context
+	ProjectService projectApp.ProjectService
+	ProjectHandler *projectHTTP.ProjectHandler
 }
 
 func NewServerContainer(ctx context.Context, cfg *config.Config, log *zap.Logger) (*ServerContainer, error) {
@@ -127,12 +127,13 @@ func NewServerContainer(ctx context.Context, cfg *config.Config, log *zap.Logger
 	c.initIngest()
 	c.initSearch()
 	c.initUser()
+
 	if err := c.initAuth(); err != nil {
 		return nil, err
 	}
 	c.initRole()
 	c.initNotification()
-	c.initWorkspace()
+	c.initProject()
 
 	return c, nil
 }
@@ -176,22 +177,13 @@ func (c *ServerContainer) initAuth() error {
 		SecretKey:        []byte(c.Config.Auth.JWT.Secret),
 		SigningAlgorithm: gojwt.SigningMethodHS256,
 		TokenDuration:    c.Config.Auth.JWT.AccessTokenTTL,
+		Issuer:           c.Config.Auth.JWT.Issuer,
 	})
 
 	c.SessionRepo = authRepo.NewSessionRepository(c.postgresDB)
 	c.AuthRepo = authRepo.NewRefreshTokenRepository(c.postgresDB)
 
-	issuer, err := authService.NewTokenIssuer(authService.TokenIssuerConfig{
-		JWT:             c.JWT,
-		Issuer:          c.Config.Auth.JWT.Issuer,
-		AccessTokenTTL:  c.Config.Auth.JWT.AccessTokenTTL,
-		RefreshTokenTTL: c.Config.Auth.JWT.RefreshTokenTTL,
-	})
-	if err != nil {
-		return err
-	}
-
-	c.AuthService = authService.NewAuthService(c.Logger, issuer, c.AuthRepo, c.SessionRepo, c.UserService)
+	c.AuthService = authService.NewAuthService(c.Logger, c.JWT, c.AuthRepo, c.SessionRepo, c.UserService)
 	c.AuthHandler = authHTTP.NewAuthHandler(c.AuthService)
 	return nil
 }
@@ -212,15 +204,15 @@ func (c *ServerContainer) initNotification() {
 	c.NotificationDashboardHandler = notificationHTTP.NewNotificationDashboardHandler()
 }
 
-func (c *ServerContainer) initWorkspace() {
+func (c *ServerContainer) initProject() {
 	repo := projectPG.NewProjectRepository(c.postgresDB)
-	c.WorkspaceService = projectApp.NewProjectService(repo, c.Logger)
-	c.WorkspaceHandler = projectHTTP.NewProjectHandler(c.WorkspaceService)
+	c.ProjectService = projectApp.NewProjectService(repo, c.Logger)
+	c.ProjectHandler = projectHTTP.NewProjectHandler(c.ProjectService)
 }
 
 func (c *ServerContainer) RegisterAllRoutes(e *gin.Engine) {
 	authHTTP.RegisterRoutes(&e.RouterGroup, c.AuthHandler)
 	ingestHTTP.RegisterRoutes(&e.RouterGroup, c.IngestHandler)
 	searchHTTP.RegisterRoutes(&e.RouterGroup, c.SearchHandler)
-	projectHTTP.RegisterRoutes(&e.RouterGroup, c.WorkspaceHandler, c.JWT)
+	projectHTTP.RegisterRoutes(&e.RouterGroup, c.ProjectHandler, c.JWT)
 }

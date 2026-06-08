@@ -95,18 +95,35 @@ docker-run:
 #   * use the *-ch shortcut targets, or
 #   * override MIGRATE_DRIVER=clickhouse on any migrate-* target.
 #
-# Override DSN/env/dir from the command line, e.g.
-#   make migrate-up MIGRATE_ENV=dev
-#   make migrate-up MIGRATE_DSN='postgres://user:pass@host:5432/db?sslmode=disable'
-#   make migrate-up MIGRATE_DRIVER=clickhouse
+# Pass the migrator subcommand straight through, e.g.
+#   make migrate up
+#   make migrate status
+#   make migrate up-to 20260513034123
+#   make migrate create add_user_indexes
+#
+# Override DSN/env/dir/driver from the command line, e.g.
+#   make migrate up MIGRATE_ENV=dev
+#   make migrate up MIGRATE_DSN='postgres://user:pass@host:5432/db?sslmode=disable'
+#   make migrate up MIGRATE_DRIVER=clickhouse
 #   make migrate-up-ch MIGRATE_ENV=stage
 #   make migrate-create NAME=add_user_indexes
 #   make migrate-create-ch NAME=add_logs_index
 # ---------------------------------------------------------------------------
 
-## migrate: Run a raw migrator command (e.g. `make migrate ARGS="up-to 20260513034123"`)
+# Let `make migrate <cmd> [args]` mirror the migrator CLI. The words after
+# `migrate`/`migrate-ch` are captured as the subcommand and declared as no-op
+# targets so make doesn't fail with "No rule to make target 'up'". With no
+# trailing words the bare `migrate` target falls back to ARGS="...".
+ifneq ($(filter migrate migrate-ch,$(firstword $(MAKECMDGOALS))),)
+  MIGRATE_SUBCMD := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
+  ifneq ($(strip $(MIGRATE_SUBCMD)),)
+    $(eval $(MIGRATE_SUBCMD):;@:)
+  endif
+endif
+
+## migrate: Run a migrator command directly, e.g. `make migrate up` or `make migrate up-to 20260513034123`
 migrate:
-	@go run $(MIGRATOR_PKG) $(MIGRATE_ARGS) $(ARGS)
+	@go run $(MIGRATOR_PKG) $(MIGRATE_ARGS) $(if $(strip $(MIGRATE_SUBCMD)),$(MIGRATE_SUBCMD),$(ARGS))
 
 ## migrate-up: Apply all pending Postgres migrations
 migrate-up:
@@ -148,9 +165,9 @@ migrate-create:
 
 # --- ClickHouse shortcuts --------------------------------------------------
 
-## migrate-ch: Run a raw migrator command against ClickHouse (e.g. `make migrate-ch ARGS="up-to 20260503061402"`)
+## migrate-ch: Run a migrator command against ClickHouse, e.g. `make migrate-ch up` or `make migrate-ch up-to 20260503061402`
 migrate-ch:
-	@$(MAKE) migrate MIGRATE_DRIVER=clickhouse ARGS="$(ARGS)"
+	@$(MAKE) migrate MIGRATE_DRIVER=clickhouse ARGS="$(if $(strip $(MIGRATE_SUBCMD)),$(MIGRATE_SUBCMD),$(ARGS))"
 
 ## migrate-up-ch: Apply all pending ClickHouse migrations
 migrate-up-ch:

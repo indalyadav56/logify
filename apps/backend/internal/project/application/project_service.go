@@ -12,11 +12,11 @@ import (
 )
 
 type ProjectService interface {
-	CreateWorkspace(ctx context.Context, input CreateWorkspaceInput) (*WorkspaceOutput, error)
-	GetWorkspace(ctx context.Context, id uuid.UUID) (*WorkspaceOutput, error)
-	ListWorkspaces(ctx context.Context, tenantID *uuid.UUID) ([]*WorkspaceOutput, error)
-	UpdateWorkspace(ctx context.Context, id uuid.UUID, input UpdateWorkspaceInput) (*WorkspaceOutput, error)
-	DeleteWorkspace(ctx context.Context, id uuid.UUID) error
+	CreateProject(ctx context.Context, input CreateProjectInput) (*ProjectOutput, error)
+	GetProject(ctx context.Context, id uuid.UUID) (*ProjectOutput, error)
+	ListProjects(ctx context.Context, tenantID *uuid.UUID) ([]*ProjectOutput, error)
+	UpdateProject(ctx context.Context, id uuid.UUID, input UpdateProjectInput) (*ProjectOutput, error)
+	DeleteProject(ctx context.Context, id uuid.UUID) error
 }
 
 type projectService struct {
@@ -27,51 +27,51 @@ type projectService struct {
 func NewProjectService(repo domain.ProjectRepository, logger *zap.Logger) ProjectService {
 	return &projectService{
 		repo:   repo,
-		logger: logger.Named("workspace_service"),
+		logger: logger.Named("project_service"),
 	}
 }
 
-func (s *projectService) CreateWorkspace(ctx context.Context, input CreateWorkspaceInput) (*WorkspaceOutput, error) {
+func (s *projectService) CreateProject(ctx context.Context, input CreateProjectInput) (*ProjectOutput, error) {
 	ws := domain.NewProject(input.TenantID, input.Name, input.Description)
 
 	if err := s.repo.Create(ctx, ws); err != nil {
-		if errors.Is(err, domain.ErrWorkspaceAlreadyExists) {
+		if errors.Is(err, domain.ErrProjectAlreadyExists) {
 			return nil, err
 		}
-		s.logger.Error("failed to create workspace", zap.Error(err))
+		s.logger.Error("failed to create project", zap.Error(err))
 		return nil, err
 	}
 
-	s.logger.Info("workspace created",
-		zap.String("workspace_id", ws.ID.String()),
+	s.logger.Info("project created",
+		zap.String("project_id", ws.ID.String()),
 		zap.String("tenant_id", ws.TenantID.String()),
 		zap.String("name", ws.Name),
 	)
-	return toWorkspaceOutput(ws), nil
+	return toProjectOutput(ws), nil
 }
 
-func (s *projectService) GetWorkspace(ctx context.Context, id uuid.UUID) (*WorkspaceOutput, error) {
+func (s *projectService) GetProject(ctx context.Context, id uuid.UUID) (*ProjectOutput, error) {
 	ws, err := s.repo.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
-	return toWorkspaceOutput(ws), nil
+	return toProjectOutput(ws), nil
 }
 
-func (s *projectService) ListWorkspaces(ctx context.Context, tenantID *uuid.UUID) ([]*WorkspaceOutput, error) {
+func (s *projectService) ListProjects(ctx context.Context, tenantID *uuid.UUID) ([]*ProjectOutput, error) {
 	items, err := s.repo.List(ctx, tenantID)
 	if err != nil {
-		s.logger.Error("failed to list workspaces", zap.Error(err))
+		s.logger.Error("failed to list projects", zap.Error(err))
 		return nil, err
 	}
-	out := make([]*WorkspaceOutput, len(items))
+	out := make([]*ProjectOutput, len(items))
 	for i, w := range items {
-		out[i] = toWorkspaceOutput(w)
+		out[i] = toProjectOutput(w)
 	}
 	return out, nil
 }
 
-func (s *projectService) UpdateWorkspace(ctx context.Context, id uuid.UUID, input UpdateWorkspaceInput) (*WorkspaceOutput, error) {
+func (s *projectService) UpdateProject(ctx context.Context, id uuid.UUID, input UpdateProjectInput) (*ProjectOutput, error) {
 	ws, err := s.repo.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
@@ -85,31 +85,31 @@ func (s *projectService) UpdateWorkspace(ctx context.Context, id uuid.UUID, inpu
 	}
 
 	if err := s.repo.Update(ctx, ws); err != nil {
-		s.logger.Error("failed to update workspace",
+		s.logger.Error("failed to update project",
 			zap.Error(err),
-			zap.String("workspace_id", id.String()),
+			zap.String("project_id", id.String()),
 		)
 		return nil, err
 	}
-	return toWorkspaceOutput(ws), nil
+	return toProjectOutput(ws), nil
 }
 
-func (s *projectService) DeleteWorkspace(ctx context.Context, id uuid.UUID) error {
+func (s *projectService) DeleteProject(ctx context.Context, id uuid.UUID) error {
 	if err := s.repo.Delete(ctx, id); err != nil {
-		if !errors.Is(err, domain.ErrWorkspaceNotFound) {
-			s.logger.Error("failed to delete workspace",
+		if !errors.Is(err, domain.ErrProjectNotFound) {
+			s.logger.Error("failed to delete project",
 				zap.Error(err),
-				zap.String("workspace_id", id.String()),
+				zap.String("project_id", id.String()),
 			)
 		}
 		return err
 	}
-	s.logger.Info("workspace deleted", zap.String("workspace_id", id.String()))
+	s.logger.Info("project deleted", zap.String("project_id", id.String()))
 	return nil
 }
 
-func toWorkspaceOutput(w *domain.Project) *WorkspaceOutput {
-	return &WorkspaceOutput{
+func toProjectOutput(w *domain.Project) *ProjectOutput {
+	return &ProjectOutput{
 		ID:          w.ID,
 		TenantID:    w.TenantID,
 		Name:        w.Name,

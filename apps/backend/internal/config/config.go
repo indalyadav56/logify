@@ -1,6 +1,7 @@
 package config
 
 import (
+	"bufio"
 	"fmt"
 	"log"
 	"os"
@@ -127,15 +128,9 @@ func Load() (*Config, error) {
 		log.Printf("Info: Could not load %s config: %v", env, err)
 	}
 
-	// Load .env file if present
-	v.SetConfigFile(".env")
-	v.SetConfigType("env")
-	if err := v.MergeInConfig(); err != nil {
-		// It's fine if .env doesn't exist
-		if !os.IsNotExist(err) {
-			log.Printf("Info: Could not load .env file: %v", err)
-		}
-	}
+	// Load .env (if present) into the process environment so the bindings below
+	// can read it. Real environment variables take precedence over the file.
+	loadDotEnv(".env")
 
 	// 4. Override with environment variables
 	v.SetEnvPrefix("APP") // e.g. APP_SERVER_PORT
@@ -149,6 +144,16 @@ func Load() (*Config, error) {
 		v.BindEnv(key, envKey)
 	}
 
+	// Convenience aliases: let a conventional flat .env configure the primary
+	// Postgres connection without the APP_POSTGRES_PRIMARY_ prefix. The APP_*
+	// name is listed first so it wins if both happen to be set.
+	v.BindEnv("postgres.primary.host", "APP_POSTGRES_PRIMARY_HOST", "POSTGRES_HOST")
+	v.BindEnv("postgres.primary.port", "APP_POSTGRES_PRIMARY_PORT", "POSTGRES_PORT")
+	v.BindEnv("postgres.primary.user", "APP_POSTGRES_PRIMARY_USER", "POSTGRES_USER", "POSTGRES_USERNAME")
+	v.BindEnv("postgres.primary.password", "APP_POSTGRES_PRIMARY_PASSWORD", "POSTGRES_PASSWORD")
+	v.BindEnv("postgres.primary.database", "APP_POSTGRES_PRIMARY_DATABASE", "POSTGRES_DATABASE", "POSTGRES_DB")
+	v.BindEnv("postgres.primary.ssl_mode", "APP_POSTGRES_PRIMARY_SSL_MODE", "POSTGRES_SSL_MODE", "POSTGRES_SSLMODE")
+
 	var cfg Config
 	if err := v.Unmarshal(&cfg); err != nil {
 		return nil, fmt.Errorf("unable to unmarshal config: %w", err)
@@ -156,6 +161,45 @@ func Load() (*Config, error) {
 
 	cfg.AppEnv = env
 	return &cfg, nil
+}
+
+// loadDotEnv reads KEY=VALUE pairs from a .env file (if present) into the process
+// environment. Existing environment variables are left untouched, so real env vars
+// always take precedence over the file. Blank lines and # comments are skipped, an
+// optional leading "export " and surrounding single/double quotes are stripped.
+func loadDotEnv(path string) {
+	f, err := os.Open(path)
+	if err != nil {
+		return // a missing .env is fine
+	}
+	defer f.Close()
+
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		line = strings.TrimPrefix(line, "export ")
+
+		key, val, ok := strings.Cut(line, "=")
+		if !ok {
+			continue
+		}
+		key = strings.TrimSpace(key)
+		if key == "" {
+			continue
+		}
+		val = strings.TrimSpace(val)
+		if len(val) >= 2 {
+			if c := val[0]; (c == '"' || c == '\'') && val[len(val)-1] == c {
+				val = val[1 : len(val)-1]
+			}
+		}
+		if _, exists := os.LookupEnv(key); !exists {
+			os.Setenv(key, val)
+		}
+	}
 }
 
 // GetDatabaseURL returns the default postgres connection string (pgx/libpq), or empty if misconfigured.

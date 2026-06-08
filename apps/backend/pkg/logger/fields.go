@@ -18,8 +18,8 @@ func TenantID(tenantID string) zap.Field {
 	return zap.String("tenant_id", tenantID)
 }
 
-func WorkspaceID(workspaceID string) zap.Field {
-	return zap.String("workspace_id", workspaceID)
+func ProjectID(projectID string) zap.Field {
+	return zap.String("project_id", projectID)
 }
 
 func Error(err error) zap.Field {

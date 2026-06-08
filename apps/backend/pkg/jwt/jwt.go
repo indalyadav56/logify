@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 )
 
 var (
@@ -22,11 +23,24 @@ func New(config JWTConfig) *JWT {
 	}
 }
 
-// GenerateToken generates a new JWT token with customizable claims
+// GenerateToken generates a new JWT token with customizable claims. The standard
+// registered claims (iat, exp, jti, and iss when an issuer is configured) are
+// stamped automatically; jti/iss are only set when the caller hasn't supplied them.
 func (j *JWT) GenerateToken(claims map[string]interface{}) (string, error) {
 	jwtClaims := jwt.MapClaims(claims)
 
-	jwtClaims["exp"] = time.Now().Add(j.config.TokenDuration).Unix()
+	now := time.Now()
+	jwtClaims["iat"] = now.Unix()
+	jwtClaims["exp"] = now.Add(j.config.TokenDuration).Unix()
+
+	if _, ok := jwtClaims["jti"]; !ok {
+		jwtClaims["jti"] = uuid.NewString()
+	}
+	if j.config.Issuer != "" {
+		if _, ok := jwtClaims["iss"]; !ok {
+			jwtClaims["iss"] = j.config.Issuer
+		}
+	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwtClaims)
 	return token.SignedString(j.config.SecretKey)

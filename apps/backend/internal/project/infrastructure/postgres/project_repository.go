@@ -17,26 +17,23 @@ import (
 // See: https://www.postgresql.org/docs/current/errcodes-appendix.html
 const pgUniqueViolation = "23505"
 
-type workspaceRepository struct {
+type projectRepository struct {
 	db *pgxpool.Pool
 }
 
 func NewProjectRepository(db *pgxpool.Pool) domain.ProjectRepository {
-	return &workspaceRepository{db: db}
+	return &projectRepository{db: db}
 }
 
-func (r *workspaceRepository) Create(ctx context.Context, ws *domain.Project) error {
+func (r *projectRepository) Create(ctx context.Context, project *domain.Project) error {
 	const query = `
-		INSERT INTO workspaces (id, tenant_id, name, description, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6)
+		INSERT INTO projects (name, description, created_by)
+		VALUES ($1, $2, $3)
 	`
 	_, err := r.db.Exec(ctx, query,
-		ws.ID,
-		ws.TenantID,
-		ws.Name,
-		nullableText(ws.Description),
-		ws.CreatedAt,
-		ws.UpdatedAt,
+		project.Name,
+		nullableText(project.Description),
+		uuid.New(),
 	)
 	if err != nil {
 		return mapUniqueViolation(err)
@@ -44,10 +41,10 @@ func (r *workspaceRepository) Create(ctx context.Context, ws *domain.Project) er
 	return nil
 }
 
-func (r *workspaceRepository) GetByID(ctx context.Context, id uuid.UUID) (*domain.Project, error) {
+func (r *projectRepository) GetByID(ctx context.Context, id uuid.UUID) (*domain.Project, error) {
 	const query = `
 		SELECT id, tenant_id, name, COALESCE(description, ''), created_at, updated_at
-		FROM workspaces
+		FROM projects
 		WHERE id = $1
 	`
 	var ws domain.Project
@@ -61,17 +58,17 @@ func (r *workspaceRepository) GetByID(ctx context.Context, id uuid.UUID) (*domai
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, domain.ErrWorkspaceNotFound
+			return nil, domain.ErrProjectNotFound
 		}
 		return nil, err
 	}
 	return &ws, nil
 }
 
-func (r *workspaceRepository) List(ctx context.Context, tenantID *uuid.UUID) ([]*domain.Project, error) {
+func (r *projectRepository) List(ctx context.Context, tenantID *uuid.UUID) ([]*domain.Project, error) {
 	const baseQuery = `
 		SELECT id, tenant_id, name, COALESCE(description, ''), created_at, updated_at
-		FROM workspaces
+		FROM projects
 	`
 	query := baseQuery + " ORDER BY created_at DESC"
 	args := []any{}
@@ -104,9 +101,9 @@ func (r *workspaceRepository) List(ctx context.Context, tenantID *uuid.UUID) ([]
 	return out, rows.Err()
 }
 
-func (r *workspaceRepository) Update(ctx context.Context, ws *domain.Project) error {
+func (r *projectRepository) Update(ctx context.Context, ws *domain.Project) error {
 	const query = `
-		UPDATE workspaces
+		UPDATE projects
 		SET name = $2,
 		    description = $3,
 		    updated_at = (now() AT TIME ZONE 'utc')
@@ -117,19 +114,19 @@ func (r *workspaceRepository) Update(ctx context.Context, ws *domain.Project) er
 		return mapUniqueViolation(err)
 	}
 	if tag.RowsAffected() == 0 {
-		return domain.ErrWorkspaceNotFound
+		return domain.ErrProjectNotFound
 	}
 	return nil
 }
 
-func (r *workspaceRepository) Delete(ctx context.Context, id uuid.UUID) error {
-	const query = `DELETE FROM workspaces WHERE id = $1`
+func (r *projectRepository) Delete(ctx context.Context, id uuid.UUID) error {
+	const query = `DELETE FROM projects WHERE id = $1`
 	tag, err := r.db.Exec(ctx, query, id)
 	if err != nil {
 		return err
 	}
 	if tag.RowsAffected() == 0 {
-		return domain.ErrWorkspaceNotFound
+		return domain.ErrProjectNotFound
 	}
 	return nil
 }
@@ -148,7 +145,7 @@ func nullableText(s string) any {
 func mapUniqueViolation(err error) error {
 	var pgErr *pgconn.PgError
 	if errors.As(err, &pgErr) && pgErr.Code == pgUniqueViolation {
-		return domain.ErrWorkspaceAlreadyExists
+		return domain.ErrProjectAlreadyExists
 	}
 	return err
 }

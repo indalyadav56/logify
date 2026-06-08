@@ -21,9 +21,9 @@ func NewProjectHandler(service application.ProjectService) *ProjectHandler {
 	return &ProjectHandler{service: service}
 }
 
-// CreateWorkspace handles POST /v1/workspaces
-func (h *ProjectHandler) CreateWorkspace(c *gin.Context) {
-	var input application.CreateWorkspaceInput
+// CreateProject handles POST /v1/projects
+func (h *ProjectHandler) CreateProject(c *gin.Context) {
+	var input application.CreateProjectInput
 	if !validator.ValidateRequest(c, &input) {
 		return
 	}
@@ -35,31 +35,31 @@ func (h *ProjectHandler) CreateWorkspace(c *gin.Context) {
 	}
 	input.TenantID = uuid.MustParse(tenantID)
 
-	ws, err := h.service.CreateWorkspace(c.Request.Context(), input)
+	ws, err := h.service.CreateProject(c.Request.Context(), input)
 	if err != nil {
-		h.writeError(c, err, "Failed to create workspace")
+		h.writeError(c, err, "Failed to create project")
 		return
 	}
-	response.Created(c, "Workspace created successfully", ws)
+	response.Created(c, "Project created successfully", ws)
 }
 
-// GetWorkspace handles GET /v1/workspaces/:id
-func (h *ProjectHandler) GetWorkspace(c *gin.Context) {
+// GetProject handles GET /v1/projects/:id
+func (h *ProjectHandler) GetProject(c *gin.Context) {
 	id, ok := parseUUIDParam(c, "id")
 	if !ok {
 		return
 	}
 
-	ws, err := h.service.GetWorkspace(c.Request.Context(), id)
+	ws, err := h.service.GetProject(c.Request.Context(), id)
 	if err != nil {
-		h.writeError(c, err, "Failed to retrieve workspace")
+		h.writeError(c, err, "Failed to retrieve project")
 		return
 	}
-	response.OK(c, "Workspace retrieved successfully", ws)
+	response.OK(c, "Project retrieved successfully", ws)
 }
 
-// ListWorkspaces handles GET /v1/workspaces[?tenant_id=...]
-func (h *ProjectHandler) ListWorkspaces(c *gin.Context) {
+// ListProjects handles GET /v1/projects[?tenant_id=...]
+func (h *ProjectHandler) ListProjects(c *gin.Context) {
 	var tenantID *uuid.UUID
 	if v := c.Query("tenant_id"); v != "" {
 		id, err := uuid.Parse(v)
@@ -70,43 +70,43 @@ func (h *ProjectHandler) ListWorkspaces(c *gin.Context) {
 		tenantID = &id
 	}
 
-	items, err := h.service.ListWorkspaces(c.Request.Context(), tenantID)
+	items, err := h.service.ListProjects(c.Request.Context(), tenantID)
 	if err != nil {
-		response.InternalServerError(c, "Failed to list workspaces")
+		response.InternalServerError(c, "Failed to list projects")
 		return
 	}
-	response.OK(c, "Workspaces retrieved successfully", items)
+	response.OK(c, "Projects retrieved successfully", items)
 }
 
-// UpdateWorkspace handles PUT /v1/workspaces/:id
-func (h *ProjectHandler) UpdateWorkspace(c *gin.Context) {
+// UpdateProject handles PUT /v1/projects/:id
+func (h *ProjectHandler) UpdateProject(c *gin.Context) {
 	id, ok := parseUUIDParam(c, "id")
 	if !ok {
 		return
 	}
 
-	var input application.UpdateWorkspaceInput
+	var input application.UpdateProjectInput
 	if !validator.ValidateRequest(c, &input) {
 		return
 	}
 
-	ws, err := h.service.UpdateWorkspace(c.Request.Context(), id, input)
+	ws, err := h.service.UpdateProject(c.Request.Context(), id, input)
 	if err != nil {
-		h.writeError(c, err, "Failed to update workspace")
+		h.writeError(c, err, "Failed to update project")
 		return
 	}
-	response.OK(c, "Workspace updated successfully", ws)
+	response.OK(c, "Project updated successfully", ws)
 }
 
-// DeleteWorkspace handles DELETE /v1/workspaces/:id
-func (h *ProjectHandler) DeleteWorkspace(c *gin.Context) {
+// DeleteProject handles DELETE /v1/projects/:id
+func (h *ProjectHandler) DeleteProject(c *gin.Context) {
 	id, ok := parseUUIDParam(c, "id")
 	if !ok {
 		return
 	}
 
-	if err := h.service.DeleteWorkspace(c.Request.Context(), id); err != nil {
-		h.writeError(c, err, "Failed to delete workspace")
+	if err := h.service.DeleteProject(c.Request.Context(), id); err != nil {
+		h.writeError(c, err, "Failed to delete project")
 		return
 	}
 	response.NoContent(c)
@@ -115,10 +115,10 @@ func (h *ProjectHandler) DeleteWorkspace(c *gin.Context) {
 // writeError maps domain errors to HTTP responses with a consistent envelope.
 func (h *ProjectHandler) writeError(c *gin.Context, err error, fallback string) {
 	switch {
-	case errors.Is(err, domain.ErrWorkspaceNotFound):
-		response.NotFound(c, "Workspace not found")
-	case errors.Is(err, domain.ErrWorkspaceAlreadyExists):
-		response.Conflict(c, "A workspace with this name already exists in the tenant")
+	case errors.Is(err, domain.ErrProjectNotFound):
+		response.NotFound(c, "Project not found")
+	case errors.Is(err, domain.ErrProjectAlreadyExists):
+		response.Conflict(c, "A project with this name already exists in the tenant")
 	default:
 		response.InternalServerError(c, fallback)
 	}

@@ -45,24 +45,9 @@ definitions:
     properties:
       access_token:
         type: string
-      expires_at:
-        type: string
       refresh_token:
         type: string
       token_type:
-        type: string
-      user:
-        $ref: '#/definitions/http.UserResponse'
-    type: object
-  http.UserResponse:
-    properties:
-      email:
-        type: string
-      full_name:
-        type: string
-      id:
-        type: string
-      role:
         type: string
     type: object
   response.APIError:

@@ -79,7 +79,7 @@ auth:
   jwt:
     secret: "change-me-in-production"
     issuer: "logify-backend"
-    access_token_ttl: 15m
+    access_token_ttl: 60m
     refresh_token_ttl: 720h   # 30 days
 
 postgres:
