@@ -14,6 +14,7 @@ import (
 	searchApp "github.com/indalyadav56/logify/apps/backend/internal/search/application"
 	searchCH "github.com/indalyadav56/logify/apps/backend/internal/search/infrastructure/clickhouse"
 	searchHTTP "github.com/indalyadav56/logify/apps/backend/internal/search/transport/http"
+	"github.com/indalyadav56/logify/apps/backend/internal/server/http/middleware"
 	pkgClickhouse "github.com/indalyadav56/logify/apps/backend/pkg/clickhouse"
 	jwtpkg "github.com/indalyadav56/logify/apps/backend/pkg/jwt"
 	"github.com/indalyadav56/logify/apps/backend/pkg/postgres"
@@ -211,8 +212,16 @@ func (c *ServerContainer) initProject() {
 }
 
 func (c *ServerContainer) RegisterAllRoutes(e *gin.Engine) {
-	authHTTP.RegisterRoutes(&e.RouterGroup, c.AuthHandler)
-	ingestHTTP.RegisterRoutes(&e.RouterGroup, c.IngestHandler)
-	searchHTTP.RegisterRoutes(&e.RouterGroup, c.SearchHandler)
-	projectHTTP.RegisterRoutes(&e.RouterGroup, c.ProjectHandler, c.JWT)
+	root := &e.RouterGroup
+
+	// Public routes — reachable without a token.
+	authHTTP.RegisterRoutes(root, c.AuthHandler)
+
+	// Protected routes — authentication is applied once here, so every context
+	// mounted on `secured` is authenticated by default. New contexts added here
+	// inherit auth automatically; do not re-add AuthMiddleware inside them.
+	secured := root.Group("", middleware.AuthMiddleware(c.JWT))
+	ingestHTTP.RegisterRoutes(secured, c.IngestHandler)
+	searchHTTP.RegisterRoutes(secured, c.SearchHandler)
+	projectHTTP.RegisterRoutes(secured, c.ProjectHandler)
 }
