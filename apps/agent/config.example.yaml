@@ -1,0 +1,58 @@
+# logify-agent configuration
+# Install to /etc/logify/agent.yaml (Linux) or /usr/local/etc/logify/agent.yaml (macOS).
+
+backend:
+  url: http://localhost:8080      # Logify ingest API
+  api_key: ""                     # optional, sent as X-API-Key (env: LOGIFY_API_KEY)
+  ingest_path: /v1/logs
+  timeout: 10s
+
+# Defaults stamped on every log (an input or the log line itself can override).
+defaults:
+  project_id: ""
+  service: my-host
+  environment: production
+  namespace: ""
+  source: logify-agent
+  tags:
+    region: us-east-1
+
+# How logs are shipped to the backend.
+delivery:
+  async: true                     # buffer + background workers (recommended for an agent)
+  buffer_size: 4096
+  workers: 4
+
+# Where file-tail read offsets are checkpointed so restarts resume in place.
+registry_file: /var/lib/logify-agent/registry.json
+
+log_level: info                   # the agent's own logs: debug|info|warn|error
+
+inputs:
+  # 1) Tail application log files (globs allowed, rotation-aware).
+  - type: file
+    name: app
+    paths:
+      - /var/log/myapp/*.log
+    service: myapp
+    level: INFO                   # fallback level when none is parsed from the line
+    json: false                   # set true if each line is a JSON object
+    from_beginning: false         # false = only new lines; true = read existing content too
+    tags:
+      component: api
+    # Join stack traces / multi-line records into one event (Filebeat-style):
+    # multiline:
+    #   pattern: '^[[:space:]]'   # indented lines are continuations
+    #   negate: false
+    #   match: after
+
+  # 2) Follow the systemd journal (Linux only).
+  - type: journald
+    name: system
+    service: system
+    units: []                     # e.g. ["nginx.service", "ssh.service"]; empty = everything
+
+  # 3) Read piped stdin:  myapp | logify-agent run
+  # - type: stdin
+  #   name: stdin
+  #   service: piped
