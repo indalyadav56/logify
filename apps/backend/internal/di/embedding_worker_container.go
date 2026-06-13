@@ -18,39 +18,39 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// EmbeddingWorkerContainer wires the log-embedding Kafka consumer worker.
 type EmbeddingWorkerContainer struct {
 	Config     *config.Config
 	Logger     *zap.Logger
 	postgresDB *pgxpool.Pool
 
-	KafkaReader      *kafka.Reader
-	EmbedderService  *embedderApp.EmbedderService
-	LogRepository    embedderDomain.LogRepository
-	OllamaClient     *ollama.Client
+	KafkaReader     *kafka.Reader
+	EmbedderService *embedderApp.EmbedderService
+	LogRepository   embedderDomain.LogRepository
+	OllamaClient    *ollama.Client
 }
 
 func NewEmbeddingWorkerContainer(ctx context.Context, cfg *config.Config, log *zap.Logger) (*EmbeddingWorkerContainer, error) {
 	c := &EmbeddingWorkerContainer{Config: cfg, Logger: log}
 
-	pgCfg, err := cfg.PostgresPoolConfig(config.DefaultPostgresConn)
-	if err != nil {
-		return nil, fmt.Errorf("postgres config: %w", err)
-	}
-	pool, err := postgres.New(ctx, pgCfg)
+	pool, err := postgres.New(ctx, postgres.Config{
+		Host:         c.Config.Postgres.Host,
+		Port:         c.Config.Postgres.Port,
+		User:         c.Config.Postgres.User,
+		Password:     c.Config.Postgres.Password,
+		Database:     c.Config.Postgres.Database,
+		SSLMode:      c.Config.Postgres.SSLMode,
+		MaxOpenConns: int32(c.Config.Postgres.MaxOpenConns),
+		MaxIdleConns: int32(c.Config.Postgres.MaxIdleConns),
+		MaxLifetime:  c.Config.Postgres.ConnMaxLifetime,
+		MaxIdleTime:  c.Config.Postgres.ConnMaxIdleTime,
+	})
 	if err != nil {
 		return nil, fmt.Errorf("postgres: %w", err)
 	}
 	c.postgresDB = pool
 
-	topic := cfg.EmbeddingWorker.KafkaTopic
-	if topic == "" {
-		topic = "logs"
-	}
-	groupID := cfg.EmbeddingWorker.KafkaGroupID
-	if groupID == "" {
-		groupID = "log-embedder-group"
-	}
+	topic := "logs"
+	groupID := "log-embedder-group"
 
 	if err := ensureKafkaTopics(ctx, c.Config.Kafka.Brokers, topic); err != nil {
 		log.Warn("failed to pre-create kafka topics (may already exist)", zap.Error(err))

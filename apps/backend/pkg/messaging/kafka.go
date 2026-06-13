@@ -15,7 +15,7 @@ type Producer struct {
 }
 
 // NewProducer creates a new Kafka producer for the given topic.
-func NewProducer(cfg config.KafkaConfig, topic string) *Producer {
+func NewProducer(cfg config.Kafka, topic string) *Producer {
 	writer := &kafka.Writer{
 		Addr:         kafka.TCP(cfg.Brokers...),
 		Topic:        topic,
@@ -54,7 +54,7 @@ type Consumer struct {
 }
 
 // NewConsumer creates a new Kafka consumer for the given topic.
-func NewConsumer(cfg config.KafkaConfig, topic string) *Consumer {
+func NewConsumer(cfg config.Kafka, topic string) *Consumer {
 	reader := kafka.NewReader(kafka.ReaderConfig{
 		Brokers: cfg.Brokers,
 		Topic:   topic,

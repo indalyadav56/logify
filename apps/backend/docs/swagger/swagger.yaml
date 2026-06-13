@@ -1,5 +1,193 @@
 basePath: /
 definitions:
+  application.CreateProjectInput:
+    properties:
+      description:
+        maxLength: 1000
+        type: string
+      name:
+        maxLength: 255
+        minLength: 2
+        type: string
+      tenant_id:
+        type: string
+    required:
+    - name
+    type: object
+  application.UpdateProjectInput:
+    properties:
+      description:
+        maxLength: 1000
+        type: string
+      name:
+        maxLength: 255
+        minLength: 2
+        type: string
+    type: object
+  http.AggBucketResponse:
+    properties:
+      count:
+        type: integer
+      key:
+        type: string
+      timestamp:
+        type: string
+    type: object
+  http.AggregateRequest:
+    properties:
+      from:
+        type: string
+      group_by:
+        description: '"level", "service", "environment", "host"'
+        type: string
+      interval:
+        description: '"1m", "5m", "1h", "1d"'
+        type: string
+      tenant_id:
+        type: string
+      to:
+        type: string
+    required:
+    - from
+    - to
+    type: object
+  http.AggregateResponse:
+    properties:
+      buckets:
+        items:
+          $ref: '#/definitions/http.AggBucketResponse'
+        type: array
+    type: object
+  http.CreateLogRequest:
+    properties:
+      environment:
+        type: string
+      hostname:
+        type: string
+      level:
+        type: string
+      message:
+        type: string
+      metadata:
+        additionalProperties: true
+        type: object
+      project_id:
+        type: string
+      request_id:
+        type: string
+      service:
+        type: string
+      service_namespace:
+        type: string
+      source:
+        type: string
+      span_id:
+        type: string
+      tags:
+        additionalProperties:
+          type: string
+        type: object
+      timestamp:
+        type: string
+      trace_id:
+        type: string
+      user_id:
+        type: string
+    required:
+    - level
+    type: object
+  http.ExportRequest:
+    properties:
+      attributes:
+        additionalProperties:
+          type: string
+        type: object
+      body_contains:
+        type: string
+      format:
+        description: '"json" | "csv" | "ndjson"'
+        type: string
+      from:
+        type: string
+      services:
+        items:
+          type: string
+        type: array
+      severities:
+        items:
+          type: string
+        type: array
+      tenant_id:
+        type: string
+      to:
+        type: string
+    required:
+    - from
+    - to
+    type: object
+  http.ExportResponse:
+    properties:
+      created_at:
+        type: string
+      export_id:
+        type: string
+      status:
+        type: string
+    type: object
+  http.ExportStatusResponse:
+    properties:
+      created_at:
+        type: string
+      download_url:
+        type: string
+      export_id:
+        type: string
+      status:
+        type: string
+    type: object
+  http.LogResponse:
+    properties:
+      attributes:
+        additionalProperties:
+          type: string
+        type: object
+      body:
+        type: string
+      environment:
+        type: string
+      host:
+        type: string
+      ingestion_time:
+        type: string
+      log_id:
+        type: string
+      namespace:
+        type: string
+      project_id:
+        type: string
+      request_id:
+        type: string
+      service:
+        type: string
+      severity:
+        type: string
+      source:
+        type: string
+      span_id:
+        type: string
+      tags:
+        additionalProperties:
+          type: string
+        type: object
+      tenant_id:
+        type: string
+      timestamp:
+        type: string
+      trace_id:
+        type: string
+      user_id:
+        type: string
+    type: object
   http.LoginRequest:
     properties:
       email:
@@ -40,6 +228,59 @@ definitions:
     - email
     - full_name
     - password
+    type: object
+  http.SearchRequest:
+    properties:
+      attributes:
+        additionalProperties:
+          type: string
+        type: object
+      body_contains:
+        type: string
+      cursor:
+        type: string
+      from:
+        type: string
+      hosts:
+        items:
+          type: string
+        type: array
+      limit:
+        type: integer
+      request_id:
+        type: string
+      services:
+        items:
+          type: string
+        type: array
+      severities:
+        items:
+          type: string
+        type: array
+      sort_desc:
+        type: boolean
+      tenant_id:
+        type: string
+      to:
+        type: string
+      trace_id:
+        type: string
+    required:
+    - from
+    - to
+    type: object
+  http.SearchResponse:
+    properties:
+      logs:
+        items:
+          $ref: '#/definitions/http.LogResponse'
+        type: array
+      next_cursor:
+        type: string
+      took_ms:
+        type: integer
+      total:
+        type: integer
     type: object
   http.TokenResponse:
     properties:
@@ -91,6 +332,27 @@ info:
   title: Logify API
   version: "1.0"
 paths:
+  /exports/{id}:
+    get:
+      description: Return the current status of an async log export job.
+      parameters:
+      - description: Export ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Export status
+          schema:
+            $ref: '#/definitions/http.ExportStatusResponse'
+      security:
+      - BearerAuth: []
+      summary: Get export status
+      tags:
+      - logs
   /v1/auth/login:
     post:
       consumes:
@@ -266,4 +528,390 @@ paths:
       summary: Register a new user
       tags:
       - auth
+  /v1/logs:
+    post:
+      consumes:
+      - application/json
+      description: Accept a log entry and publish it to the ingest pipeline.
+      parameters:
+      - description: Log payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/http.CreateLogRequest'
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: log received
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: invalid request body
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: failed to publish log
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Ingest a log entry
+      tags:
+      - ingest
+  /v1/logs/{id}:
+    get:
+      description: Retrieve a single log entry by its ID for a tenant.
+      parameters:
+      - description: Log ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Tenant ID (also resolved from JWT/header)
+        in: query
+        name: tenant_id
+        type: string
+      - description: Tenant ID override
+        in: header
+        name: X-Tenant-ID
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Log entry
+          schema:
+            $ref: '#/definitions/http.LogResponse'
+        "400":
+          description: Missing tenant_id
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Log not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Fetch failed
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get log by ID
+      tags:
+      - logs
+  /v1/logs/aggregate:
+    post:
+      consumes:
+      - application/json
+      description: Run a grouped/time-bucketed aggregation over logs.
+      parameters:
+      - description: Aggregation query
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/http.AggregateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Aggregation result
+          schema:
+            $ref: '#/definitions/http.AggregateResponse'
+        "400":
+          description: Invalid request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Aggregate failed
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Aggregate logs
+      tags:
+      - logs
+  /v1/logs/export:
+    post:
+      consumes:
+      - application/json
+      description: Start an asynchronous log export job; returns the export job ID.
+      parameters:
+      - description: Export query
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/http.ExportRequest'
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Export accepted
+          schema:
+            $ref: '#/definitions/http.ExportResponse'
+        "400":
+          description: Invalid request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Export logs
+      tags:
+      - logs
+  /v1/logs/search:
+    post:
+      consumes:
+      - application/json
+      description: Run a structured log search query for a tenant.
+      parameters:
+      - description: Tenant ID override (also resolved from JWT or body)
+        in: header
+        name: X-Tenant-ID
+        type: string
+      - description: Search query
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/http.SearchRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Search results
+          schema:
+            $ref: '#/definitions/http.SearchResponse'
+        "400":
+          description: Invalid request or missing tenant_id
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Search failed
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Search logs
+      tags:
+      - logs
+  /v1/projects:
+    get:
+      description: Return projects visible to the caller. Optionally filter by tenant_id.
+      parameters:
+      - description: Filter by tenant UUID
+        in: query
+        name: tenant_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Projects retrieved successfully
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: Invalid tenant_id format
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: List projects
+      tags:
+      - projects
+    post:
+      consumes:
+      - application/json
+      description: Create a new project within the authenticated tenant.
+      parameters:
+      - description: Project payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/application.CreateProjectInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Project created successfully
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "409":
+          description: Project already exists
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Create project
+      tags:
+      - projects
+  /v1/projects/{id}:
+    delete:
+      description: Delete a project by UUID.
+      parameters:
+      - description: Project ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No content
+        "400":
+          description: Invalid id format
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "404":
+          description: Project not found
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete project
+      tags:
+      - projects
+    get:
+      description: Retrieve a project by UUID.
+      parameters:
+      - description: Project ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Project retrieved successfully
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: Invalid id format
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "404":
+          description: Project not found
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Get project
+      tags:
+      - projects
+    put:
+      consumes:
+      - application/json
+      description: Update fields on an existing project.
+      parameters:
+      - description: Project ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Project update payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/application.UpdateProjectInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Project updated successfully
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "404":
+          description: Project not found
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Update project
+      tags:
+      - projects
+  /v1/users/me:
+    get:
+      description: Return the authenticated user's profile from JWT claims.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Current user retrieved successfully
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "401":
+          description: User not authenticated
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "404":
+          description: User not found
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Get current user
+      tags:
+      - users
 swagger: "2.0"

@@ -14,9 +14,7 @@ RUN go mod download
 # Copy source and build
 COPY . .
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
-    go build -ldflags="-w -s" -o /app/server ./cmd/server && \
-    CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
-    go build -ldflags="-w -s" -o /app/clickhouse-worker ./cmd/clickhouse-worker
+    go build -ldflags="-w -s" -o /app/server ./cmd/server
 
 # ============================================================
 # Runtime stage
@@ -28,8 +26,6 @@ RUN apk add --no-cache ca-certificates tzdata
 WORKDIR /app
 
 COPY --from=builder /app/server .
-COPY --from=builder /app/clickhouse-worker .
-COPY --from=builder /app/migrations ./migrations
 COPY --from=builder /app/configs ./configs
 
 EXPOSE 8080

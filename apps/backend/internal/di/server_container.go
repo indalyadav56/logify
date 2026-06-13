@@ -60,7 +60,6 @@ type ServerContainer struct {
 	KafkaWriter  *kafka.Writer
 	ClickHouseDB ch.Conn
 
-	// JWT helper, shared by token issuance and HTTP auth middleware.
 	JWT *jwtpkg.JWT
 
 	// Auth
@@ -100,11 +99,18 @@ type ServerContainer struct {
 func NewServerContainer(ctx context.Context, cfg *config.Config, log *zap.Logger) (*ServerContainer, error) {
 	c := &ServerContainer{Config: cfg, Logger: log}
 
-	pgCfg, err := cfg.PostgresPoolConfig(config.DefaultPostgresConn)
-	if err != nil {
-		return nil, fmt.Errorf("postgres config: %w", err)
-	}
-	pool, err := postgres.New(ctx, pgCfg)
+	pool, err := postgres.New(ctx, postgres.Config{
+		Host:         c.Config.Postgres.Host,
+		Port:         c.Config.Postgres.Port,
+		User:         c.Config.Postgres.User,
+		Password:     c.Config.Postgres.Password,
+		Database:     c.Config.Postgres.Database,
+		SSLMode:      c.Config.Postgres.SSLMode,
+		MaxOpenConns: int32(c.Config.Postgres.MaxOpenConns),
+		MaxIdleConns: int32(c.Config.Postgres.MaxIdleConns),
+		MaxLifetime:  c.Config.Postgres.ConnMaxLifetime,
+		MaxIdleTime:  c.Config.Postgres.ConnMaxIdleTime,
+	})
 	if err != nil {
 		return nil, fmt.Errorf("postgres: %w", err)
 	}
@@ -116,11 +122,7 @@ func NewServerContainer(ctx context.Context, cfg *config.Config, log *zap.Logger
 		Balancer: &kafka.LeastBytes{},
 	}
 
-	chDSN, err := c.Config.ClickHouseNativeDSN(config.DefaultClickHouseConn)
-	if err != nil {
-		return nil, err
-	}
-	c.ClickHouseDB, err = pkgClickhouse.NewClickHouseDB(chDSN)
+	c.ClickHouseDB, err = pkgClickhouse.NewClickHouseDB(c.Config.ClickHouse.DSN())
 	if err != nil {
 		return nil, err
 	}
@@ -170,15 +172,15 @@ func (c *ServerContainer) initSearch() {
 }
 
 func (c *ServerContainer) initAuth() error {
-	if c.Config.Auth.JWT.Secret == "" {
+	if c.Config.JWT.Secret == "" {
 		return errors.New("auth: jwt secret is required (set auth.jwt.secret)")
 	}
 
 	c.JWT = jwtpkg.New(jwtpkg.JWTConfig{
-		SecretKey:        []byte(c.Config.Auth.JWT.Secret),
+		SecretKey:        []byte(c.Config.JWT.Secret),
 		SigningAlgorithm: gojwt.SigningMethodHS256,
-		TokenDuration:    c.Config.Auth.JWT.AccessTokenTTL,
-		Issuer:           c.Config.Auth.JWT.Issuer,
+		TokenDuration:    c.Config.JWT.AccessTokenTTL,
+		Issuer:           c.Config.JWT.Issuer,
 	})
 
 	c.SessionRepo = authRepo.NewSessionRepository(c.postgresDB)

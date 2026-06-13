@@ -1,4 +1,4 @@
-.PHONY: run run-clickhouse-worker run-embedding-worker build test lint clean docker-build docker-run fmt vet mocks \
+.PHONY: run run-log-processor run-embedding-worker build test lint clean docker-build docker-run fmt vet mocks \
         migrate migrate-up migrate-up-by-one migrate-down migrate-redo \
         migrate-reset migrate-status migrate-version migrate-create \
         migrate-ch migrate-up-ch migrate-up-by-one-ch migrate-down-ch \
@@ -16,7 +16,7 @@ DOCKER_TAG   := latest
 
 # Migrations
 MIGRATOR_PKG    := ./cmd/migrator
-MIGRATE_ENV     ?= local
+MIGRATE_ENV     ?= dev
 MIGRATE_DRIVER  ?= postgres
 MIGRATE_DIR     ?=
 MIGRATE_DSN     ?=
@@ -29,12 +29,12 @@ MIGRATE_ARGS     = -driver $(MIGRATE_DRIVER) -env $(MIGRATE_ENV) \
 ## run: Run the API locally (APP_ENV=local matches docker compose defaults in configs/local.yaml)
 run:
 	@echo "▶ Running $(APP_NAME)..."
-	APP_ENV=local go run $(MAIN_FILE)
+	APP_ENV=dev go run $(MAIN_FILE)
 
-## run-clickhouse-worker: Consume logs from Kafka and write to ClickHouse
-run-clickhouse-worker:
-	@echo "▶ Running clickhouse worker (Kafka → ClickHouse)..."
-	APP_ENV=local go run ./cmd/clickhouse-worker
+## run-log-processor: Consume logs from Kafka and write to ClickHouse
+run-log-processor:
+	@echo "▶ Running log processor (Kafka → ClickHouse)..."
+	APP_ENV=local go run ./cmd/log-processor
 
 ## run-embedding-worker: Consume logs from Kafka, embed via Ollama, store in Postgres
 run-embedding-worker:

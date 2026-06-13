@@ -35,8 +35,19 @@ func resolveTenantID(c *gin.Context, fromBody string) string {
 	return fromBody
 }
 
-// Search godoc
-// POST /v1/logs/search
+// Search runs a log query against ClickHouse.
+// @Summary      Search logs
+// @Description  Run a structured log search query for a tenant.
+// @Tags         logs
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        X-Tenant-ID  header    string         false  "Tenant ID override (also resolved from JWT or body)"
+// @Param        request      body      SearchRequest  true   "Search query"
+// @Success      200          {object}  SearchResponse "Search results"
+// @Failure      400          {object}  map[string]string "Invalid request or missing tenant_id"
+// @Failure      500          {object}  map[string]string "Search failed"
+// @Router       /v1/logs/search [post]
 func (h *Handler) Search(c *gin.Context) {
 	var req SearchRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -69,8 +80,20 @@ func (h *Handler) Search(c *gin.Context) {
 	c.JSON(http.StatusOK, toSearchResponse(result))
 }
 
-// GetByID godoc
-// GET /v1/logs/:id
+// GetByID fetches a single log entry by ID.
+// @Summary      Get log by ID
+// @Description  Retrieve a single log entry by its ID for a tenant.
+// @Tags         logs
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id           path      string  true   "Log ID"
+// @Param        tenant_id    query     string  false  "Tenant ID (also resolved from JWT/header)"
+// @Param        X-Tenant-ID  header    string  false  "Tenant ID override"
+// @Success      200          {object}  LogResponse "Log entry"
+// @Failure      400          {object}  map[string]string "Missing tenant_id"
+// @Failure      404          {object}  map[string]string "Log not found"
+// @Failure      500          {object}  map[string]string "Fetch failed"
+// @Router       /v1/logs/{id} [get]
 func (h *Handler) GetByID(c *gin.Context) {
 	logID := c.Param("id")
 	tenantID := resolveTenantID(c, c.Query("tenant_id"))
@@ -93,8 +116,18 @@ func (h *Handler) GetByID(c *gin.Context) {
 	c.JSON(http.StatusOK, toLogResponse(*entry))
 }
 
-// Aggregate godoc
-// POST /v1/logs/aggregate
+// Aggregate runs a log aggregation query.
+// @Summary      Aggregate logs
+// @Description  Run a grouped/time-bucketed aggregation over logs.
+// @Tags         logs
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        request  body      AggregateRequest  true  "Aggregation query"
+// @Success      200      {object}  AggregateResponse "Aggregation result"
+// @Failure      400      {object}  map[string]string "Invalid request"
+// @Failure      500      {object}  map[string]string "Aggregate failed"
+// @Router       /v1/logs/aggregate [post]
 func (h *Handler) Aggregate(c *gin.Context) {
 	var req AggregateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -134,9 +167,17 @@ func (h *Handler) Aggregate(c *gin.Context) {
 	c.JSON(http.StatusOK, toAggregateResponse(result))
 }
 
-// Export godoc
-// POST /v1/logs/export
-// Returns a static accepted response — async export is not yet implemented.
+// Export starts an async log export job.
+// @Summary      Export logs
+// @Description  Start an asynchronous log export job; returns the export job ID.
+// @Tags         logs
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        request  body      ExportRequest  true  "Export query"
+// @Success      202      {object}  ExportResponse "Export accepted"
+// @Failure      400      {object}  map[string]string "Invalid request"
+// @Router       /v1/logs/export [post]
 func (h *Handler) Export(c *gin.Context) {
 	var req ExportRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -151,9 +192,15 @@ func (h *Handler) Export(c *gin.Context) {
 	})
 }
 
-// ExportStatus godoc
-// GET /v1/exports/:id
-// Returns a static processing response — async export is not yet implemented.
+// ExportStatus returns the status of an export job.
+// @Summary      Get export status
+// @Description  Return the current status of an async log export job.
+// @Tags         logs
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id   path      string  true  "Export ID"
+// @Success      200  {object}  ExportStatusResponse "Export status"
+// @Router       /exports/{id} [get]
 func (h *Handler) ExportStatus(c *gin.Context) {
 	exportID := c.Param("id")
 

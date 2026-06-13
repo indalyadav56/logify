@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -27,10 +28,26 @@ func (c Config) DSN() string {
 	if c.ConnString != "" {
 		return c.ConnString
 	}
-	return fmt.Sprintf(
-		"host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
-		c.Host, c.Port, c.User, c.Password, c.Database, c.SSLMode,
-	)
+	var parts []string
+	if c.Host != "" {
+		parts = append(parts, fmt.Sprintf("host=%s", c.Host))
+	}
+	if c.Port > 0 {
+		parts = append(parts, fmt.Sprintf("port=%d", c.Port))
+	}
+	if c.User != "" {
+		parts = append(parts, fmt.Sprintf("user=%s", c.User))
+	}
+	if c.Password != "" {
+		parts = append(parts, fmt.Sprintf("password=%s", c.Password))
+	}
+	if c.Database != "" {
+		parts = append(parts, fmt.Sprintf("dbname=%s", c.Database))
+	}
+	if c.SSLMode != "" {
+		parts = append(parts, fmt.Sprintf("sslmode=%s", c.SSLMode))
+	}
+	return strings.Join(parts, " ")
 }
 
 func New(ctx context.Context, cfg Config) (*pgxpool.Pool, error) {
@@ -39,10 +56,18 @@ func New(ctx context.Context, cfg Config) (*pgxpool.Pool, error) {
 		return nil, fmt.Errorf("postgres: parse config: %w", err)
 	}
 
-	poolCfg.MaxConns = cfg.MaxOpenConns
-	poolCfg.MinConns = cfg.MaxIdleConns
-	poolCfg.MaxConnLifetime = cfg.MaxLifetime
-	poolCfg.MaxConnIdleTime = cfg.MaxIdleTime
+	if cfg.MaxOpenConns > 0 {
+		poolCfg.MaxConns = cfg.MaxOpenConns
+	}
+	if cfg.MaxIdleConns > 0 {
+		poolCfg.MinConns = cfg.MaxIdleConns
+	}
+	if cfg.MaxLifetime > 0 {
+		poolCfg.MaxConnLifetime = cfg.MaxLifetime
+	}
+	if cfg.MaxIdleTime > 0 {
+		poolCfg.MaxConnIdleTime = cfg.MaxIdleTime
+	}
 
 	pool, err := pgxpool.NewWithConfig(ctx, poolCfg)
 	if err != nil {

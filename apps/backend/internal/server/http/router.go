@@ -9,7 +9,7 @@ import (
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 
-	// _ "github.com/indalyadav56/logify/apps/backend/docs/swagger"
+	_ "github.com/indalyadav56/logify/apps/backend/docs/swagger"
 )
 
 // Router is responsible for setting up all routes

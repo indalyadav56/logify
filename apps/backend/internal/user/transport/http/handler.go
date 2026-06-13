@@ -147,7 +147,17 @@ func NewUserHandler(service application.UserService) *UserHandler {
 // 	response.Paginated(c, users, params.Page, params.PerPage, total)
 // }
 
-// GetCurrentUser handles GET /api/v1/users/me
+// GetCurrentUser returns the authenticated user's profile.
+// @Summary      Get current user
+// @Description  Return the authenticated user's profile from JWT claims.
+// @Tags         users
+// @Produce      json
+// @Security     BearerAuth
+// @Success      200  {object}  response.APIResponse "Current user retrieved successfully"
+// @Failure      401  {object}  response.APIResponse "User not authenticated"
+// @Failure      404  {object}  response.APIResponse "User not found"
+// @Failure      500  {object}  response.APIResponse "Internal server error"
+// @Router       /v1/users/me [get]
 func (h *UserHandler) GetCurrentUser(c *gin.Context) {
 	userIDStr, ok := middleware.GetUserIDFromContext(c)
 	if !ok {

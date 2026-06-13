@@ -1,2 +1,4 @@
 tmp
 logs/
+bin
+coverage.out

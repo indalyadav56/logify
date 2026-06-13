@@ -247,19 +247,15 @@ func resolveDSN(profile driverProfile, dsnFlag, env string) (string, error) {
 
 	switch profile.name {
 	case driverPostgres:
-		pcfg, err := cfg.PostgresPoolConfig(config.DefaultPostgresConn)
-		if err != nil {
-			return "", fmt.Errorf("postgres config: %w", err)
-		}
-		dsn := pcfg.DSN()
+		dsn := cfg.Postgres.DSN()
 		if dsn == "" {
 			return "", errors.New("could not build Postgres DSN from config")
 		}
 		return dsn, nil
 	case driverClickHouse:
-		dsn, err := cfg.ClickHouseNativeDSN(config.DefaultClickHouseConn)
-		if err != nil {
-			return "", fmt.Errorf("clickhouse config: %w", err)
+		dsn := cfg.ClickHouse.DSN()
+		if dsn == "" {
+			return "", errors.New("could not build ClickHouse DSN from config")
 		}
 		return dsn, nil
 	default:

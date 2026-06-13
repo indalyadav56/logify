@@ -11,7 +11,7 @@ ClickHouse for fast search and analytics, with a web UI for exploring them.
 ```
  apps & hosts                backend (:8080)          pipeline                storage
 ┌───────────────┐   POST    ┌──────────────┐  Kafka  ┌──────────────────┐   ┌────────────┐
-│ Go / Python / │ ───────▶  │  /v1/logs    │ ──────▶ │ clickhouse-worker│ ▶ │ ClickHouse │
+│ Go / Python / │ ───────▶  │  /v1/logs    │ ──────▶ │  log-processor   │ ▶ │ ClickHouse │
 │ Node SDKs     │  /v1/logs │  ingest      │  topic  └──────────────────┘   │  (logs)    │
 │ logify-agent  │           │              │                                └────────────┘
 └───────────────┘           │  auth/search │ ── Postgres (users, projects) ── Redis (cache)
@@ -24,7 +24,7 @@ ClickHouse for fast search and analytics, with a web UI for exploring them.
    log as JSON to `POST /v1/logs`.
 2. **Ingest** — the Go backend validates the record and publishes it to the
    Kafka `logs` topic.
-3. **Store** — `clickhouse-worker` consumes the topic and writes to ClickHouse.
+3. **Store** — `log-processor` consumes the topic and writes to ClickHouse.
 4. **Explore** — the web UI and search API query ClickHouse; Postgres holds
    users/projects/auth and Redis provides caching.
 
