@@ -1,0 +1,459 @@
+services:
+  # -------------------------------------------------------------------------
+  # Infrastructure
+  # -------------------------------------------------------------------------
+  postgres:
+    image: pgvector/pgvector:pg18
+    container_name: logify_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: logify
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - logify-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d logify"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  pgbouncer:
+    image: bitnami/pgbouncer:latest
+    container_name: logify_pgbouncer
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "6432:6432"
+    environment:
+      POSTGRESQL_HOST: postgres
+      POSTGRESQL_PORT: 5432
+      POSTGRESQL_USERNAME: postgres
+      POSTGRESQL_PASSWORD: postgres
+      POSTGRESQL_DATABASE: logify
+      PGBOUNCER_POOL_MODE: transaction
+      PGBOUNCER_DEFAULT_POOL_SIZE: 100
+      PGBOUNCER_MAX_CLIENT_CONN: 1000
+      PGBOUNCER_LISTEN_PORT: 6432
+      PGBOUNCER_AUTH_TYPE: scram-sha-256
+    networks:
+      - logify-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h localhost -p 6432 -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7.4-alpine
+    container_name: logify_redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory", "256mb", "--maxmemory-policy", "allkeys-lru"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - logify-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    container_name: logify_kafka
+    restart: unless-stopped
+    ports:
+      - "${KAFKA_EXTERNAL_PORT:-29092}:29092"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:29093
+      KAFKA_LISTENERS: PLAINTEXT://kafka:9092,CONTROLLER://kafka:29093,PLAINTEXT_HOST://0.0.0.0:29092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:${KAFKA_EXTERNAL_PORT:-29092}
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+      KAFKA_LOG_RETENTION_HOURS: 168
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    networks:
+      - logify-net
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-broker-api-versions --bootstrap-server kafka:9092 > /dev/null 2>&1"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:26.2-alpine
+    container_name: logify_clickhouse
+    restart: unless-stopped
+    environment:
+      CLICKHOUSE_USER: default
+      CLICKHOUSE_PASSWORD: mypassword
+      CLICKHOUSE_DB: logify
+    ports:
+      - "8123:8123"
+      - "9000:9000"
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+      - clickhouse_logs:/var/log/clickhouse-server
+    networks:
+      - logify-net
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:8123/ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # -------------------------------------------------------------------------
+  # Microservices
+  # -------------------------------------------------------------------------
+  api-gateway:
+    build:
+      context: ./services/api-gateway
+      dockerfile: Dockerfile
+    image: logify/api-gateway:envoy
+    container_name: logify_api_gateway
+    restart: unless-stopped
+    ports:
+      - "8080:8080"   # public HTTP / gRPC-Web
+      - "9901:9901"   # Envoy admin interface
+    volumes:
+      - ./services/api-gateway/envoy.yaml:/etc/envoy/envoy.yaml:ro
+    depends_on:
+      - user-service
+      - auth-service
+      - project-service
+      - tenant-service
+      - search-service
+      - notification-service
+      - ingest-service
+      - log-processor-service
+      - dashboard-service
+    networks:
+      - logify-net
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:9901/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  user-service:
+    build:
+      context: ./services/user-service
+      dockerfile: Dockerfile
+    container_name: logify_user_service
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+      - "50051:50051"
+    environment:
+      PORT: "8081"
+      GRPC_PORT: "50051"
+      DATABASE_HOST: postgres
+      DATABASE_PORT: "5432"
+      DATABASE_USER: postgres
+      DATABASE_PASSWORD: postgres
+      DATABASE_NAME: logify
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - logify-net
+
+  auth-service:
+    build:
+      context: ./services/auth-service
+      dockerfile: Dockerfile
+    container_name: logify_auth_service
+    restart: unless-stopped
+    ports:
+      - "8082:8082"
+      - "50052:50052"
+    environment:
+      PORT: "8082"
+      GRPC_PORT: "50052"
+      DATABASE_HOST: postgres
+      DATABASE_PORT: "5432"
+      DATABASE_USER: postgres
+      DATABASE_PASSWORD: postgres
+      DATABASE_NAME: logify
+      USER_SERVICE_GRPC: "user-service:50051"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      user-service:
+        condition: service_started
+    networks:
+      - logify-net
+
+  project-service:
+    build:
+      context: ./services/project-service
+      dockerfile: Dockerfile
+    container_name: logify_project_service
+    restart: unless-stopped
+    ports:
+      - "8083:8083"
+      - "50053:50053"
+    environment:
+      PORT: "8083"
+      GRPC_PORT: "50053"
+      DATABASE_HOST: postgres
+      DATABASE_PORT: "5432"
+      DATABASE_USER: postgres
+      DATABASE_PASSWORD: postgres
+      DATABASE_NAME: logify
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - logify-net
+
+  tenant-service:
+    build:
+      context: ./services/tenant-service
+      dockerfile: Dockerfile
+    container_name: logify_tenant_service
+    restart: unless-stopped
+    ports:
+      - "8084:8084"
+      - "50054:50054"
+    environment:
+      PORT: "8084"
+      GRPC_PORT: "50054"
+      DATABASE_HOST: postgres
+      DATABASE_PORT: "5432"
+      DATABASE_USER: postgres
+      DATABASE_PASSWORD: postgres
+      DATABASE_NAME: logify
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - logify-net
+
+  search-service:
+    build:
+      context: ./services/search-service
+      dockerfile: Dockerfile
+    container_name: logify_search_service
+    restart: unless-stopped
+    ports:
+      - "8085:8085"
+      - "50055:50055"
+    environment:
+      PORT: "8085"
+      GRPC_PORT: "50055"
+      CLICKHOUSE_HOST: clickhouse
+      CLICKHOUSE_PORT: "9000"
+      CLICKHOUSE_USER: default
+      CLICKHOUSE_PASSWORD: mypassword
+      CLICKHOUSE_DB: logify
+    depends_on:
+      clickhouse:
+        condition: service_healthy
+    networks:
+      - logify-net
+
+  notification-service:
+    build:
+      context: ./services/notification-service
+      dockerfile: Dockerfile
+    container_name: logify_notification_service
+    restart: unless-stopped
+    ports:
+      - "8086:8086"
+      - "50056:50056"
+    environment:
+      PORT: "8086"
+      GRPC_PORT: "50056"
+      DATABASE_HOST: postgres
+      DATABASE_PORT: "5432"
+      DATABASE_USER: postgres
+      DATABASE_PASSWORD: postgres
+      DATABASE_NAME: logify
+      KAFKA_BROKERS: "kafka:9092"
+      KAFKA_TOPIC_NOTIFICATIONS: "notifications"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    networks:
+      - logify-net
+
+  ingest-service:
+    build:
+      context: ./services/ingest-service
+      dockerfile: Dockerfile
+    container_name: logify_ingest_service
+    restart: unless-stopped
+    ports:
+      - "8087:8087"
+      - "50057:50057"
+    environment:
+      PORT: "8087"
+      GRPC_PORT: "50057"
+      KAFKA_BROKERS: "kafka:9092"
+      KAFKA_TOPIC_LOGS: "logs.raw"
+      REDIS_ADDR: "redis:6379"
+    depends_on:
+      kafka:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - logify-net
+
+  log-processor-service:
+    build:
+      context: ./services/log-processor-service
+      dockerfile: Dockerfile
+    container_name: logify_log_processor_service
+    restart: unless-stopped
+    ports:
+      - "8088:8088"
+      - "50058:50058"
+    environment:
+      PORT: "8088"
+      GRPC_PORT: "50058"
+      KAFKA_BROKERS: "kafka:9092"
+      KAFKA_TOPIC_LOGS_IN: "logs.raw"
+      KAFKA_TOPIC_LOGS_OUT: "logs.processed"
+      KAFKA_GROUP_ID: "log-processor"
+      CLICKHOUSE_HOST: clickhouse
+      CLICKHOUSE_PORT: "9000"
+      CLICKHOUSE_USER: default
+      CLICKHOUSE_PASSWORD: mypassword
+      CLICKHOUSE_DB: logify
+    depends_on:
+      kafka:
+        condition: service_healthy
+      clickhouse:
+        condition: service_healthy
+    networks:
+      - logify-net
+
+  embedder-service:
+    build:
+      context: ./services/embedder-service
+      dockerfile: Dockerfile
+    container_name: logify_embedder_service
+    restart: unless-stopped
+    ports:
+      - "8089:8089"
+      - "50059:50059"
+    environment:
+      PORT: "8089"
+      GRPC_PORT: "50059"
+      KAFKA_BROKERS: "kafka:9092"
+      KAFKA_TOPIC_LOGS_IN: "logs.processed"
+      KAFKA_GROUP_ID: "embedder"
+      DATABASE_HOST: postgres
+      DATABASE_PORT: "5432"
+      DATABASE_USER: postgres
+      DATABASE_PASSWORD: postgres
+      DATABASE_NAME: logify
+      OLLAMA_HOST: "http://host.docker.internal:11434"
+      OLLAMA_MODEL: "nomic-embed-text"
+    depends_on:
+      kafka:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    networks:
+      - logify-net
+
+  dashboard-service:
+    build:
+      context: ./services/dashboard-service
+      dockerfile: Dockerfile
+    container_name: logify_dashboard_service
+    restart: unless-stopped
+    ports:
+      - "8090:8090"
+      - "50060:50060"
+    environment:
+      PORT: "8090"
+      GRPC_PORT: "50060"
+      DATABASE_HOST: postgres
+      DATABASE_PORT: "5432"
+      DATABASE_USER: postgres
+      DATABASE_PASSWORD: postgres
+      DATABASE_NAME: logify
+      CLICKHOUSE_HOST: clickhouse
+      CLICKHOUSE_PORT: "9000"
+      CLICKHOUSE_USER: default
+      CLICKHOUSE_PASSWORD: mypassword
+      CLICKHOUSE_DB: logify
+    depends_on:
+      postgres:
+        condition: service_healthy
+      clickhouse:
+        condition: service_healthy
+    networks:
+      - logify-net
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  kafka_data:
+    driver: local
+  clickhouse_data:
+    driver: local
+  clickhouse_logs:
+    driver: local
+  pgadmin_data:
+    driver: local
+
+networks:
+  logify-net:
+    driver: bridge

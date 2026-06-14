@@ -1,0 +1,18 @@
+# POST http://logify.api.indalyadav.com:81/v1/auth/register
+POST http://localhost:8080/v1/auth/register
+
+{
+    "first_name":"test1232100@gmail.com",
+    "middle_name":"test1232100@gmail.com",
+    "last_name":"test1232100@gmail.com",
+    "email":"t12@gmail.com",
+    "password":"test@123"
+}
+
+###
+POST http://localhost:8080/v1/auth/login
+
+{
+    "email": "indal@gmail.com",
+    "password": "test@123"
+}

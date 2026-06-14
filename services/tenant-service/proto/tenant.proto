@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+package tenant;
+
+option go_package = "github.com/indalyadav56/logify/services/tenant-service/internal/transport/grpc/proto";
+
+service TenantService {
+  rpc CreateTenant (CreateTenantRequest) returns (CreateTenantResponse);
+  rpc GetTenantByID (GetTenantByIDRequest) returns (GetTenantByIDResponse);
+  rpc ListTenants  (ListTenantsRequest)  returns (ListTenantsResponse);
+}
+
+message CreateTenantRequest {
+  string name = 1;
+  string slug = 2;
+  string plan = 3;
+}
+
+message CreateTenantResponse {
+  string id = 1;
+  string name = 2;
+  string slug = 3;
+}
+
+message GetTenantByIDRequest {
+  string id = 1;
+}
+
+message GetTenantByIDResponse {
+  string id = 1;
+  string name = 2;
+  string slug = 3;
+  string plan = 4;
+}
+
+message ListTenantsRequest {
+  int32 limit = 1;
+  int32 offset = 2;
+}
+
+message ListTenantsResponse {
+  repeated GetTenantByIDResponse tenants = 1;
+}

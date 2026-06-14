@@ -1,0 +1,54 @@
+version: "3"
+
+dotenv: [".env"]
+
+tasks:
+  grpc-generate:
+    desc: Generate gRPC code from .proto files
+    cmds:
+      - |
+        for file in proto/*.proto; do
+          protoc \
+            --go_out=./internal/transport/grpc \
+            --go_opt=paths=source_relative \
+            --go-grpc_out=./internal/transport/grpc \
+            --go-grpc_opt=paths=source_relative \
+            "$file"
+        done
+
+  goose-create:
+    desc: Create a new SQL migration file
+    vars:
+      migration_name:
+        sh: echo "{{.migration_name}}"
+      DB_URL:
+        sh: echo "postgres://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$DB_NAME?sslmode=disable"
+    cmds:
+      - goose -dir ./internal/infrastructure/postgres/migrations postgres "{{.DB_URL}}" create {{.migration_name}} sql
+    preconditions:
+      - sh: "test -n '{{.migration_name}}'"
+        msg: "migration_name is required. Usage: task goose-create migration_name=your_migration_name"
+      - sh: "test -n '$DB_USER' && test -n '$DB_PASSWORD' && test -n '$DB_HOST' && test -n '$DB_PORT' && test -n '$DB_NAME'"
+        msg: "All database environment variables (DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME) are required"
+
+  goose-up:
+    desc: Apply all pending SQL migrations
+    vars:
+      DB_URL:
+        sh: echo "postgres://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$DB_NAME?sslmode=disable"
+    cmds:
+      - goose -dir ./internal/infrastructure/postgres/migrations postgres "{{.DB_URL}}" up
+    preconditions:
+      - sh: "test -n '$DB_USER' && test -n '$DB_PASSWORD' && test -n '$DB_HOST' && test -n '$DB_PORT' && test -n '$DB_NAME'"
+        msg: "All database environment variables (DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME) are required"
+
+  goose-down:
+    desc: Roll back the most recent SQL migration
+    vars:
+      DB_URL:
+        sh: echo "postgres://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$DB_NAME?sslmode=disable"
+    cmds:
+      - goose -dir ./internal/infrastructure/postgres/migrations postgres "{{.DB_URL}}" down
+    preconditions:
+      - sh: "test -n '$DB_USER' && test -n '$DB_PASSWORD' && test -n '$DB_HOST' && test -n '$DB_PORT' && test -n '$DB_NAME'"
+        msg: "All database environment variables (DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME) are required"

@@ -1,0 +1,29 @@
+POST http://localhost:8083/v1/projects
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NTQ0MzkzNTMsInRlbmFudF9pZCI6ImI2NjQ1ZWM0LTZkNzgtNDY3My05Mjg2LWE5MDU5YzhlMmYyZiIsInVzZXJfaWQiOiI1YjUxY2Q3Mi1jMTE0LTQwYjItOGE0NS1iZjc3NjA4ODU2YWIifQ.O6-0boEZ-9aTn1diNDDF0KvVOl8zmz30KYLDfCfB8bw
+
+{
+    "title" : "project124-new"
+}
+
+# POST http://localhost:8083/v1/projects
+
+
+###
+GET http://localhost:8083/v1/projects
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NTQ0MzkzNTMsInRlbmFudF9pZCI6ImI2NjQ1ZWM0LTZkNzgtNDY3My05Mjg2LWE5MDU5YzhlMmYyZiIsInVzZXJfaWQiOiI1YjUxY2Q3Mi1jMTE0LTQwYjItOGE0NS1iZjc3NjA4ODU2YWIifQ.O6-0boEZ-9aTn1diNDDF0KvVOl8zmz30KYLDfCfB8bw
+
+# GET http://logify.api.indalyadav.com:81/v1/projects
+
+
+### get api keys
+GET http://localhost:8083/v1/projects/38e428eb-6f72-4fa6-9ccb-b469fb2e1aa1/api-keys
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NTQ0MzkzNTMsInRlbmFudF9pZCI6ImI2NjQ1ZWM0LTZkNzgtNDY3My05Mjg2LWE5MDU5YzhlMmYyZiIsInVzZXJfaWQiOiI1YjUxY2Q3Mi1jMTE0LTQwYjItOGE0NS1iZjc3NjA4ODU2YWIifQ.O6-0boEZ-9aTn1diNDDF0KvVOl8zmz30KYLDfCfB8bw
+
+### create api keys
+POST http://localhost:8083/v1/projects/38e428eb-6f72-4fa6-9ccb-b469fb2e1aa1/api-keys
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NTQ0MzkzNTMsInRlbmFudF9pZCI6ImI2NjQ1ZWM0LTZkNzgtNDY3My05Mjg2LWE5MDU5YzhlMmYyZiIsInVzZXJfaWQiOiI1YjUxY2Q3Mi1jMTE0LTQwYjItOGE0NS1iZjc3NjA4ODU2YWIifQ.O6-0boEZ-9aTn1diNDDF0KvVOl8zmz30KYLDfCfB8bw
+
+{
+    "name" : "key12",
+    "description" : "description"
+}

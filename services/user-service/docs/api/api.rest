@@ -1,0 +1,12 @@
+POST http://logify.api.indalyadav.com:81/v1/users
+
+{
+    "first_name": "indal123yadav56@",
+    "middle_name": "indal123yadav56@",
+    "last_name": "indal123yadav56@",
+    "email": "indal13@gmail.com",
+    "password": "indal@gmail.com"
+}
+
+###
+GET http://localhost:8080/v1/users?email="indalyadav56@gmail.com"

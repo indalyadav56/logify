@@ -1,0 +1,38 @@
+version: "3"
+
+dotenv: [".env"]
+
+tasks:
+  run:
+    cmds:
+      - go run cmd/main.go
+
+  grpc-generate:
+    cmds:
+      - protoc --go_out=./internal/transport/grpc --go_opt=paths=source_relative --go-grpc_out=./internal/transport/grpc --go-grpc_opt=paths=source_relative proto/user.proto
+
+  goose-create:
+    desc: Create a new SQL migration file
+    vars:
+      migration_name: # Define the variable (will be prompted or passed)
+    cmds:
+      - goose -dir ./internal/infrastructure/postgres/migrations create {{.migration_name}} sql
+    preconditions:
+      - sh: "test -n '{{.migration_name}}'"
+        msg: "migration_name is required. Usage: task goose-create -- migration_name=your_migration_name"
+
+  goose-up:
+    desc: Apply all pending SQL migrations
+    vars:
+      DB_URL:
+        sh: echo "postgres://$DATABASE_USER:$DATABASE_PASSWORD@$DATABASE_HOST:$DATABASE_PORT/$DATABASE_NAME?sslmode=disable"
+    cmds:
+      - goose -dir ./internal/infrastructure/postgres/migrations postgres "{{.DB_URL}}" up
+    preconditions:
+      - sh: "test -n '$DATABASE_USER' && test -n '$DATABASE_PASSWORD' && test -n '$DATABASE_HOST' && test -n '$DATABASE_PORT' && test -n '$DATABASE_NAME'"
+        msg: "All database environment variables (DATABASE_USER, DATABASE_PASSWORD, DATABASE_HOST, DATABASE_PORT, DATABASE_NAME) are required"
+
+  goose-down:
+    desc: Roll back the most recent migration
+    cmds:
+      - goose -dir ./internal/infrastructure/postgres/migrations down

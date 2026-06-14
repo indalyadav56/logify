@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package project;
+
+option go_package = "github.com/indalyadav56/logify/services/project-service/internal/transport/grpc/proto";
+
+service ProjectAPIKeyService {
+  rpc GetApiDataByKey (Request) returns (Response);
+}
+
+message Request {
+  string key = 1;
+}
+
+message Response {
+  string project_id = 1;
+  string user_id = 2;
+  string tanent_id = 3;
+}

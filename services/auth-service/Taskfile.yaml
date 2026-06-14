@@ -1,0 +1,10 @@
+version: "3"
+
+tasks:
+  run:
+    cmds:
+      - go run cmd/main.go
+
+  grpc-generate:
+    cmds:
+      - protoc --go_out=./internal/transport/grpc --go_opt=paths=source_relative --go-grpc_out=./internal/transport/grpc --go-grpc_opt=paths=source_relative proto/user.proto
