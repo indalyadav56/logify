@@ -3,10 +3,9 @@
 import * as React from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { BookOpenIcon, PlusCircleIcon } from "lucide-react"
+import { PlusCircleIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
-import { Separator } from "@/components/ui/separator"
 import { Button } from "@/components/ui/button"
 import {
   Breadcrumb,
@@ -16,11 +15,6 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -115,20 +109,6 @@ export function AppHeader() {
       </span>
 
       <div className="ml-auto flex items-center gap-2">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button variant="ghost" size="icon-sm" aria-label="Docs">
-              <BookOpenIcon />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Docs</TooltipContent>
-        </Tooltip>
-
-        <Separator
-          orientation="vertical"
-          className="mx-1 h-4 bg-border/60"
-        />
-
         {showIngestion ? (
           <Button
             size="sm"

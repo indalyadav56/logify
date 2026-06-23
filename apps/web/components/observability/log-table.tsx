@@ -96,7 +96,7 @@ export function LogTable({
   return (
     <div
       className={cn(
-        "flex h-full w-full flex-col rounded-lg border border-border bg-background",
+        "flex h-full w-full flex-col rounded-lg border border-border bg-muted/40",
         className
       )}
     >
@@ -104,15 +104,15 @@ export function LogTable({
         ref={scrollRef}
         className="relative min-h-0 flex-1 overflow-auto"
       >
-        <table className="w-full min-w-[720px] border-collapse text-[13px] font-sans">
+        <table className="w-full min-w-[720px] border-separate [border-spacing:0_5px] text-[13px] font-sans">
           <thead className="sticky top-0 z-20">
-            <tr className="border-b border-border bg-background text-left text-[12px] font-medium text-muted-foreground">
-              <th className="w-1.5 p-0" aria-hidden />
+            <tr className="bg-background text-left text-[11px] font-medium uppercase tracking-wide text-muted-foreground/75">
+              <th className="w-1 border-b border-border p-0" aria-hidden />
               {visibleColumns.map((col) => (
                 <th
                   key={col.id}
                   className={cn(
-                    "border-r border-border/80 px-4 py-2.5 bg-background",
+                    "border-b border-border px-4 py-2.5 bg-background font-medium",
                     col.width,
                     col.minWidth,
                     col.id === "message" && "min-w-[320px]"
@@ -128,9 +128,7 @@ export function LogTable({
                   )}
                 </th>
               ))}
-              <th className="w-[72px] border-l border-border/80 px-2 py-2.5 bg-background text-center">
-                Action
-              </th>
+              <th className="w-[60px] border-b border-border px-2 py-2.5 bg-background text-right pr-3 font-medium" />
             </tr>
           </thead>
           <tbody className={cn(loading && "opacity-40 transition-opacity")}>
@@ -167,7 +165,7 @@ export function LogTable({
       </div>
 
       {/* Pagination Bar at bottom */}
-      <div className="flex shrink-0 flex-col gap-3 border-t border-border/60 bg-muted/20 px-4 py-2.5 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex shrink-0 flex-col gap-3 border-t border-border bg-background px-4 py-2.5 sm:flex-row sm:items-center sm:justify-between">
         <div className="text-[12px] text-muted-foreground">
           {newestLog && oldestLog ? (
             <span className="tabular-nums-lining">
@@ -247,15 +245,15 @@ function LogTableRow({
       data-log-id={log.id}
       onClick={() => onSelect(log)}
       className={cn(
-        "group/row cursor-pointer border-b border-border/70 transition-all",
-        !active && "bg-background hover:bg-muted/50",
+        "group/row cursor-pointer transition-all",
+        !active && "bg-card hover:bg-muted/50",
         active && !isContextTarget && "relative z-[1] bg-primary/5 outline outline-1 outline-primary outline-offset-[-1px]",
         isContextTarget && "relative z-[1] bg-primary/10 hover:bg-primary/15 border-y-primary/30 outline outline-1 outline-primary shadow-[0_0_12px_rgba(var(--primary-rgb),0.15)]"
       )}
     >
       <td
         className={cn(
-          "w-1.5 p-0 relative transition-all", 
+          "w-1 p-0 relative transition-all",
           LOG_LEVEL_ROW_BAR[log.level],
           isContextTarget && "w-3.5 after:absolute after:inset-y-0 after:left-0 after:w-1.5 after:bg-primary after:animate-pulse"
         )}
@@ -274,8 +272,8 @@ function LogTableRow({
           />
         )
       })}
-      <td className="w-[72px] border-l border-border/50 px-2 py-2.5 align-top bg-transparent">
-        <div className="flex justify-center bg-transparent">
+      <td className="w-[60px] px-2 py-3 align-top">
+        <div className="flex justify-end pr-1">
           <RowActions log={log} active={active || isContextTarget} onViewContext={onViewContext} />
         </div>
       </td>
@@ -296,8 +294,7 @@ function LogTableCell({
   wrap: boolean
   isContextTarget?: boolean
 }) {
-  const base =
-    "border-r border-border/50 px-4 py-2.5 align-top"
+  const base = "px-4 py-3 align-top"
 
   if (column.id === "timestamp") {
     return (

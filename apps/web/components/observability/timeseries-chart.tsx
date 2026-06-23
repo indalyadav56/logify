@@ -55,7 +55,7 @@ export function TimeseriesChart({
     (totals.trace ?? 0) + (totals.debug ?? 0) + (totals.fatal ?? 0)
 
   return (
-    <div className="shrink-0 border-b border-border/60 bg-muted/10 px-4 py-3">
+    <div className="shrink-0 border-b border-border bg-background px-4 py-3">
       <div className="overflow-hidden rounded-lg border border-border bg-card">
         <div
           className={cn(
@@ -87,7 +87,7 @@ export function TimeseriesChart({
         </div>
 
         {!collapsed ? (
-          <div className="flex min-h-[9.5rem] bg-background/40">
+          <div className="flex min-h-[9.5rem] bg-card">
             <div className={cn("min-w-0 flex-1 px-3 py-3", onBucketClick && "cursor-pointer")}>
               <ResponsiveContainer width="100%" height={152}>
                 <BarChart

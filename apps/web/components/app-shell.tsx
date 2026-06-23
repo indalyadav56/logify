@@ -19,10 +19,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <LogsDataProvider>
           <SidebarProvider
             defaultOpen
-            className="h-svh max-h-svh overflow-hidden"
+            className="h-svh max-h-svh overflow-hidden bg-muted dark:bg-background"
           >
             <AppBar />
-            <SidebarInset className="min-w-0 overflow-hidden">
+            <SidebarInset className="m-2 min-w-0 overflow-hidden rounded-xl border border-border bg-card shadow-sm">
               <AppHeader />
               <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden">
                 <AppSidebar />

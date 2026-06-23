@@ -5,15 +5,10 @@ import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import {
   CheckIcon,
-  ChevronsLeftIcon,
-  ChevronsRightIcon,
   ChevronsUpDownIcon,
-  LayoutDashboardIcon,
+  PanelLeftIcon,
   PlusIcon,
   ScrollTextIcon,
-  SearchIcon,
-  SettingsIcon,
-  SparklesIcon,
 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
@@ -47,7 +42,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { ThemeToggle } from "@/components/theme-toggle"
 
 type NavItem = {
   href: string
@@ -64,40 +58,13 @@ type NavSection = {
   items: NavItem[]
 }
 
-const UTIL_ITEMS: NavItem[] = [
-  {
-    href: "/dashboard/logs",
-    icon: SearchIcon,
-    label: "Search",
-    kbdShortcut: "K",
-    suppressActive: true,
-  },
-  {
-    href: "/dashboard/assist",
-    icon: SparklesIcon,
-    label: "Assist",
-    kbdShortcut: "I",
-    exact: true,
-  },
-]
-
 const SECTIONS: NavSection[] = [
   {
     items: [
       {
-        href: "/dashboard/dashboards",
-        icon: LayoutDashboardIcon,
-        label: "Dashboards",
-      },
-      {
         href: "/dashboard/logs",
         icon: ScrollTextIcon,
         label: "Logs",
-      },
-      {
-        href: "/dashboard/settings",
-        icon: SettingsIcon,
-        label: "Settings",
       },
     ],
   },
@@ -110,12 +77,12 @@ export function AppBar() {
   const router = useRouter()
   const { projects, project, setProject } = useProjectStore()
   const [createProjectOpen, setCreateProjectOpen] = React.useState(false)
-  const [expanded, setExpanded] = React.useState(false)
+  const [expanded, setExpanded] = React.useState(true)
 
   React.useEffect(() => {
     try {
       const saved = window.localStorage.getItem(STORAGE_KEY)
-      if (saved === "true") setExpanded(true)
+      if (saved === "false") setExpanded(false)
     } catch {
       /* localStorage may be unavailable */
     }
@@ -137,10 +104,6 @@ export function AppBar() {
     const onKeyDown = (e: KeyboardEvent) => {
       if (!(e.metaKey || e.ctrlKey)) return
       const key = e.key.toLowerCase()
-      if (key === "i") {
-        e.preventDefault()
-        router.push("/dashboard/assist")
-      }
       if (key === "k") {
         e.preventDefault()
         router.push("/dashboard/logs")
@@ -155,12 +118,14 @@ export function AppBar() {
       data-slot="app-bar"
       data-state={expanded ? "expanded" : "collapsed"}
       className={cn(
-        "flex h-svh shrink-0 flex-col gap-1 border-r border-sidebar-border bg-sidebar py-2 shadow-[1px_0_0_0_color-mix(in_oklch,var(--foreground)_4%,transparent)]",
+        "flex h-svh shrink-0 flex-col gap-1.5 bg-transparent py-3",
         "transition-[width] duration-300 ease-[cubic-bezier(0.33,1,0.68,1)] motion-reduce:transition-none",
         expanded ? "w-[224px]" : "w-[52px]"
       )}
     >
-      <ProjectTrigger
+      <BrandHeader expanded={expanded} onToggle={toggle} />
+
+      <ProjectSwitcher
         expanded={expanded}
         project={project}
         projects={projects}
@@ -168,21 +133,10 @@ export function AppBar() {
         onRequestCreate={() => setCreateProjectOpen(true)}
       />
 
-      <SectionDivider expanded={expanded} />
-
       <nav
         aria-label="Primary navigation"
-        className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto overscroll-contain"
+        className="mt-1 flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto overscroll-contain px-1.5"
       >
-        {UTIL_ITEMS.map((item) => (
-          <NavLink
-            key={`util-${item.label}`}
-            item={item}
-            pathname={pathname}
-            expanded={expanded}
-          />
-        ))}
-        <SectionDivider expanded={expanded} dense />
         {SECTIONS.map((section) =>
           section.items.map((item) => (
             <NavLink
@@ -198,42 +152,8 @@ export function AppBar() {
       <SectionDivider expanded={expanded} />
 
       <div className="flex flex-col items-stretch gap-0.5 px-1.5">
-        <div
-          className={cn(
-            "flex items-center",
-            expanded ? "px-1.5" : "justify-center"
-          )}
-        >
-          <ThemeToggle />
-          {expanded ? (
-            <span className="ml-2 text-[13px] font-medium text-muted-foreground/90">
-              Theme
-            </span>
-          ) : null}
-        </div>
-
         <UserTrigger expanded={expanded} />
       </div>
-
-      <button
-        type="button"
-        onClick={toggle}
-        aria-label={expanded ? "Collapse navigation" : "Expand navigation"}
-        title={expanded ? "Collapse" : "Expand"}
-        className={cn(
-          "mx-1.5 mt-1 flex h-8 items-center rounded-md text-muted-foreground transition-colors duration-150 ease-out hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-          expanded ? "justify-start gap-2.5 px-2" : "justify-center"
-        )}
-      >
-        {expanded ? (
-          <ChevronsLeftIcon className="size-4" />
-        ) : (
-          <ChevronsRightIcon className="size-4" />
-        )}
-        {expanded ? (
-          <span className="text-[13px] font-medium">Collapse</span>
-        ) : null}
-      </button>
 
       <CreateProjectDialog
         open={createProjectOpen}
@@ -256,13 +176,79 @@ function SectionDivider({
       className={cn(
         "shrink-0",
         dense ? "my-0.5" : "my-1.5",
-        expanded ? "mx-3 h-px bg-border" : "mx-auto h-px w-7 bg-border"
+        expanded ? "mx-2 h-px bg-border/70" : "mx-auto h-px w-7 bg-border/70"
       )}
     />
   )
 }
 
-function ProjectTrigger({
+function BrandHeader({
+  expanded,
+  onToggle,
+}: {
+  expanded: boolean
+  onToggle: () => void
+}) {
+  const toggleButton = (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-label={expanded ? "Collapse navigation" : "Expand navigation"}
+      title={expanded ? "Collapse" : "Expand"}
+      className={cn(
+        "flex shrink-0 items-center justify-center rounded-md text-muted-foreground/70 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+        expanded ? "size-7" : "size-9"
+      )}
+    >
+      <PanelLeftIcon className="size-4" />
+    </button>
+  )
+
+  // Collapsed rail: drop the brand mark, keep only the toggle at the top.
+  if (!expanded) {
+    return <div className="flex justify-center">{toggleButton}</div>
+  }
+
+  return (
+    <div className="mx-1.5 flex h-11 items-center gap-1 pr-0.5 pl-1.5">
+      <Link
+        href="/dashboard/logs"
+        aria-label="Logify"
+        className="flex min-w-0 flex-1 items-center gap-2.5 rounded-lg transition-colors"
+      >
+        <LogifyMark className="size-7 shrink-0" />
+        <span className="truncate text-[14px] font-semibold tracking-tight text-sidebar-foreground">
+          Logify
+        </span>
+      </Link>
+      {toggleButton}
+    </div>
+  )
+}
+
+function ProjectTile({
+  initials,
+  id,
+  className,
+}: {
+  initials: string
+  id: string
+  className?: string
+}) {
+  return (
+    <span
+      className={cn(
+        "flex size-7 shrink-0 items-center justify-center rounded-md text-[11px] font-semibold",
+        tileStyle(id),
+        className
+      )}
+    >
+      {initials}
+    </span>
+  )
+}
+
+function ProjectSwitcher({
   expanded,
   project,
   projects,
@@ -275,96 +261,82 @@ function ProjectTrigger({
   onPick: (p: ProjectSummary) => void
   onRequestCreate: () => void
 }) {
+  const trigger = (
+    <DropdownMenuTrigger asChild>
+      <button
+        type="button"
+        aria-label="Switch project"
+        className={cn(
+          "group/ws flex items-center rounded-lg border border-border/70 bg-background transition-colors hover:bg-sidebar-accent/70 data-[state=open]:bg-sidebar-accent/70",
+          expanded
+            ? "mx-1.5 h-9 gap-2.5 px-1.5"
+            : "mx-auto size-9 justify-center border-transparent"
+        )}
+      >
+        {project ? (
+          <ProjectTile initials={project.initials} id={project.id} />
+        ) : (
+          <span className="flex size-7 shrink-0 items-center justify-center rounded-md border border-dashed border-border text-muted-foreground">
+            <PlusIcon className="size-4" />
+          </span>
+        )}
+        {expanded ? (
+          <>
+            <span className="min-w-0 flex-1 truncate text-left text-[13px] font-medium text-sidebar-foreground">
+              {project?.name ?? "Select a project"}
+            </span>
+            <ChevronsUpDownIcon className="size-4 shrink-0 text-muted-foreground/70 transition-colors group-hover/ws:text-muted-foreground" />
+          </>
+        ) : null}
+      </button>
+    </DropdownMenuTrigger>
+  )
+
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <button
-          type="button"
-          className={cn(
-            "group/ws flex items-center rounded-lg transition-colors",
-            expanded
-              ? "mx-1.5 h-11 gap-2.5 px-1.5 hover:bg-sidebar-accent/80 data-[state=open]:bg-sidebar-accent/80"
-              : "mx-auto size-9 justify-center hover:bg-sidebar-accent/80 data-[state=open]:bg-sidebar-accent/80"
-          )}
-          aria-label="Switch project"
-        >
-          <LogifyMark className={cn("shrink-0", expanded ? "size-8" : "size-7")} />
-          {expanded ? (
-            <>
-              <span className="flex min-w-0 flex-1 flex-col items-start leading-tight">
-                <span className="w-full truncate text-[13px] font-semibold text-sidebar-foreground">
-                  {project?.name ?? "Select a project"}
-                </span>
-                <span className="w-full truncate text-[11.5px] font-medium text-muted-foreground">
-                  {project?.role ?? "No project yet"}
-                </span>
-              </span>
-              <ChevronsUpDownIcon className="size-4 shrink-0 text-muted-foreground/70 transition-colors group-hover/ws:text-muted-foreground" />
-            </>
-          ) : null}
-        </button>
-      </DropdownMenuTrigger>
+      {expanded ? (
+        trigger
+      ) : (
+        <Tooltip>
+          <TooltipTrigger asChild>{trigger}</TooltipTrigger>
+          <TooltipContent side="right">
+            {project?.name ?? "Select a project"}
+          </TooltipContent>
+        </Tooltip>
+      )}
       <DropdownMenuContent
         side="right"
         align="start"
         sideOffset={8}
-        className="w-72 rounded-xl p-1.5"
+        className="w-64 rounded-xl p-1.5"
       >
-        <DropdownMenuLabel className="flex items-center justify-between px-2 pt-1.5 pb-1 text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
-          <span>Projects</span>
-          <span className="font-mono text-[10.5px] tracking-normal text-muted-foreground/70">
-            {projects.length}
-          </span>
-        </DropdownMenuLabel>
-        <div className="space-y-0.5">
-          {projects.length === 0 ? (
-            <p className="px-2 py-2 text-[12px] text-muted-foreground">
-              No projects yet. Create your first one below.
-            </p>
-          ) : null}
-          {projects.map((p) => {
-            const current = p.id === project?.id
-            return (
-              <DropdownMenuItem
-                key={p.id}
-                onClick={() => onPick(p)}
-                className={cn(
-                  "gap-2.5 rounded-lg px-2 py-2",
-                  current && "bg-sidebar-accent/60"
-                )}
-              >
-                <span
-                  className={cn(
-                    "flex size-8 shrink-0 items-center justify-center rounded-md text-[11px] font-semibold ring-1 ring-inset",
-                    tileStyle(p.id)
-                  )}
-                >
-                  {p.initials}
-                </span>
-                <span className="flex min-w-0 flex-col">
-                  <span className="truncate text-[13px] font-medium text-foreground">
-                    {p.name}
-                  </span>
-                  <span className="truncate text-[11px] text-muted-foreground">
-                    {p.role}
-                  </span>
-                </span>
-                {current ? (
-                  <CheckIcon className="ml-auto size-4 shrink-0 text-primary" />
-                ) : null}
-              </DropdownMenuItem>
-            )
-          })}
-        </div>
+        {projects.map((p) => {
+          const current = p.id === project?.id
+          return (
+            <DropdownMenuItem
+              key={p.id}
+              onClick={() => onPick(p)}
+              className="gap-2.5 rounded-lg px-2 py-2"
+            >
+              <ProjectTile initials={p.initials} id={p.id} />
+              <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-foreground">
+                {p.name}
+              </span>
+              {current ? (
+                <CheckIcon className="size-4 shrink-0 text-primary" />
+              ) : null}
+            </DropdownMenuItem>
+          )
+        })}
         <DropdownMenuSeparator className="mx-1 my-1.5" />
         <DropdownMenuItem
-          className="gap-2.5 rounded-lg px-2 py-2 font-medium"
+          className="gap-2.5 rounded-lg px-2 py-2 text-primary focus:text-primary"
           onSelect={() => onRequestCreate()}
         >
-          <span className="flex size-8 shrink-0 items-center justify-center rounded-md border border-dashed border-border text-muted-foreground">
+          <span className="flex size-7 shrink-0 items-center justify-center">
             <PlusIcon className="size-4" />
           </span>
-          <span className="text-[13px]">Create project</span>
+          <span className="text-[13px] font-medium">Create project</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -372,18 +344,18 @@ function ProjectTrigger({
 }
 
 const TILE_STYLES = [
-  "bg-sky-500/15 text-sky-600 ring-sky-500/25 dark:text-sky-300",
-  "bg-violet-500/15 text-violet-600 ring-violet-500/25 dark:text-violet-300",
-  "bg-amber-500/15 text-amber-600 ring-amber-500/25 dark:text-amber-300",
-  "bg-emerald-500/15 text-emerald-600 ring-emerald-500/25 dark:text-emerald-300",
-  "bg-rose-500/15 text-rose-600 ring-rose-500/25 dark:text-rose-300",
+  "bg-emerald-500 text-white",
+  "bg-violet-500 text-white",
+  "bg-sky-500 text-white",
+  "bg-amber-500 text-white",
+  "bg-rose-500 text-white",
 ]
 
-/** Deterministic accent tile per project id, stable across renders. */
+/** Deterministic solid accent tile per project id, stable across renders. */
 function tileStyle(id: string) {
   let hash = 0
   for (let i = 0; i < id.length; i++) {
-    hash = (hash * 31 + id.charCodeAt(i)) >>> 0
+    hash = (hash * 31 + id.codePointAt(i)!) >>> 0
   }
   return TILE_STYLES[hash % TILE_STYLES.length]
 }
@@ -499,13 +471,20 @@ function NavLink({
       aria-current={active ? "page" : undefined}
       className={cn(
         "group/nav relative flex items-center rounded-md transition-colors duration-150 ease-out",
-        expanded ? "h-9 gap-2.5 px-2" : "size-9 justify-center self-center",
+        expanded ? "h-9 gap-2.5 px-1.5" : "size-9 justify-center self-center",
         active
           ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-sm"
           : "text-sidebar-foreground/75 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
       )}
     >
-      <Icon className="size-4 shrink-0" />
+      <span
+        className={cn(
+          "flex shrink-0 items-center justify-center",
+          expanded && "size-7"
+        )}
+      >
+        <Icon className="size-4" />
+      </span>
       {expanded ? (
         <span className="truncate text-[13px] font-medium text-sidebar-foreground">
           {item.label}
@@ -576,10 +555,10 @@ function UserTrigger({ expanded }: { expanded: boolean }) {
           aria-label="Account"
           className={cn(
             "flex max-w-full items-center rounded-md text-sidebar-foreground transition-colors duration-150 ease-out hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-            expanded ? "h-9 gap-2 px-1.5" : "mx-auto size-9 justify-center"
+            expanded ? "h-10 gap-2.5 px-1.5" : "mx-auto size-9 justify-center"
           )}
         >
-          <Avatar className="size-8 rounded-md ring-1 ring-sidebar-border">
+          <Avatar className="size-7 rounded-md ring-1 ring-sidebar-border">
             <AvatarFallback className="rounded-md bg-sidebar-primary text-[11.5px] font-semibold text-sidebar-primary-foreground">
               {initials}
             </AvatarFallback>

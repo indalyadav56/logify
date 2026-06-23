@@ -177,7 +177,7 @@ export default function LogsPage() {
               </Button>
             </div>
           ) : (
-            <div className="relative z-30 flex items-start gap-3 border-b border-border/60 bg-muted/15 px-4 py-3 backdrop-blur-[2px]">
+            <div className="relative z-30 flex items-start gap-3 border-b border-border bg-background px-4 py-3">
               <Tooltip>
                 <TooltipTrigger asChild>
                   <SidebarTrigger
@@ -314,7 +314,7 @@ function ResultsHeader({
 }) {
   const isPaged = hasMoreOlder || hasMoreNewer
   return (
-    <div className="flex min-h-12 items-center gap-4 border-b border-border/60 bg-muted/20 px-4 py-2">
+    <div className="flex min-h-12 items-center gap-4 border-b border-border bg-background px-4 py-2">
       <span className="tabular-nums-lining text-[13px]">
         <strong className="font-semibold text-foreground">
           {loading
