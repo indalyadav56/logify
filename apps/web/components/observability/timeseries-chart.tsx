@@ -60,7 +60,7 @@ export function TimeseriesChart({
         <div
           className={cn(
             "flex min-h-11 items-center justify-between gap-3 px-4 py-2.5",
-            !collapsed && "border-b border-border/50"
+            !collapsed && "border-b border-border"
           )}
         >
           <span className="truncate text-[13px] font-semibold tracking-tight text-foreground">
@@ -162,7 +162,7 @@ export function TimeseriesChart({
                 </BarChart>
               </ResponsiveContainer>
             </div>
-            <aside className="flex w-28 shrink-0 flex-col justify-center gap-3 border-l border-border/50 py-3 pr-3 pl-2">
+            <aside className="flex w-28 shrink-0 flex-col justify-center gap-3 border-l border-border py-3 pr-3 pl-2">
               {TIMESERIES_LEGEND.map((l) => {
                 const count =
                   l.key === "none"

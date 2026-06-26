@@ -15,7 +15,6 @@ import (
 
 const logsTable = "logify.logs"
 
-// logRow mirrors the logify.logs table for ScanStruct.
 type logRow struct {
 	ID            uuid.UUID         `ch:"id"`
 	TenantID      string            `ch:"tenant_id"`
@@ -60,7 +59,6 @@ func fromRow(r logRow) domain.LogEntry {
 	}
 }
 
-// SearchRepository implements domain.Repository against ClickHouse.
 type SearchRepository struct {
 	conn ch.Conn
 	log  *zap.Logger
@@ -208,6 +206,10 @@ func buildSearchWhere(q domain.Query) (string, []any) {
 	if q.TenantID != "" {
 		conds = append(conds, "tenant_id = ?")
 		args = append(args, q.TenantID)
+	}
+	if q.ProjectID != "" {
+		conds = append(conds, "project_id = ?")
+		args = append(args, q.ProjectID)
 	}
 	if !q.From.IsZero() {
 		conds = append(conds, "timestamp >= ?")

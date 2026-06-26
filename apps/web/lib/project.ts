@@ -8,12 +8,6 @@ export type ProjectSummary = {
   description?: string
 }
 
-export const DEFAULT_PROJECTS: ProjectSummary[] = [
-  { id: "prod", name: "Logify Production", role: "Admin", initials: "LP" },
-  { id: "stage", name: "Logify Staging", role: "Editor", initials: "LS" },
-  { id: "sand", name: "Acme Sandbox", role: "Viewer", initials: "AS" },
-]
-
 /** Two-letter initials from a project name (e.g. "Acme Platform" → "AP"). */
 export function initialsFromName(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean)

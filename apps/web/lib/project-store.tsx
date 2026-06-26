@@ -8,11 +8,7 @@ import {
   listProjects,
   type CreateProjectInput,
 } from "@/lib/api/projects"
-import {
-  DEFAULT_PROJECTS,
-  projectFromApi,
-  type ProjectSummary,
-} from "@/lib/project"
+import { projectFromApi, type ProjectSummary } from "@/lib/project"
 
 const STORAGE_KEY = "logify:current-project-id"
 
@@ -27,6 +23,9 @@ type ProjectStoreValue = {
   setProject: (project: ProjectSummary) => void
   createProject: (input: CreateProjectInput) => Promise<ProjectSummary>
   refresh: () => Promise<void>
+  /** Shared create-project dialog visibility (openable from anywhere). */
+  createOpen: boolean
+  setCreateOpen: (open: boolean) => void
 }
 
 const ProjectCtx = React.createContext<ProjectStoreValue | null>(null)
@@ -64,6 +63,7 @@ export function ProjectStoreProvider({
   const [project, setProjectState] = React.useState<ProjectSummary | null>(null)
   const [status, setStatus] = React.useState<ProjectStatus>("loading")
   const [error, setError] = React.useState<string | null>(null)
+  const [createOpen, setCreateOpen] = React.useState(false)
 
   const role = roleLabel(user?.role)
 
@@ -84,9 +84,9 @@ export function ProjectStoreProvider({
       selectInitial(mapped)
       setStatus("ready")
     } catch (err) {
-      // Keep the demo usable when the backend is unreachable.
-      setProjects(DEFAULT_PROJECTS)
-      selectInitial(DEFAULT_PROJECTS)
+      // No fake data — surface the empty/error state and let the UI handle it.
+      setProjects([])
+      setProjectState(null)
       setError(err instanceof Error ? err.message : "Failed to load projects.")
       setStatus("error")
     }
@@ -123,8 +123,19 @@ export function ProjectStoreProvider({
       setProject,
       createProject,
       refresh,
+      createOpen,
+      setCreateOpen,
     }),
-    [projects, project, status, error, setProject, createProject, refresh]
+    [
+      projects,
+      project,
+      status,
+      error,
+      setProject,
+      createProject,
+      refresh,
+      createOpen,
+    ]
   )
 
   return <ProjectCtx.Provider value={value}>{children}</ProjectCtx.Provider>

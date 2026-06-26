@@ -2,13 +2,16 @@ package application
 
 import (
 	"context"
+	"time"
 
 	"go.uber.org/zap"
 
 	"github.com/indalyadav56/logify/apps/backend/internal/search/domain"
+	"github.com/indalyadav56/logify/apps/backend/internal/server/http/middleware"
 )
 
-// SearchService orchestrates all search operations via the domain repository port.
+const defaultSearchWindow = time.Hour
+
 type SearchService struct {
 	repo domain.Repository
 	log  *zap.Logger
@@ -19,6 +22,13 @@ func NewSearchService(repo domain.Repository, log *zap.Logger) *SearchService {
 }
 
 func (s *SearchService) Search(ctx context.Context, q domain.Query) (*domain.SearchResult, error) {
+	tenantID, ok := middleware.TenantIDFromContext(ctx)
+	if !ok {
+		return nil, domain.ErrTenantIDRequired
+	}
+	q.TenantID = tenantID
+	q.ApplyTimeRangeDefaults(defaultSearchWindow)
+
 	if err := q.Validate(); err != nil {
 		return nil, err
 	}

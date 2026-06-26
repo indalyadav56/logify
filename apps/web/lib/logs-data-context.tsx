@@ -10,10 +10,11 @@ import {
   timeRangeToIso,
 } from "@/lib/api/logs"
 import type { LogEntry } from "@/lib/mock-data"
-import { getSurroundingLogs, searchMockLogs } from "@/lib/mock-log-search"
 import { type LogsFilterSelection, useLogsStore } from "@/lib/logs-store"
+import { useProjectStore } from "@/lib/project-store"
+import { useAuth } from "@/lib/auth-store"
 
-export type LogsDataSource = "mock" | "api"
+export type LogsDataSource = "api"
 
 const PAGE_SIZE = 100
 
@@ -50,7 +51,13 @@ export function LogsDataProvider({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   const pathname = usePathname()
-  const { appliedQuery, appliedSelection, appliedRange } = useLogsStore()
+  const { appliedQuery, appliedRange } = useLogsStore()
+  const { project } = useProjectStore()
+  const { user } = useAuth()
+  // The backend scopes logs by tenant, which for this API equals the user id
+  // (the JWT `tenant_id` claim). Fall back to the env override when present.
+  const tenantId =
+    process.env.NEXT_PUBLIC_LOGIFY_TENANT_ID ?? user?.id ?? ""
 
   const [logs, setLogs] = React.useState<LogEntry[]>([])
   const [chartLogs, setChartLogs] = React.useState<LogEntry[]>([])
@@ -60,7 +67,7 @@ export function LogsDataProvider({
   const [nextOlderCursor, setNextOlderCursor] = React.useState<string | null>(null)
   const [nextNewerCursor, setNextNewerCursor] = React.useState<string | null>(null)
 
-  const [dataSource, setDataSource] = React.useState<LogsDataSource>("mock")
+  const [dataSource] = React.useState<LogsDataSource>("api")
   const [loading, setLoading] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
 
@@ -80,24 +87,16 @@ export function LogsDataProvider({
     pathname.startsWith("/dashboard/logs") ||
     pathname.startsWith("/dashboard/dashboards")
 
-  const applyMockPage = React.useCallback(
-    (
-      query: string,
-      selection: LogsFilterSelection,
-      cursor: string | null
-    ) => {
-      const result = searchMockLogs(query, selection, cursor, PAGE_SIZE)
-      setLogs(result.logs)
-      setChartLogs(result.allMatching)
-      setTotalHits(result.total)
-      setHasMoreOlder(result.hasMoreOlder)
-      setHasMoreNewer(result.hasMoreNewer)
-      setNextOlderCursor(result.nextOlderCursor)
-      setNextNewerCursor(result.nextNewerCursor)
-      setDataSource("mock")
-    },
-    []
-  )
+  /** Reset to an empty result set (no project, no data, or on error). */
+  const applyEmpty = React.useCallback(() => {
+    setLogs([])
+    setChartLogs([])
+    setTotalHits(0)
+    setHasMoreOlder(false)
+    setHasMoreNewer(false)
+    setNextOlderCursor(null)
+    setNextNewerCursor(null)
+  }, [])
 
   const fetchFromApi = React.useCallback(
     async (
@@ -106,10 +105,9 @@ export function LogsDataProvider({
       cursor: string | null
     ) => {
       const { from, to } = timeRangeToIso(effectiveRange)
-      const tenantId =
-        process.env.NEXT_PUBLIC_LOGIFY_TENANT_ID ?? "acme-corp"
 
       const payload = await searchLogs({
+        project_id: project?.id ?? "",
         tenant_id: tenantId,
         from,
         to,
@@ -157,9 +155,8 @@ export function LogsDataProvider({
       setHasMoreNewer(hasMoreNewer)
       setNextOlderCursor(calculatedOlder)
       setNextNewerCursor(calculatedNewer)
-      setDataSource("api")
     },
-    []
+    [tenantId, project?.id]
   )
 
   const refetch = React.useCallback(
@@ -167,49 +164,42 @@ export function LogsDataProvider({
       if (!onLogsRoute) return
       if (contextLog) return // Don't allow regular refetches when exploring context
 
+      // No active project → nothing to show. Keep the view empty.
+      if (!project) {
+        applyEmpty()
+        setError(null)
+        setLoading(false)
+        return
+      }
+
       const query = options?.query ?? appliedQuery
-      const selection = options?.selection ?? appliedSelection
       const cursor = options?.cursor ?? null
       const effectiveRange = options?.range ?? appliedRange
 
       setLoading(true)
       setError(null)
 
-      const finish = () => {
-        setLoading(false)
-      }
-
-      if (dataSource === "mock") {
-        try {
-          applyMockPage(query, selection, cursor)
-        } finally {
-          finish()
-        }
-        return
-      }
-
       try {
         await fetchFromApi(effectiveRange, query, cursor)
       } catch (e) {
         const msg = e instanceof Error ? e.message : "Failed to load logs"
         setError(msg)
-        applyMockPage(query, selection, cursor)
+        applyEmpty()
         if (!cursor) {
-          toast.error("Could not load logs from API", { description: msg })
+          toast.error("Could not load logs", { description: msg })
         }
       } finally {
-        finish()
+        setLoading(false)
       }
     },
     [
       appliedQuery,
-      appliedSelection,
       appliedRange,
-      applyMockPage,
-      dataSource,
+      applyEmpty,
       fetchFromApi,
       onLogsRoute,
       contextLog,
+      project,
     ]
   )
 
@@ -243,39 +233,28 @@ export function LogsDataProvider({
         setLoading(true)
 
         try {
-          if (dataSource === "mock") {
-            const result = getSurroundingLogs(targetLog, 50)
-            setLogs(result.logs)
-            setChartLogs(result.logs)
-            setTotalHits(result.logs.length)
-            setHasMoreOlder(false)
-            setHasMoreNewer(false)
-            setNextOlderCursor(null)
-            setNextNewerCursor(null)
-          } else {
-            // API mode context search: query ±1m timeframe around log with NO query or filters
-            const targetTime = new Date(targetLog.timestamp).getTime()
-            const fromIso = new Date(targetTime - 60 * 1000).toISOString()
-            const toIso = new Date(targetTime + 60 * 1000).toISOString()
-            const tenantId = process.env.NEXT_PUBLIC_LOGIFY_TENANT_ID ?? "acme-corp"
+          // API context search: ±1m around the anchor log, no query or filters.
+          const targetTime = new Date(targetLog.timestamp).getTime()
+          const fromIso = new Date(targetTime - 60 * 1000).toISOString()
+          const toIso = new Date(targetTime + 60 * 1000).toISOString()
 
-            const payload = await searchLogs({
-              tenant_id: tenantId,
-              from: fromIso,
-              to: toIso,
-              limit: PAGE_SIZE,
-              sort_desc: true,
-            })
+          const payload = await searchLogs({
+            project_id: project?.id ?? "",
+            tenant_id: tenantId,
+            from: fromIso,
+            to: toIso,
+            limit: PAGE_SIZE,
+            sort_desc: true,
+          })
 
-            const mapped = (payload.logs ?? []).map(mapRemoteLogToLogEntry)
-            setLogs(mapped)
-            setChartLogs(mapped)
-            setTotalHits(mapped.length)
-            setHasMoreOlder(false)
-            setHasMoreNewer(false)
-            setNextOlderCursor(null)
-            setNextNewerCursor(null)
-          }
+          const mapped = (payload.logs ?? []).map(mapRemoteLogToLogEntry)
+          setLogs(mapped)
+          setChartLogs(mapped)
+          setTotalHits(mapped.length)
+          setHasMoreOlder(false)
+          setHasMoreNewer(false)
+          setNextOlderCursor(null)
+          setNextNewerCursor(null)
         } catch (e) {
           toast.error("Failed to load surrounding logs context")
         } finally {
@@ -305,15 +284,20 @@ export function LogsDataProvider({
       nextOlderCursor,
       nextNewerCursor,
       searchCache,
-      dataSource,
+      tenantId,
     ]
   )
 
+  // Load (or clear) logs whenever the route or the active project changes.
   React.useEffect(() => {
     if (!onLogsRoute) return
-    applyMockPage(appliedQuery, appliedSelection, null)
+    if (!project) {
+      applyEmpty()
+      return
+    }
+    void refetch()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [onLogsRoute])
+  }, [onLogsRoute, project?.id])
 
   const value = React.useMemo(
     (): LogsDataContextValue => ({

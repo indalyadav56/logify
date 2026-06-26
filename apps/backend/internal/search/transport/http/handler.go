@@ -50,28 +50,24 @@ func resolveTenantID(c *gin.Context, fromBody string) string {
 // @Router       /v1/logs/search [post]
 func (h *Handler) Search(c *gin.Context) {
 	var req SearchRequest
+
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	tenantID := resolveTenantID(c, req.TenantID)
-	if tenantID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "tenant_id is required"})
-		return
-	}
-
-	q := toDomainQuery(tenantID, req)
-
-	result, err := h.service.Search(c.Request.Context(), q)
+	result, err := h.service.Search(c.Request.Context(), req.ToQuery())
 	if err != nil {
 		switch {
-		case errors.Is(err, domain.ErrInvalidTimeRange),
+		case errors.Is(err, domain.ErrTenantIDRequired):
+			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		case errors.Is(err, domain.ErrProjectIDRequired),
 			errors.Is(err, domain.ErrTimeRangeRequired),
+			errors.Is(err, domain.ErrInvalidTimeRange),
 			errors.Is(err, domain.ErrLimitTooLarge):
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		default:
-			h.log.Error("search failed", zap.String("tenant_id", tenantID), zap.Error(err))
+			h.log.Error("search failed", zap.Error(err))
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "search failed"})
 		}
 		return

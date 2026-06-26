@@ -1,6 +1,8 @@
 package server
 
 import (
+	"time"
+
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/requestid"
 	"github.com/gin-gonic/gin"
@@ -12,7 +14,6 @@ import (
 	_ "github.com/indalyadav56/logify/apps/backend/docs/swagger"
 )
 
-// Router is responsible for setting up all routes
 type Router struct {
 	container *di.ServerContainer
 }
@@ -21,10 +22,14 @@ func NewRouter(container *di.ServerContainer) *Router {
 	return &Router{container: container}
 }
 
-// Setup configures all routes and middlewares on the Gin engine
 func (r *Router) Setup(engine *gin.Engine) error {
-	// Global middlewares
-	engine.Use(cors.Default())
+	engine.Use(cors.New(cors.Config{
+		AllowAllOrigins: true,
+		AllowMethods:    []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+		AllowHeaders:    []string{"Origin", "Content-Type", "Accept", "Authorization", "X-Request-ID"},
+		ExposeHeaders:   []string{"Content-Length", "X-Request-ID"},
+		MaxAge:          12 * time.Hour,
+	}))
 	engine.Use(requestid.New())
 	engine.Use(logger.LoggerMiddleware(r.container.Logger))
 

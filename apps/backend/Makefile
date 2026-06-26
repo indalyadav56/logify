@@ -5,16 +5,13 @@
         migrate-redo-ch migrate-reset-ch migrate-status-ch migrate-version-ch \
         migrate-create-ch swagger
 
-# Application
 APP_NAME     := logify-backend
 BUILD_DIR    := ./bin
 MAIN_FILE    := ./cmd/server/main.go
 
-# Docker
 DOCKER_IMAGE := logify-backend
 DOCKER_TAG   := latest
 
-# Migrations
 MIGRATOR_PKG    := ./cmd/migrator
 MIGRATE_ENV     ?= dev
 MIGRATE_DRIVER  ?= postgres
@@ -26,7 +23,7 @@ MIGRATE_ARGS     = -driver $(MIGRATE_DRIVER) -env $(MIGRATE_ENV) \
                    $(if $(MIGRATE_DIR),-dir $(MIGRATE_DIR),) \
                    $(if $(MIGRATE_DSN),-dsn $(MIGRATE_DSN),)
 
-## run: Run the API locally (APP_ENV=local matches docker compose defaults in configs/local.yaml)
+## run: Run the API locally (APP_ENV=dev loads configs/dev.yaml)
 run:
 	@echo "▶ Running $(APP_NAME)..."
 	APP_ENV=dev go run $(MAIN_FILE)
@@ -34,12 +31,12 @@ run:
 ## run-log-processor: Consume logs from Kafka and write to ClickHouse
 run-log-processor:
 	@echo "▶ Running log processor (Kafka → ClickHouse)..."
-	APP_ENV=local go run ./cmd/log-processor
+	APP_ENV=dev go run ./cmd/log-processor
 
 ## run-embedding-worker: Consume logs from Kafka, embed via Ollama, store in Postgres
 run-embedding-worker:
 	@echo "▶ Running embedding worker (Ollama → Postgres pgvector)..."
-	APP_ENV=local go run ./cmd/embedding-worker
+	APP_ENV=dev go run ./cmd/embedding-worker
 
 ## build: Build the application binary
 build:
@@ -88,32 +85,8 @@ docker-run:
 	@echo "▶ Running Docker container..."
 	docker run --rm -p 8080:8080 --env-file .env $(DOCKER_IMAGE):$(DOCKER_TAG)
 
-# ---------------------------------------------------------------------------
-# Migrations (cmd/migrator + goose) — supports postgres and clickhouse.
-#
-# The migrate-* targets default to Postgres. For ClickHouse either:
-#   * use the *-ch shortcut targets, or
-#   * override MIGRATE_DRIVER=clickhouse on any migrate-* target.
-#
-# Pass the migrator subcommand straight through, e.g.
-#   make migrate up
-#   make migrate status
-#   make migrate up-to 20260513034123
-#   make migrate create add_user_indexes
-#
-# Override DSN/env/dir/driver from the command line, e.g.
-#   make migrate up MIGRATE_ENV=dev
-#   make migrate up MIGRATE_DSN='postgres://user:pass@host:5432/db?sslmode=disable'
-#   make migrate up MIGRATE_DRIVER=clickhouse
-#   make migrate-up-ch MIGRATE_ENV=stage
-#   make migrate-create NAME=add_user_indexes
-#   make migrate-create-ch NAME=add_logs_index
-# ---------------------------------------------------------------------------
-
-# Let `make migrate <cmd> [args]` mirror the migrator CLI. The words after
-# `migrate`/`migrate-ch` are captured as the subcommand and declared as no-op
-# targets so make doesn't fail with "No rule to make target 'up'". With no
-# trailing words the bare `migrate` target falls back to ARGS="...".
+# Capture words after `make migrate`/`migrate-ch` as the subcommand and declare
+# them as no-op targets so make doesn't fail with "No rule to make target 'up'".
 ifneq ($(filter migrate migrate-ch,$(firstword $(MAKECMDGOALS))),)
   MIGRATE_SUBCMD := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
   ifneq ($(strip $(MIGRATE_SUBCMD)),)
@@ -162,8 +135,6 @@ migrate-version:
 migrate-create:
 	@if [ -z "$(NAME)" ]; then echo "NAME is required, e.g. make migrate-create NAME=add_foo"; exit 1; fi
 	@go run $(MIGRATOR_PKG) -driver $(MIGRATE_DRIVER) $(if $(MIGRATE_DIR),-dir $(MIGRATE_DIR),) create $(NAME) sql
-
-# --- ClickHouse shortcuts --------------------------------------------------
 
 ## migrate-ch: Run a migrator command against ClickHouse, e.g. `make migrate-ch up` or `make migrate-ch up-to 20260503061402`
 migrate-ch:

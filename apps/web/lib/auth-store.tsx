@@ -35,12 +35,56 @@ type AuthContextValue = {
 
 const AuthContext = React.createContext<AuthContextValue | null>(null)
 
-function toSession(data: TokenData): AuthSession {
+type JwtClaims = { sub?: string; exp?: number; [k: string]: unknown }
+
+/** Decode a JWT payload without verifying the signature (client display only). */
+function decodeJwt(token: string): JwtClaims {
+  try {
+    const payload = token.split(".")[1]
+    const json = atob(payload.replace(/-/g, "+").replace(/_/g, "/"))
+    return JSON.parse(decodeURIComponent(escape(json))) as JwtClaims
+  } catch {
+    return {}
+  }
+}
+
+/** True when the JWT carries an `exp` claim that is already in the past. */
+function isTokenExpired(token: string): boolean {
+  const { exp } = decodeJwt(token)
+  if (typeof exp !== "number") return false
+  return exp * 1000 <= Date.now()
+}
+
+/** Prettify an email local-part into a display name (e.g. "ada.lovelace" → "Ada Lovelace"). */
+function nameFromEmail(email: string): string {
+  const local = email.split("@")[0] ?? ""
+  return (
+    local
+      .split(/[._-]+/)
+      .filter(Boolean)
+      .map((p) => p.charAt(0).toUpperCase() + p.slice(1))
+      .join(" ") || email
+  )
+}
+
+/**
+ * Build a session from the API token response. The backend returns only tokens,
+ * so the user is derived from the JWT `sub` plus the values typed at sign-in.
+ */
+function toSession(data: TokenData, fallback?: Partial<AuthUser>): AuthSession {
+  const claims = decodeJwt(data.access_token)
+  const email = data.user?.email ?? fallback?.email ?? ""
+  const user: AuthUser = data.user ?? {
+    id: String(claims.sub ?? ""),
+    email,
+    full_name: fallback?.full_name?.trim() || (email ? nameFromEmail(email) : "Your account"),
+    role: fallback?.role ?? "member",
+  }
   return {
     accessToken: data.access_token,
     refreshToken: data.refresh_token,
     tokenType: data.token_type || "Bearer",
-    user: data.user,
+    user,
   }
 }
 
@@ -81,9 +125,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = React.useState<AuthSession | null>(null)
   const [status, setStatus] = React.useState<AuthStatus>("loading")
 
-  // Hydrate from localStorage once on mount.
+  const logout = React.useCallback(() => {
+    persistSession(null)
+    setSession(null)
+    setStatus("unauthenticated")
+  }, [])
+
+  // Hydrate from localStorage once on mount. Drop sessions whose token has
+  // already expired so a stale token doesn't keep the user "signed in".
   React.useEffect(() => {
     const existing = readSession()
+    if (existing && isTokenExpired(existing.accessToken)) {
+      persistSession(null)
+      setSession(null)
+      setStatus("unauthenticated")
+      return
+    }
     setSession(existing)
     setStatus(existing ? "authenticated" : "unauthenticated")
   }, [])
@@ -100,17 +157,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener("storage", onStorage)
   }, [])
 
-  const applySession = React.useCallback((data: TokenData) => {
-    const next = toSession(data)
-    persistSession(next)
-    setSession(next)
-    setStatus("authenticated")
-  }, [])
+  // Any authenticated API call that returns 401 signs the user out so the
+  // route guard can redirect them to /login (handles invalid/expired tokens).
+  React.useEffect(() => {
+    const onUnauthorized = () => logout()
+    window.addEventListener("logify:unauthorized", onUnauthorized)
+    return () => window.removeEventListener("logify:unauthorized", onUnauthorized)
+  }, [logout])
+
+  const applySession = React.useCallback(
+    (data: TokenData, fallback?: Partial<AuthUser>) => {
+      const next = toSession(data, fallback)
+      persistSession(next)
+      setSession(next)
+      setStatus("authenticated")
+    },
+    []
+  )
 
   const login = React.useCallback(
     async (email: string, password: string) => {
       const data = await loginUser({ email, password })
-      applySession(data)
+      applySession(data, { email })
     },
     [applySession]
   )
@@ -122,16 +190,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         email,
         password,
       })
-      applySession(data)
+      applySession(data, { full_name: fullName, email })
     },
     [applySession]
   )
-
-  const logout = React.useCallback(() => {
-    persistSession(null)
-    setSession(null)
-    setStatus("unauthenticated")
-  }, [])
 
   const value = React.useMemo<AuthContextValue>(
     () => ({

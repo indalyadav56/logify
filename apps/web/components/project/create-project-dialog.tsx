@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 
 type Props = Readonly<{
   open: boolean
@@ -25,11 +26,13 @@ type Props = Readonly<{
 export function CreateProjectDialog({ open, onOpenChange }: Props) {
   const { createProject } = useProjectStore()
   const [name, setName] = React.useState("")
+  const [description, setDescription] = React.useState("")
   const [submitting, setSubmitting] = React.useState(false)
 
   React.useEffect(() => {
     if (!open) return
     setName("")
+    setDescription("")
     setSubmitting(false)
   }, [open])
 
@@ -42,9 +45,10 @@ export function CreateProjectDialog({ open, onOpenChange }: Props) {
     }
     setSubmitting(true)
     try {
-      await createProject({ name: trimmed })
+      const desc = description.trim()
+      await createProject({ name: trimmed, description: desc || undefined })
       toast.success("Project created", {
-        description: `${trimmed} is ready. You're the Admin.`,
+        description: `${trimmed} is ready.`,
       })
       onOpenChange(false)
     } catch (err) {
@@ -65,13 +69,8 @@ export function CreateProjectDialog({ open, onOpenChange }: Props) {
         <div className="border-b border-border/60 bg-muted/30 px-6 py-5">
           <DialogHeader className="gap-1">
             <DialogTitle className="text-[17px]">Create a project</DialogTitle>
-            <DialogDescription className="text-[13px]">
-              Projects isolate data, members, and billing. You can invite your
-              team after setup.
-            </DialogDescription>
           </DialogHeader>
         </div>
-
         <form onSubmit={onSubmit} className="flex flex-col gap-5 px-6 py-5">
           <div className="space-y-2">
             <Label htmlFor="project-name" className="text-[12.5px]">
@@ -86,6 +85,23 @@ export function CreateProjectDialog({ open, onOpenChange }: Props) {
               className="h-10 rounded-xl"
               autoFocus
               required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="project-description" className="text-[12.5px]">
+              Description
+              <span className="ml-1 font-normal text-muted-foreground">
+                (optional)
+              </span>
+            </Label>
+            <Textarea
+              id="project-description"
+              placeholder="What is this project for?"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className="min-h-20 rounded-xl"
+              rows={3}
             />
           </div>
 

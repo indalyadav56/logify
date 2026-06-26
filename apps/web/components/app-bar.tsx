@@ -75,8 +75,8 @@ const STORAGE_KEY = "logify:appbar-expanded"
 export function AppBar() {
   const pathname = usePathname()
   const router = useRouter()
-  const { projects, project, setProject } = useProjectStore()
-  const [createProjectOpen, setCreateProjectOpen] = React.useState(false)
+  const { projects, project, status, setProject, createOpen, setCreateOpen } =
+    useProjectStore()
   const [expanded, setExpanded] = React.useState(true)
 
   React.useEffect(() => {
@@ -129,8 +129,9 @@ export function AppBar() {
         expanded={expanded}
         project={project}
         projects={projects}
+        status={status}
         onPick={setProject}
-        onRequestCreate={() => setCreateProjectOpen(true)}
+        onRequestCreate={() => setCreateOpen(true)}
       />
 
       <nav
@@ -155,10 +156,7 @@ export function AppBar() {
         <UserTrigger expanded={expanded} />
       </div>
 
-      <CreateProjectDialog
-        open={createProjectOpen}
-        onOpenChange={setCreateProjectOpen}
-      />
+      <CreateProjectDialog open={createOpen} onOpenChange={setCreateOpen} />
     </aside>
   )
 }
@@ -252,15 +250,24 @@ function ProjectSwitcher({
   expanded,
   project,
   projects,
+  status,
   onPick,
   onRequestCreate,
 }: {
   expanded: boolean
   project: ProjectSummary | null
   projects: ProjectSummary[]
+  status: "loading" | "ready" | "error"
   onPick: (p: ProjectSummary) => void
   onRequestCreate: () => void
 }) {
+  const isLoading = status === "loading"
+  const isEmpty = !isLoading && projects.length === 0
+
+  const label = isLoading
+    ? "Loading…"
+    : project?.name ?? (isEmpty ? "Create a project" : "Select a project")
+
   const trigger = (
     <DropdownMenuTrigger asChild>
       <button
@@ -282,8 +289,13 @@ function ProjectSwitcher({
         )}
         {expanded ? (
           <>
-            <span className="min-w-0 flex-1 truncate text-left text-[13px] font-medium text-sidebar-foreground">
-              {project?.name ?? "Select a project"}
+            <span
+              className={cn(
+                "min-w-0 flex-1 truncate text-left text-[13px] font-medium",
+                project ? "text-sidebar-foreground" : "text-muted-foreground"
+              )}
+            >
+              {label}
             </span>
             <ChevronsUpDownIcon className="size-4 shrink-0 text-muted-foreground/70 transition-colors group-hover/ws:text-muted-foreground" />
           </>
@@ -299,9 +311,7 @@ function ProjectSwitcher({
       ) : (
         <Tooltip>
           <TooltipTrigger asChild>{trigger}</TooltipTrigger>
-          <TooltipContent side="right">
-            {project?.name ?? "Select a project"}
-          </TooltipContent>
+          <TooltipContent side="right">{label}</TooltipContent>
         </Tooltip>
       )}
       <DropdownMenuContent
@@ -310,6 +320,15 @@ function ProjectSwitcher({
         sideOffset={8}
         className="w-64 rounded-xl p-1.5"
       >
+        {isLoading ? (
+          <p className="px-2 py-2 text-[12.5px] text-muted-foreground">
+            Loading projects…
+          </p>
+        ) : isEmpty ? (
+          <p className="px-2 py-2 text-[12.5px] text-muted-foreground">
+            No projects yet. Create one to get started.
+          </p>
+        ) : null}
         {projects.map((p) => {
           const current = p.id === project?.id
           return (
@@ -584,14 +603,6 @@ function UserTrigger({ expanded }: { expanded: boolean }) {
             </span>
           ) : null}
         </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem asChild>
-          <Link href="/dashboard/settings/account">Account settings</Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Link href="/dashboard/settings">Project settings</Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem>Keyboard shortcuts</DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem
           className="text-destructive focus:text-destructive"

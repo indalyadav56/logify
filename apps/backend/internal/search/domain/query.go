@@ -2,28 +2,38 @@ package domain
 
 import "time"
 
-// Query represents a log search query in domain terms.
-// Independent of HTTP DTOs and storage backend.
 type Query struct {
 	TenantID     string
-	Services     []string // filter by service names (OR)
-	Severities   []string // filter by severity (OR)
+	ProjectID    string
+	Services     []string
+	Severities   []string
 	Hosts        []string
-	TraceID      string            // exact trace_id match
-	RequestID    string            // exact request_id match
-	BodyContains string            // free-text search in message body
-	Attributes   map[string]string // attribute filters (AND): map[key]value
+	TraceID      string
+	RequestID    string
+	BodyContains string
+	Attributes   map[string]string
 	From         time.Time
 	To           time.Time
-	Limit        int    // page size, default 100, max 1000
-	Cursor       string // for cursor-based pagination
-	SortDesc     bool   // true = newest first
+	Limit        int
+	Cursor       string
+	SortDesc     bool
 }
 
-// Validate ensures the query is well-formed.
+func (q *Query) ApplyTimeRangeDefaults(window time.Duration) {
+	if q.To.IsZero() {
+		q.To = time.Now().UTC()
+	}
+	if q.From.IsZero() {
+		q.From = q.To.Add(-window)
+	}
+}
+
 func (q Query) Validate() error {
 	if q.TenantID == "" {
 		return ErrTenantIDRequired
+	}
+	if q.ProjectID == "" {
+		return ErrProjectIDRequired
 	}
 	if q.From.IsZero() || q.To.IsZero() {
 		return ErrTimeRangeRequired

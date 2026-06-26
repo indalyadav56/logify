@@ -2,9 +2,11 @@ package kafka
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/indalyadav56/logify/apps/backend/internal/ingest/domain"
+	"github.com/indalyadav56/logify/apps/backend/internal/server/http/middleware"
 	"github.com/segmentio/kafka-go"
 	"go.uber.org/zap"
 )
@@ -22,8 +24,12 @@ func NewLogProducer(writer *kafka.Writer, logger *zap.Logger) *logProducer {
 }
 
 func (lp *logProducer) Produce(ctx context.Context, log domain.Log) error {
+	tenantID, ok := middleware.TenantIDFromContext(ctx)
+	if !ok {
+		return errors.New("tenant id not found")
+	}
 
-	log.TenantID = "acme-corp"
+	log.TenantID = tenantID
 	value, err := log.ToJSON()
 	if err != nil {
 		return fmt.Errorf("failed to serialize log: %w", err)

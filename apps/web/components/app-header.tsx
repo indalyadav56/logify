@@ -24,19 +24,12 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { LogIngestionSetupDialog } from "@/components/observability/log-ingestion-setup-dialog"
 import { getDashboardById } from "@/lib/dashboards/mock-data"
-import { getRoleById } from "@/lib/settings/mock-data"
 
 const TITLES: Record<string, string> = {
   "/dashboard": "Dashboard",
   "/dashboard/logs": "Logs",
   "/dashboard/dashboards": "Dashboards",
   "/dashboard/assist": "Assist",
-  "/dashboard/settings": "Settings",
-  "/dashboard/settings/account": "Account",
-  "/dashboard/settings/users": "Members",
-  "/dashboard/settings/api-keys": "API keys",
-  "/dashboard/settings/roles": "Roles",
-  "/dashboard/settings/billing": "Billing",
 }
 
 const ENVIRONMENTS = [
@@ -69,7 +62,7 @@ export function AppHeader() {
   const [ingestionOpen, setIngestionOpen] = React.useState(false)
 
   return (
-    <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-3 border-b border-border/80 bg-background/90 px-4 backdrop-blur-md supports-[backdrop-filter]:bg-background/75">
+    <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-3 border-b border-border bg-background/90 px-4 backdrop-blur-md supports-[backdrop-filter]:bg-background/75">
       <Breadcrumb
         className={cn(
           "hidden min-w-0 md:block",
@@ -135,15 +128,6 @@ function resolveTitle(pathname: string) {
   const dashMatch = pathname.match(/^\/dashboard\/dashboards\/([^/]+)$/)
   if (dashMatch) {
     return getDashboardById(dashMatch[1])?.name ?? "Dashboard"
-  }
-
-  const roleMatch = pathname.match(/^\/dashboard\/settings\/roles\/([^/]+)$/)
-  if (roleMatch) {
-    return getRoleById(roleMatch[1])?.name ?? "Role"
-  }
-
-  if (pathname.startsWith("/dashboard/settings")) {
-    return "Settings"
   }
 
   return toTitle(pathname)

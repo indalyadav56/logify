@@ -1,27 +1,41 @@
 package http
 
 import (
+	"strings"
 	"time"
 
 	"github.com/indalyadav56/logify/apps/backend/internal/search/domain"
 )
 
-// ── Search ────────────────────────────────────────────────────────────────────
-
 type SearchRequest struct {
-	TenantID     string            `json:"tenant_id,omitempty"`
-	Services     []string          `json:"services,omitempty"`
-	Severities   []string          `json:"severities,omitempty"`
-	Hosts        []string          `json:"hosts,omitempty"`
-	TraceID      string            `json:"trace_id,omitempty"`
-	RequestID    string            `json:"request_id,omitempty"`
-	BodyContains string            `json:"body_contains,omitempty"`
-	Attributes   map[string]string `json:"attributes,omitempty"`
-	From         time.Time         `json:"from"  binding:"required"`
-	To           time.Time         `json:"to"    binding:"required"`
-	Limit        int               `json:"limit,omitempty"`
-	Cursor       string            `json:"cursor,omitempty"`
-	SortDesc     bool              `json:"sort_desc,omitempty"`
+	ProjectID string    `json:"project_id" binding:"required"`
+	Query     string    `json:"query,omitempty"`
+	TimeRange TimeRange `json:"time_range"`
+	Limit     int       `json:"limit,omitempty"`
+	Cursor    string    `json:"cursor,omitempty"`
+	Sort      Sort      `json:"sort"`
+}
+
+func (r SearchRequest) ToQuery() domain.Query {
+	return domain.Query{
+		ProjectID:    r.ProjectID,
+		BodyContains: r.Query,
+		From:         r.TimeRange.From,
+		To:           r.TimeRange.To,
+		Limit:        r.Limit,
+		Cursor:       r.Cursor,
+		SortDesc:     !strings.EqualFold(r.Sort.Order, "asc"),
+	}
+}
+
+type TimeRange struct {
+	From time.Time `json:"from"`
+	To   time.Time `json:"to"`
+}
+
+type Sort struct {
+	Field string `json:"field,omitempty"`
+	Order string `json:"order,omitempty"` // "asc" or "desc"
 }
 
 type SearchResponse struct {
@@ -52,11 +66,9 @@ type LogResponse struct {
 	IngestionTime time.Time         `json:"ingestion_time"`
 }
 
-// ── Aggregation ───────────────────────────────────────────────────────────────
-
 type AggregateRequest struct {
 	TenantID string    `json:"tenant_id,omitempty"`
-	GroupBy  string    `json:"group_by,omitempty"` // "level", "service", "environment", "host"
+	GroupBy  string    `json:"group_by,omitempty"`
 	Interval string    `json:"interval,omitempty"` // "1m", "5m", "1h", "1d"
 	From     time.Time `json:"from" binding:"required"`
 	To       time.Time `json:"to"   binding:"required"`
@@ -71,8 +83,6 @@ type AggBucketResponse struct {
 	Key       string     `json:"key,omitempty"`
 	Count     uint64     `json:"count"`
 }
-
-// ── Export ────────────────────────────────────────────────────────────────────
 
 type ExportRequest struct {
 	TenantID     string            `json:"tenant_id,omitempty"`
@@ -96,26 +106,6 @@ type ExportStatusResponse struct {
 	Status      string    `json:"status"`
 	DownloadURL string    `json:"download_url,omitempty"`
 	CreatedAt   time.Time `json:"created_at"`
-}
-
-// ── Conversions ───────────────────────────────────────────────────────────────
-
-func toDomainQuery(tenantID string, req SearchRequest) domain.Query {
-	return domain.Query{
-		TenantID:     tenantID,
-		Services:     req.Services,
-		Severities:   req.Severities,
-		Hosts:        req.Hosts,
-		TraceID:      req.TraceID,
-		RequestID:    req.RequestID,
-		BodyContains: req.BodyContains,
-		Attributes:   req.Attributes,
-		From:         req.From,
-		To:           req.To,
-		Limit:        req.Limit,
-		Cursor:       req.Cursor,
-		SortDesc:     req.SortDesc,
-	}
 }
 
 func toSearchResponse(r *domain.SearchResult) SearchResponse {

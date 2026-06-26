@@ -203,7 +203,7 @@ export function LogDetail({
         </div>
       </ScrollArea>
 
-      <footer className="shrink-0 border-t border-border/60 bg-muted/20 px-4 py-2.5">
+      <footer className="shrink-0 border-t border-border bg-muted/20 px-4 py-2.5">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex min-w-0 flex-wrap items-center gap-2">
             <Badge
@@ -244,7 +244,7 @@ function Section({
   const [open, setOpen] = React.useState(true)
 
   return (
-    <section className="border-b border-border/40 last:border-b-0">
+    <section className="border-b border-border last:border-b-0">
       <div className="px-4 pt-4">
         <div className="flex items-start justify-between gap-3">
           <button

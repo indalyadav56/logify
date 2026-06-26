@@ -1,16 +1,16 @@
 "use client"
 
 import * as React from "react"
-import { DownloadIcon, WrapTextIcon, CompassIcon, ArrowLeftIcon } from "lucide-react"
+import {
+  DownloadIcon,
+  WrapTextIcon,
+  CompassIcon,
+  ArrowLeftIcon,
+  FolderPlusIcon,
+} from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { SidebarTrigger } from "@/components/ui/sidebar"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
 import { QueryBar } from "@/components/observability/query-bar"
 import { LogDetail } from "@/components/observability/log-detail"
 import { LogColumnsPicker } from "@/components/observability/log-columns-picker"
@@ -29,6 +29,7 @@ import {
 } from "@/lib/mock-data"
 import { useLogsStore } from "@/lib/logs-store"
 import { useLogsData } from "@/lib/logs-data-context"
+import { useProjectStore } from "@/lib/project-store"
 
 const RANGE_LABELS: Record<string, string> = {
   "5m": "Last 5 minutes",
@@ -66,6 +67,8 @@ export default function LogsPage() {
     contextLog,
     setContextLog,
   } = useLogsData()
+
+  const { project } = useProjectStore()
 
   const [selected, setSelected] = React.useState<LogEntry | null>(null)
   const [chartHidden, setChartHidden] = React.useState(false)
@@ -139,6 +142,10 @@ export default function LogsPage() {
     [chartLogs]
   )
 
+  if (!project) {
+    return <NoProjectState />
+  }
+
   return (
     <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
       <div
@@ -149,7 +156,7 @@ export default function LogsPage() {
       >
         <section className="flex min-h-0 min-w-0 flex-col overflow-hidden font-sans">
           {contextLog ? (
-            <div className="relative z-30 flex items-center justify-between gap-4 border-b border-border/60 bg-primary/5 px-4 py-3 backdrop-blur-[2px]">
+            <div className="relative z-30 flex min-h-14 items-center justify-between gap-4 border-b border-border bg-primary/5 px-4 py-3 backdrop-blur-[2px]">
               <div className="flex items-center gap-3 min-w-0">
                 <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-primary/15 text-primary">
                   <CompassIcon className="size-4" />
@@ -177,16 +184,7 @@ export default function LogsPage() {
               </Button>
             </div>
           ) : (
-            <div className="relative z-30 flex items-start gap-3 border-b border-border bg-background px-4 py-3">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <SidebarTrigger
-                    className="size-8 shrink-0"
-                    aria-label="Toggle facets"
-                  />
-                </TooltipTrigger>
-                <TooltipContent side="bottom">Toggle facets</TooltipContent>
-              </Tooltip>
+            <div className="relative z-30 flex h-14 items-center gap-3 border-b border-border bg-background px-4">
               <QueryBar
                 className="min-w-0 flex-1"
                 value={query}
@@ -276,7 +274,7 @@ export default function LogsPage() {
         </section>
 
         {selected ? (
-          <aside className="hidden animate-in fade-in-0 slide-in-from-right-2 border-l border-border/60 duration-200 xl:block">
+          <aside className="hidden animate-in fade-in-0 slide-in-from-right-2 border-l border-border duration-200 xl:block">
             <LogDetail entry={selected} onClose={() => setSelected(null)} />
           </aside>
         ) : null}
@@ -356,6 +354,32 @@ function ResultsHeader({
   )
 }
 
+
+function NoProjectState() {
+  const { setCreateOpen } = useProjectStore()
+  return (
+    <div className="flex h-full min-h-0 flex-1 items-center justify-center p-6">
+      <div className="flex max-w-sm flex-col items-center text-center">
+        <div className="flex size-12 items-center justify-center rounded-xl border border-border bg-muted/40 text-muted-foreground">
+          <FolderPlusIcon className="size-5" />
+        </div>
+        <h2 className="mt-4 text-[15px] font-semibold tracking-tight text-foreground">
+          No project yet
+        </h2>
+        <p className="mt-1.5 text-[13px] leading-relaxed text-muted-foreground">
+          Create your first project to start ingesting and exploring your logs.
+        </p>
+        <Button
+          className="mt-5 gap-1.5"
+          onClick={() => setCreateOpen(true)}
+        >
+          <FolderPlusIcon className="size-4" />
+          Create project
+        </Button>
+      </div>
+    </div>
+  )
+}
 
 function formatHm(d: Date) {
   return [

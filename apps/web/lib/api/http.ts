@@ -53,7 +53,12 @@ export async function apiRequest<T>(
     throw new Error("Can't reach the Logify API. Check your connection.")
   }
 
-  if (res.status === 401) throw new UnauthorizedError()
+  if (res.status === 401) {
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new Event("logify:unauthorized"))
+    }
+    throw new UnauthorizedError()
+  }
   if (res.status === 204) return undefined as T
 
   const text = await res.text()

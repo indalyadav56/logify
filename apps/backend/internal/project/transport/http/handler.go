@@ -94,17 +94,7 @@ func (h *ProjectHandler) GetProject(c *gin.Context) {
 // @Failure      500        {object}  response.APIResponse "Internal server error"
 // @Router       /v1/projects [get]
 func (h *ProjectHandler) ListProjects(c *gin.Context) {
-	var tenantID *uuid.UUID
-	if v := c.Query("tenant_id"); v != "" {
-		id, err := uuid.Parse(v)
-		if err != nil {
-			response.BadRequest(c, "Invalid tenant_id format")
-			return
-		}
-		tenantID = &id
-	}
-
-	items, err := h.service.ListProjects(c.Request.Context(), tenantID)
+	items, err := h.service.ListProjects(c.Request.Context())
 	if err != nil {
 		response.InternalServerError(c, "Failed to list projects")
 		return

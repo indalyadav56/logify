@@ -78,7 +78,7 @@ export function Facets({
         className
       )}
     >
-      <div className="flex h-14 shrink-0 items-center justify-between border-b border-border/60 px-4">
+      <div className="flex h-14 shrink-0 items-center justify-between border-b border-border px-4">
         <h3 className="flex items-center gap-2 text-[13px] font-semibold tracking-tight text-sidebar-foreground">
           {title}
           {totalSelected > 0 ? (
@@ -99,7 +99,7 @@ export function Facets({
         ) : null}
       </div>
 
-      <div className="shrink-0 border-b border-border/50 px-4 py-3">
+      <div className="shrink-0 border-b border-border px-4 py-3">
         <div className="relative">
           <SearchIcon className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -152,7 +152,7 @@ function FacetGroupBlock({
   const hasMore = group.values.length > 6
 
   return (
-    <div className="border-b border-border/40 last:border-b-0">
+    <div className="border-b border-border last:border-b-0">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}

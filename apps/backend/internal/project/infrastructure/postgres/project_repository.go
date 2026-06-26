@@ -13,8 +13,6 @@ import (
 	"github.com/indalyadav56/logify/apps/backend/internal/project/domain"
 )
 
-// pgUniqueViolation is the SQLSTATE for a UNIQUE constraint violation.
-// See: https://www.postgresql.org/docs/current/errcodes-appendix.html
 const pgUniqueViolation = "23505"
 
 type projectRepository struct {
@@ -27,13 +25,20 @@ func NewProjectRepository(db *pgxpool.Pool) domain.ProjectRepository {
 
 func (r *projectRepository) Create(ctx context.Context, project *domain.Project) error {
 	const query = `
-		INSERT INTO projects (name, description, created_by)
-		VALUES ($1, $2, $3)
+		INSERT INTO projects (tenant_id, name, description, created_by)
+		VALUES ($1, $2, $3, $4)
+		RETURNING id, COALESCE(description, ''), created_at, updated_at
 	`
-	_, err := r.db.Exec(ctx, query,
+	err := r.db.QueryRow(ctx, query,
+		project.TenantID,
 		project.Name,
 		nullableText(project.Description),
-		uuid.New(),
+		project.CreatedBy,
+	).Scan(
+		&project.ID,
+		&project.Description,
+		&project.CreatedAt,
+		&project.UpdatedAt,
 	)
 	if err != nil {
 		return mapUniqueViolation(err)

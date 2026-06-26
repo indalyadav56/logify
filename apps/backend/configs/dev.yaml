@@ -35,7 +35,7 @@ server:
 
 jwt:
   secret: ""
-  issuer: "higlint"
+  issuer: "logify"
   access_token_ttl: 60m
   refresh_token_ttl: 720h   # 30 days
 
@@ -65,7 +65,7 @@ redis:
 
 kafka:
   brokers:
-    - "localhost:9092"
+    - "localhost:29092"
 
 clickhouse:
   host: "localhost"
