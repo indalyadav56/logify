@@ -29,6 +29,17 @@ Match this URL to the backend's `APP_SERVER_PORT`. Restart the dev server after
 changing it; a compiled frontend requires a rebuild because `NEXT_PUBLIC_*`
 values are embedded in the client bundle.
 
+## Docker
+
+From the repository root, run `make run` to build and start the full stack.
+The web image runs the Next.js standalone server on Node.js Alpine as a non-root
+user. Project URLs are resolved at runtime, so newly created projects work
+without rebuilding the frontend. The image includes public assets and the
+compiled JavaScript and CSS, and exposes `/healthz` for its health check.
+
+Run `make down` from the repository root to stop both Logify container stacks
+(`logify-alpine` and `logify-dev`) while keeping their data volumes.
+
 ## Main screens
 
 | Route | Purpose |
@@ -51,6 +62,7 @@ the [sample-data guide](../../mock-data/README.md).
 ```bash
 npx tsc --noEmit
 npm run lint
+npm run build
 ```
 
 ## Code map

@@ -7,8 +7,7 @@ import { LoaderIcon } from "lucide-react"
 import { useAuth } from "@/lib/auth-store"
 
 /**
- * Client-side route guard. The app is a static export, so authentication is
- * enforced in the browser: until a valid session is found in storage we render
+ * Client-side route guard. Until a valid session is found in storage we render
  * a loader, and unauthenticated visitors are redirected to `/login`. Dashboard
  * content is never rendered without a session.
  */

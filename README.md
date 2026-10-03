@@ -251,7 +251,24 @@ Development defaults are PostgreSQL `postgres` / `postgres`, database `logify`,
 and ClickHouse `default` / `mypassword`, database `logify`. Set credentials and
 `APP_JWT_SECRET` for your own deployment.
 
-### Run the backend in Docker
+### Build and run the full stack in Docker
+
+From the repository root, build the images and start all services in one command:
+
+```bash
+make run
+```
+
+This uses `docker-compose.alpine.yaml` to start the web app, API, log processor,
+migrator, PostgreSQL, Redis, Kafka, ClickHouse, and Debezium. The web app is at
+[localhost:3000](http://localhost:3000), and the API defaults to port `8080`.
+`make build` remains an alias for the same command.
+
+Run `make down` from the repository root to stop both the full Docker stack
+(`logify-alpine`) and the host-development containers (`logify-dev`). Database
+and broker volumes are preserved. Other Docker projects keep running.
+
+### Run only the backend in Docker
 
 To run the API and processor in containers, start the named services from the
 Alpine Compose configuration. Their database and broker dependencies start
@@ -270,10 +287,10 @@ Compose overrides include `BACKEND_PORT`, `POSTGRES_USER`, `POSTGRES_PASSWORD`,
 `POSTGRES_DB`, `CLICKHOUSE_USER`, `CLICKHOUSE_PASSWORD`, `CLICKHOUSE_DB`, and
 `APP_JWT_SECRET`. Database credentials must match existing volumes.
 
-Stop the containerized backend while preserving data:
+Stop both Logify container stacks while preserving data:
 
 ```bash
-docker compose -f docker-compose.alpine.yaml down
+make down
 ```
 
 ## Repository layout
