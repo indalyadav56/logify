@@ -5,7 +5,7 @@ Go API, store them in ClickHouse through Kafka, and search them in a simple,
 white-theme interface built with Next.js and shadcn/ui.
 
 [Quick start](#quick-start) · [Screenshots](#screenshots) ·
-[Sending logs](#sending-logs) · [Architecture](#architecture) ·
+[Sending logs](#sending-logs) · [Teams](#teams) · [Architecture](#architecture) ·
 [Troubleshooting](#troubleshooting)
 
 ![Logify log explorer showing demo events, project sidebar, search, and pagination](docs/screenshots/log-explorer.jpg)
@@ -19,6 +19,9 @@ white-theme interface built with Next.js and shadcn/ui.
 - **Organize projects** with a sidebar project switcher and project creation.
   Registration creates `default-project` in the backend automatically.
 - **Connect an application** using the workspace's generated curl command.
+- **Manage settings** from the sidebar: edit the selected project, create or
+  revoke API keys, and view your account details.
+- **Work with a team**: invite people to a project, assign roles, and manage access.
 - **Try the complete pipeline** with the included sample-data script.
 
 The log table scrolls independently, keeping the sidebar, search controls,
@@ -120,8 +123,8 @@ Named volumes preserve your accounts, projects, and logs.
 
 ## Screenshots
 
-These captures use the current interface, a fictional demo account, and events
-from [`mock-data/logs.json`](mock-data/logs.json).
+These captures use the current interface and fictional demo accounts. Log
+explorer examples use events from [`mock-data/logs.json`](mock-data/logs.json).
 
 <details>
 <summary><strong>Landing page</strong> — a short introduction and application-log preview</summary>
@@ -148,6 +151,22 @@ from [`mock-data/logs.json`](mock-data/logs.json).
 <summary><strong>Connect a source</strong> — send your first event using curl</summary>
 
 ![Logify source connection dialog with an authenticated curl command template](docs/screenshots/connect-source.jpg)
+
+</details>
+
+<details>
+<summary><strong>Settings</strong> — manage your project, API keys, and account</summary>
+
+![Logify settings with project name, description, project ID, and save controls](docs/screenshots/settings.jpg)
+
+</details>
+
+<details>
+<summary><strong>Teams</strong> — project members, roles, and invitations</summary>
+
+![Logify Teams page with Owner, Admin, Member, and Viewer roles](docs/screenshots/teams.jpg)
+
+![Logify invitation form, pending invitations, and role permissions](docs/screenshots/team-invitations.jpg)
 
 </details>
 
@@ -185,10 +204,12 @@ strings. An API key selects its project automatically. If you include
 `project_id`, it must match the key's project. Keys can only send logs; searching
 logs and managing projects or keys requires your signed-in account.
 
-**Connect a source** lists key names and prefixes and lets you revoke a key.
+**Settings → API keys** and **Connect a source** list key names and prefixes
+and let you revoke a key.
 Revocation immediately rejects new requests with that key. PostgreSQL stores
 only the key's SHA-256 hash, never its secret. Existing Bearer access tokens
-remain supported for ingestion and require an owned `project_id` in the body.
+remain supported for ingestion and require a `project_id` where you are an
+Owner, Admin, or Member. Only Owners and Admins can manage API keys.
 
 To manage keys directly, send `Authorization: Bearer YOUR_ACCESS_TOKEN` to:
 
@@ -201,6 +222,39 @@ To manage keys directly, send `Authorization: Bearer YOUR_ACCESS_TOKEN` to:
 Client packages are available in [the Go SDK](sdks/go/README.md) and
 [the Python SDK](sdks/python/README.md). Both support `X-API-Key`; their project
 ID option is optional when using a project API key.
+
+## Teams
+
+Select a project and open **Teams** in the sidebar. Teams are scoped to that
+project; accepting an invitation adds the shared project to the recipient’s
+project switcher without exposing anyone’s other projects.
+
+1. As an Owner or Admin, enter a teammate’s email and choose their role.
+2. Select **Create invitation**, copy the link shown once, and share it directly.
+   Logify does not send invitation emails. Links expire after seven days.
+3. The recipient opens the link, signs in or registers with the invited email,
+   reviews the project and role, and selects **Join project**.
+
+| Role | Read/search logs | Send logs with JWT | Settings, API keys, and team | Delete project |
+| --- | --- | --- | --- | --- |
+| Owner | Yes | Yes | Yes | Yes |
+| Admin | Yes | Yes | Yes | No |
+| Member | Yes | Yes | No | No |
+| Viewer | Yes | No | No | No |
+
+Owners and Admins can change a member’s role, remove members, and cancel unused
+invitations. The Owner’s role is protected. Other members can **Leave project**.
+Demoting an Admin to Member/Viewer or removing a member revokes that person’s
+project API keys and unused invitations. New requests check membership in the
+backend, so a previous login token cannot retain removed permissions.
+
+Invitation tokens are random and stored only as SHA-256 hashes. Links bind to
+the invited email and can be accepted once; repeating acceptance preserves the
+current membership and never restores removed access or an older role. The
+browser keeps the token in a URL fragment, then submits it in the request body.
+Project memberships and invitation acceptance are committed transactionally.
+
+See the [backend team endpoints](apps/backend/README.md#teams) for API details.
 
 ## Architecture
 
@@ -348,7 +402,8 @@ python3 -m unittest discover -s mock-data/tests -v
 ```
 
 The [backend guide](apps/backend/README.md) includes integration tests for
-transactional registration and Kafka topic creation.
+transactional registration, team permissions/invitations, API keys, and Kafka
+topic creation.
 
 ## Troubleshooting
 

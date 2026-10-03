@@ -84,13 +84,11 @@ func (h *ProjectHandler) GetProject(c *gin.Context) {
 
 // ListProjects lists projects, optionally filtered by tenant.
 // @Summary      List projects
-// @Description  Return projects visible to the caller. Optionally filter by tenant_id.
+// @Description  Return owned and shared projects, including the caller’s persisted project role.
 // @Tags         projects
 // @Produce      json
 // @Security     BearerAuth
-// @Param        tenant_id  query     string  false  "Filter by tenant UUID"
 // @Success      200        {object}  response.APIResponse "Projects retrieved successfully"
-// @Failure      400        {object}  response.APIResponse "Invalid tenant_id format"
 // @Failure      500        {object}  response.APIResponse "Internal server error"
 // @Router       /v1/projects [get]
 func (h *ProjectHandler) ListProjects(c *gin.Context) {
@@ -163,6 +161,8 @@ func (h *ProjectHandler) DeleteProject(c *gin.Context) {
 // writeError maps domain errors to HTTP responses with a consistent envelope.
 func (h *ProjectHandler) writeError(c *gin.Context, err error, fallback string) {
 	switch {
+	case errors.Is(err, domain.ErrForbidden):
+		response.Forbidden(c, err.Error())
 	case errors.Is(err, domain.ErrProjectNotFound):
 		response.NotFound(c, "Project not found")
 	case errors.Is(err, domain.ErrProjectAlreadyExists):

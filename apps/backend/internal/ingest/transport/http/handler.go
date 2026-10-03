@@ -48,6 +48,8 @@ func (h *ingestHandler) CreateLog(c *gin.Context) {
 
 	if err := h.service.Ingest(c.Request.Context(), req.ToDomain()); err != nil {
 		switch {
+		case errors.Is(err, projectDomain.ErrForbidden):
+			response.Forbidden(c, err.Error())
 		case errors.Is(err, domain.ErrUnauthorized):
 			response.Unauthorized(c, err.Error())
 		case errors.Is(err, domain.ErrInvalidProject):

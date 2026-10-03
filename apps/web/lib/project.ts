@@ -1,9 +1,19 @@
 import type { ApiProject } from "@/lib/api/projects"
 
+export type ProjectRole = ApiProject["role"]
+
+export function canManageProject(role: ProjectRole): boolean {
+  return role === "owner" || role === "admin"
+}
+
+export function roleLabel(role: ProjectRole): string {
+  return role.charAt(0).toUpperCase() + role.slice(1)
+}
+
 export type ProjectSummary = {
   id: string
   name: string
-  role: string
+  role: ProjectRole
   initials: string
   description?: string
 }
@@ -21,18 +31,12 @@ export function initialsFromName(name: string): string {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
 }
 
-/**
- * Map an API project to the UI summary. The project API has no per-project
- * role, so we use the signed-in user's tenant role (falling back to "Member").
- */
-export function projectFromApi(
-  api: ApiProject,
-  role = "Member"
-): ProjectSummary {
+/** Project permissions come from the backend membership, never the JWT role. */
+export function projectFromApi(api: ApiProject): ProjectSummary {
   return {
     id: api.id,
     name: api.name,
-    role,
+    role: api.role ?? "viewer",
     initials: initialsFromName(api.name),
     description: api.description,
   }

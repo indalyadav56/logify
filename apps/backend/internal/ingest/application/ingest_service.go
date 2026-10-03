@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/indalyadav56/logify/apps/backend/internal/ingest/domain"
+	projectApp "github.com/indalyadav56/logify/apps/backend/internal/project/application"
 	projectDomain "github.com/indalyadav56/logify/apps/backend/internal/project/domain"
 	"github.com/indalyadav56/logify/apps/backend/internal/server/http/middleware"
 )
@@ -21,7 +22,7 @@ type ingestService struct {
 }
 
 type ProjectLookup interface {
-	GetByID(context.Context, uuid.UUID) (*projectDomain.Project, error)
+	projectDomain.AccessRepository
 }
 
 func NewIngestService(logProducer domain.LogProducer, projects ProjectLookup) *ingestService {
@@ -52,13 +53,11 @@ func (i *ingestService) Ingest(ctx context.Context, log domain.Log) error {
 		if err != nil {
 			return domain.ErrInvalidProject
 		}
-		project, err := i.projects.GetByID(ctx, id)
+		project, err := projectApp.RequireAccess(ctx, i.projects, id, projectDomain.RoleOwner, projectDomain.RoleAdmin, projectDomain.RoleMember)
 		if err != nil {
 			return err
 		}
-		if project.TenantID != tenant {
-			return projectDomain.ErrProjectNotFound
-		}
+		tenant = project.TenantID
 		log.ProjectID = id.String()
 	}
 	log.TenantID = tenant.String()

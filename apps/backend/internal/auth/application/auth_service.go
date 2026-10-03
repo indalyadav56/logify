@@ -110,6 +110,7 @@ func (s *authService) register(ctx context.Context, input RegisterInput) (*Token
 
 	output := &TokenOutput{}
 	output.TokenType = "Bearer"
+	output.User = &AuthUserView{ID: user.ID, Email: user.Email, FullName: user.FullName, Role: string(user.Role)}
 
 	accessToken, err := s.tokens.GenerateToken(map[string]interface{}{
 		"sub":       user.ID.String(),
@@ -151,8 +152,12 @@ func (s *authService) Login(ctx context.Context, input LoginInput) (*TokenOutput
 		"sub":       user.ID.String(),
 		"tenant_id": user.ID.String(), // placeholder until a real tenant model exists
 	})
+	if err != nil {
+		return nil, fmt.Errorf("generate access token: %w", err)
+	}
 	output.AccessToken = accessToken
 	output.TokenType = "Bearer"
+	output.User = &AuthUserView{ID: user.ID, Email: user.Email, FullName: user.FullName, Role: string(user.Role)}
 
 	plainRefreshToken, err := s.generateRandomToken()
 	if err != nil {

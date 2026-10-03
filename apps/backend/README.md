@@ -1,6 +1,6 @@
 # Logify Backend
 
-The Go backend handles authentication, projects, log ingestion, and search.
+The Go backend handles authentication, project teams, API keys, log ingestion, and search.
 PostgreSQL stores account and project data; Kafka carries accepted log events
 to the log processor; ClickHouse stores events for search.
 
@@ -44,11 +44,17 @@ require `Authorization: Bearer YOUR_ACCESS_TOKEN`.
 | `POST` | `/v1/auth/login` | Sign in and receive tokens |
 | `POST` | `/v1/auth/refresh-token` | Refresh authentication |
 | `POST` | `/v1/auth/logout` | Revoke the supplied refresh token |
-| `GET` | `/v1/projects` | List the authenticated account's projects |
+| `GET` | `/v1/projects` | List owned and shared projects with the current role |
 | `POST` | `/v1/projects` | Create a project |
 | `GET`, `PUT`, `DELETE` | `/v1/projects/:id` | Read, update, or delete a project |
 | `POST`, `GET` | `/v1/projects/:id/api-keys` | Create a project API key or list its metadata |
 | `DELETE` | `/v1/projects/:id/api-keys/:keyId` | Revoke a project API key |
+| `GET` | `/v1/projects/:id/team` | List project members and invitation metadata (invitations visible to managers) |
+| `POST` | `/v1/projects/:id/invitations` | Create an email-bound invitation; return `data.token` once |
+| `DELETE` | `/v1/projects/:id/invitations/:invitationId` | Cancel an unused invitation |
+| `PATCH`, `DELETE` | `/v1/projects/:id/members/:userId` | Change a member’s role, remove them, or leave |
+| `POST` | `/v1/invitations/preview` | Validate and review an invitation for the signed-in recipient |
+| `POST` | `/v1/invitations/accept` | Consume an invitation and return the shared project |
 | `POST` | `/v1/logs` | Accept a log event into Kafka |
 | `POST` | `/v1/logs/search` | Search events by project, message, time range, and cursor |
 | `GET` | `/v1/logs/:id` | Read an event |
@@ -68,6 +74,34 @@ and records that user as its creator. A failed step rolls back signup.
 Duplicate registration returns `409`; signing in does not create another
 project. The web app selects the project returned by `GET /v1/projects`.
 
+### Teams
+
+Membership is scoped to a project. Its creator is the Owner; additional roles
+are `admin`, `member`, and `viewer`. Owners and Admins manage settings, keys,
+and the team. All roles can search/view logs; Viewers cannot ingest. Only the
+Owner can delete the project. The Owner cannot be removed or demoted. A member
+can remove themselves to leave a project.
+
+Creating an invitation accepts `{"email":"teammate@example.com","role":"member"}`.
+Share `/invite#token=TOKEN` using the frontend’s origin. The token is returned
+once, stored only as SHA-256, expires after seven days, and binds to the
+recipient’s normalized account email. No email is sent. Preview/accept accept
+`{"token":"TOKEN"}` with the recipient’s Bearer JWT. Acceptance adds membership
+and consumes the invitation in one transaction. Repeat acceptance is idempotent
+while membership remains, and never restores a removed or demoted member.
+
+Duplicate pending invitations or existing members return `409`, wrong-account
+acceptance returns `403`, and expired/canceled tokens return `410`. A removed
+member cannot use an old JWT or invitation to regain access. Demotion below
+Admin or removal revokes that person’s project keys and pending invitations in
+the same transaction. API key validation also checks the creator’s current role.
+
+Project list/read responses include `role`. Search and aggregation require
+`project_id`; shared event lookup uses `GET /v1/logs/:id?project_id=UUID`.
+The backend resolves the project’s storage tenant after checking membership.
+A caller-supplied tenant cannot bypass isolation. Nonmembers receive `404`;
+existing members attempting a disallowed action receive `403`.
+
 ### Ingestion
 
 Applications authenticate with `X-API-Key: lgfy_...` (or
@@ -80,7 +114,8 @@ checked against PostgreSQL on every request so revocation takes effect immediate
 A key can only call `POST /v1/logs` for its own project. `project_id` can be
 omitted; a mismatched project returns `403`. Invalid or revoked keys return
 `401`. Deleted or suspended projects and disabled key owners invalidate keys.
-JWT ingestion remains supported with an owned project ID. Requests containing
+JWT ingestion remains supported for Owner, Admin, and Member roles with an
+accessible project ID. Only Owners and Admins can manage keys. Requests containing
 both `X-API-Key` and `Authorization` return `400`.
 
 `POST /v1/logs` returns `202` after Kafka acknowledges the event. The log
@@ -154,6 +189,20 @@ responses, hashed storage, project and account isolation, JWT compatibility,
 revocation, invalid credentials, and project/user lifecycle changes. A capturing
 producer verifies authorized payloads without writing to Kafka.
 
+### Project teams
+
+```bash
+LOGIFY_TEST_DATABASE_URL='postgres://postgres:postgres@localhost:5432/logify?sslmode=disable' \
+  go test -tags=integration -race ./internal/team/application -run TestProjectTeamsIntegration -v
+```
+
+This uses an isolated database and real HTTP handlers. It covers role and
+project isolation, shared search/ingestion scopes, wrong-account/expired/canceled
+invitations, concurrent creation/acceptance, rollback and retry after a storage
+failure, owner protection, leaving/removal, and immediate revocation of keys and
+pending invitations. JWTs deliberately claim Owner to verify that persisted
+project roles are enforced independently of token claims.
+
 ### Kafka topic creation and delivery
 
 ```bash
@@ -173,7 +222,8 @@ cmd/log-processor/      Kafka-to-ClickHouse worker
 cmd/embedding-worker/   Embedding worker entry point
 cmd/migrator/           PostgreSQL and ClickHouse migrations
 internal/auth/          Registration, login, sessions, and refresh tokens
-internal/project/       Project application and persistence layers
+internal/project/       Project application, membership access checks, and persistence
+internal/team/          Project members, invitations, role changes, and leaving
 internal/ingest/        Event validation and publication
 internal/search/        ClickHouse search and event retrieval
 internal/di/            Service wiring, Kafka initialization, and routes

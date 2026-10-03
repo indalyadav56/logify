@@ -12,12 +12,13 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/indalyadav56/logify/apps/backend/internal/apikey/domain"
+	projectApp "github.com/indalyadav56/logify/apps/backend/internal/project/application"
 	projectDomain "github.com/indalyadav56/logify/apps/backend/internal/project/domain"
 	"github.com/indalyadav56/logify/apps/backend/internal/server/http/middleware"
 )
 
 type ProjectLookup interface {
-	GetByID(context.Context, uuid.UUID) (*projectDomain.Project, error)
+	projectDomain.AccessRepository
 }
 
 type Service struct {
@@ -35,18 +36,8 @@ type CreatedKey struct {
 }
 
 func (s *Service) ownedProject(ctx context.Context, id uuid.UUID) error {
-	tenant, ok := middleware.GetTenantUUIDFromContext(ctx)
-	if !ok {
-		return projectDomain.ErrProjectNotFound
-	}
-	project, err := s.projects.GetByID(ctx, id)
-	if err != nil {
-		return err
-	}
-	if project.TenantID != tenant {
-		return projectDomain.ErrProjectNotFound
-	}
-	return nil
+	_, err := projectApp.RequireAccess(ctx, s.projects, id, projectDomain.RoleOwner, projectDomain.RoleAdmin)
+	return err
 }
 
 func (s *Service) Create(ctx context.Context, projectID uuid.UUID, name string) (*CreatedKey, error) {

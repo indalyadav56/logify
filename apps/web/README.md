@@ -9,6 +9,22 @@ instructions.
 copies a curl command, and lists or revokes existing keys. Keys send logs only;
 the web app uses your login session for account management and log searches.
 
+**Settings** is available from the sidebar and account menu. Use **Project** to
+save a name or description, **API keys** to create and revoke ingestion keys,
+and **Account** to view your email and account ID or sign out. Project changes
+are saved through the API and appear in the project switcher immediately.
+
+**Teams** is in the sidebar. Project Owners and Admins create email-bound
+invitation links, change roles, remove members, and cancel invitations. Members
+and Viewers can read the team list and leave a shared project. The recipient
+can sign in or register from `/invite`, then explicitly join the project. The
+invitation survives switching between login and signup. Links are copied and
+shared manually, expire after seven days, and show the complete token once.
+
+Project permissions come from the backend. Members and Viewers see project
+settings as read-only and cannot manage API keys. Shared projects appear in the
+same project switcher as personal projects.
+
 ![Logify log explorer](../../docs/screenshots/log-explorer.jpg)
 
 ## Run locally
@@ -52,6 +68,9 @@ Run `make down` from the repository root to stop both Logify container stacks
 | `/signup` | Create an account; the backend provisions its default project |
 | `/login` | Sign in to an existing account |
 | `/dashboard/logs` | Search logs, switch projects, inspect events, and connect a source |
+| `/dashboard/teams` | Members, role changes, invitations, and leaving a project |
+| `/invite#token=…` | Review and accept an invitation using the invited account |
+| `/dashboard/settings` | Edit the selected project, manage API keys, and view account details |
 
 The project list and log results come from the real API. The browser selects
 an existing project; default-project creation belongs to backend registration.
@@ -76,13 +95,17 @@ npm run build
 | `app/(landing)/` | Landing screen |
 | `app/(auth)/` | Sign-in and registration routes |
 | `app/(app)/dashboard/logs/` | Log explorer |
+| `app/(app)/dashboard/settings/` | Project, API-key, and account settings |
+| `app/(app)/dashboard/teams/` | Selected project’s team |
+| `app/invite/` | Invitation review and acceptance |
+| `components/project/` | Project creation, team access, and API-key management |
 | `components/ui/` | shadcn/ui primitives |
 | `components/observability/` | Search, event details, and ingest instructions |
 | `components/app-shell.tsx` | Viewport layout and shared providers |
 | `components/app-bar.tsx` | Project sidebar and account menu |
-| `lib/api/` | HTTP clients for authentication, projects, and logs |
+| `lib/api/` | HTTP clients for authentication, projects, teams, API keys, and logs |
 | `lib/auth-store.tsx` | Authentication state |
-| `lib/project-store.tsx` | Project selection and creation |
+| `lib/project-store.tsx` | Owned/shared project selection, creation, and updates |
 | `lib/logs-data-context.tsx` | Search results and pagination |
 
 The [root README](../../README.md#screenshots) contains the complete screenshot

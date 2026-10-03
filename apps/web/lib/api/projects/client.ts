@@ -6,7 +6,7 @@ import type {
   UpdateProjectInput,
 } from "./types"
 
-/** GET /v1/projects — projects for the authenticated tenant. */
+/** GET /v1/projects — owned and shared projects visible to the authenticated user. */
 export function listProjects(): Promise<ApiProject[]> {
   return apiRequest<ApiProject[]>("/v1/projects").then((data) => data ?? [])
 }

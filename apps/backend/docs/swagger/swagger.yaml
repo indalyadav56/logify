@@ -42,12 +42,13 @@ definitions:
       interval:
         description: '"1m", "5m", "1h", "1d"'
         type: string
-      tenant_id:
+      project_id:
         type: string
       to:
         type: string
     required:
     - from
+    - project_id
     - to
     type: object
   http.AggregateResponse:
@@ -152,6 +153,20 @@ definitions:
       status:
         type: string
     type: object
+  http.InvitationRequest:
+    properties:
+      email:
+        type: string
+      role:
+        enum:
+        - admin
+        - member
+        - viewer
+        type: string
+    required:
+    - email
+    - role
+    type: object
   http.LogResponse:
     properties:
       attributes:
@@ -236,6 +251,17 @@ definitions:
     - full_name
     - password
     type: object
+  http.RoleRequest:
+    properties:
+      role:
+        enum:
+        - admin
+        - member
+        - viewer
+        type: string
+    required:
+    - role
+    type: object
   http.SearchRequest:
     properties:
       cursor:
@@ -281,6 +307,14 @@ definitions:
       to:
         type: string
     type: object
+  http.TokenRequest:
+    properties:
+      token:
+        maxLength: 128
+        type: string
+    required:
+    - token
+    type: object
   http.TokenResponse:
     properties:
       access_token:
@@ -288,6 +322,19 @@ definitions:
       refresh_token:
         type: string
       token_type:
+        type: string
+      user:
+        $ref: '#/definitions/http.UserResponse'
+    type: object
+  http.UserResponse:
+    properties:
+      email:
+        type: string
+      full_name:
+        type: string
+      id:
+        type: string
+      role:
         type: string
     type: object
   response.APIError:
@@ -528,6 +575,52 @@ paths:
       summary: Register a new user
       tags:
       - auth
+  /v1/invitations/accept:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Invitation token
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/http.TokenRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Accept a team invitation
+      tags:
+      - teams
+  /v1/invitations/preview:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Invitation token
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/http.TokenRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Preview a team invitation
+      tags:
+      - teams
   /v1/logs:
     post:
       consumes:
@@ -582,20 +675,17 @@ paths:
       - ingest
   /v1/logs/{id}:
     get:
-      description: Retrieve a single log entry by its ID for a tenant.
+      description: Retrieve a log from an accessible project. Supply project_id for
+        shared projects.
       parameters:
       - description: Log ID
         in: path
         name: id
         required: true
         type: string
-      - description: Tenant ID (also resolved from JWT/header)
+      - description: Project UUID (required for shared projects)
         in: query
-        name: tenant_id
-        type: string
-      - description: Tenant ID override
-        in: header
-        name: X-Tenant-ID
+        name: project_id
         type: string
       produces:
       - application/json
@@ -605,7 +695,7 @@ paths:
           schema:
             $ref: '#/definitions/http.LogResponse'
         "400":
-          description: Missing tenant_id
+          description: Invalid project_id
           schema:
             additionalProperties:
               type: string
@@ -697,12 +787,8 @@ paths:
     post:
       consumes:
       - application/json
-      description: Run a structured log search query for a tenant.
+      description: Search logs in a project visible to the authenticated user.
       parameters:
-      - description: Tenant ID override (also resolved from JWT or body)
-        in: header
-        name: X-Tenant-ID
-        type: string
       - description: Search query
         in: body
         name: request
@@ -717,7 +803,7 @@ paths:
           schema:
             $ref: '#/definitions/http.SearchResponse'
         "400":
-          description: Invalid request or missing tenant_id
+          description: Invalid request or missing project_id
           schema:
             additionalProperties:
               type: string
@@ -735,21 +821,13 @@ paths:
       - logs
   /v1/projects:
     get:
-      description: Return projects visible to the caller. Optionally filter by tenant_id.
-      parameters:
-      - description: Filter by tenant UUID
-        in: query
-        name: tenant_id
-        type: string
+      description: Return owned and shared projects, including the caller’s persisted
+        project role.
       produces:
       - application/json
       responses:
         "200":
           description: Projects retrieved successfully
-          schema:
-            $ref: '#/definitions/response.APIResponse'
-        "400":
-          description: Invalid tenant_id format
           schema:
             $ref: '#/definitions/response.APIResponse'
         "500":
@@ -999,6 +1077,124 @@ paths:
       summary: Revoke a project API key
       tags:
       - API keys
+  /v1/projects/{id}/invitations:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Project UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Email and project role
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/http.InvitationRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Invite a project team member
+      tags:
+      - teams
+  /v1/projects/{id}/invitations/{invitationId}:
+    delete:
+      parameters:
+      - description: Project UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Invitation UUID
+        in: path
+        name: invitationId
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No content
+      security:
+      - BearerAuth: []
+      summary: Cancel a project invitation
+      tags:
+      - teams
+  /v1/projects/{id}/members/{userId}:
+    delete:
+      parameters:
+      - description: Project UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: User UUID
+        in: path
+        name: userId
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No content
+      security:
+      - BearerAuth: []
+      summary: Remove or leave a project team
+      tags:
+      - teams
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: Project UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: User UUID
+        in: path
+        name: userId
+        required: true
+        type: string
+      - description: Admin, Member, or Viewer
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/http.RoleRequest'
+      responses:
+        "204":
+          description: No content
+      security:
+      - BearerAuth: []
+      summary: Change project member role
+      tags:
+      - teams
+  /v1/projects/{id}/team:
+    get:
+      parameters:
+      - description: Project UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Get project team
+      tags:
+      - teams
   /v1/users/me:
     get:
       description: Return the authenticated user's profile from JWT claims.

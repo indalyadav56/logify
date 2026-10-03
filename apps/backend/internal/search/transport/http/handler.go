@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 
+	project "github.com/indalyadav56/logify/apps/backend/internal/project/domain"
 	"github.com/indalyadav56/logify/apps/backend/internal/search/application"
 	"github.com/indalyadav56/logify/apps/backend/internal/search/domain"
 )
@@ -23,29 +24,16 @@ func NewHandler(service *application.SearchService, log *zap.Logger) *Handler {
 	return &Handler{service: service, log: log}
 }
 
-// resolveTenantID reads tenant_id from gin context (auth middleware), then falls
-// back to the X-Tenant-ID header, and finally to a field in the request struct.
-func resolveTenantID(c *gin.Context, fromBody string) string {
-	if id := c.GetString("tenant_id"); id != "" {
-		return id
-	}
-	if id := c.GetHeader("X-Tenant-ID"); id != "" {
-		return id
-	}
-	return fromBody
-}
-
 // Search runs a log query against ClickHouse.
 // @Summary      Search logs
-// @Description  Run a structured log search query for a tenant.
+// @Description  Search logs in a project visible to the authenticated user.
 // @Tags         logs
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
-// @Param        X-Tenant-ID  header    string         false  "Tenant ID override (also resolved from JWT or body)"
 // @Param        request      body      SearchRequest  true   "Search query"
 // @Success      200          {object}  SearchResponse "Search results"
-// @Failure      400          {object}  map[string]string "Invalid request or missing tenant_id"
+// @Failure      400          {object}  map[string]string "Invalid request or missing project_id"
 // @Failure      500          {object}  map[string]string "Search failed"
 // @Router       /v1/logs/search [post]
 func (h *Handler) Search(c *gin.Context) {
@@ -59,6 +47,10 @@ func (h *Handler) Search(c *gin.Context) {
 	result, err := h.service.Search(c.Request.Context(), req.ToQuery())
 	if err != nil {
 		switch {
+		case errors.Is(err, project.ErrProjectNotFound):
+			c.JSON(http.StatusNotFound, gin.H{"error": "Project not found"})
+		case errors.Is(err, project.ErrForbidden):
+			c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
 		case errors.Is(err, domain.ErrTenantIDRequired):
 			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		case errors.Is(err, domain.ErrProjectIDRequired),
@@ -78,29 +70,26 @@ func (h *Handler) Search(c *gin.Context) {
 
 // GetByID fetches a single log entry by ID.
 // @Summary      Get log by ID
-// @Description  Retrieve a single log entry by its ID for a tenant.
+// @Description  Retrieve a log from an accessible project. Supply project_id for shared projects.
 // @Tags         logs
 // @Produce      json
 // @Security     BearerAuth
 // @Param        id           path      string  true   "Log ID"
-// @Param        tenant_id    query     string  false  "Tenant ID (also resolved from JWT/header)"
-// @Param        X-Tenant-ID  header    string  false  "Tenant ID override"
+// @Param        project_id   query     string  false  "Project UUID (required for shared projects)"
 // @Success      200          {object}  LogResponse "Log entry"
-// @Failure      400          {object}  map[string]string "Missing tenant_id"
+// @Failure      400          {object}  map[string]string "Invalid project_id"
 // @Failure      404          {object}  map[string]string "Log not found"
 // @Failure      500          {object}  map[string]string "Fetch failed"
 // @Router       /v1/logs/{id} [get]
 func (h *Handler) GetByID(c *gin.Context) {
 	logID := c.Param("id")
-	tenantID := resolveTenantID(c, c.Query("tenant_id"))
-	if tenantID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "tenant_id is required"})
-		return
-	}
-
-	entry, err := h.service.GetByID(c.Request.Context(), tenantID, logID)
+	entry, err := h.service.GetByID(c.Request.Context(), c.Query("project_id"), logID)
 	if err != nil {
-		if errors.Is(err, domain.ErrLogNotFound) {
+		if errors.Is(err, domain.ErrProjectIDRequired) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		if errors.Is(err, domain.ErrLogNotFound) || errors.Is(err, project.ErrProjectNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "log not found"})
 			return
 		}
@@ -131,17 +120,11 @@ func (h *Handler) Aggregate(c *gin.Context) {
 		return
 	}
 
-	tenantID := resolveTenantID(c, req.TenantID)
-	if tenantID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "tenant_id is required"})
-		return
-	}
-
 	aggReq := domain.AggregationRequest{
 		Query: domain.Query{
-			TenantID: tenantID,
-			From:     req.From,
-			To:       req.To,
+			ProjectID: req.ProjectID,
+			From:      req.From,
+			To:        req.To,
 		},
 		GroupBy:  req.GroupBy,
 		Interval: req.Interval,
@@ -150,11 +133,16 @@ func (h *Handler) Aggregate(c *gin.Context) {
 	result, err := h.service.Aggregate(c.Request.Context(), aggReq)
 	if err != nil {
 		switch {
-		case errors.Is(err, domain.ErrInvalidTimeRange),
+		case errors.Is(err, project.ErrProjectNotFound):
+			c.JSON(http.StatusNotFound, gin.H{"error": "Project not found"})
+		case errors.Is(err, project.ErrForbidden):
+			c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		case errors.Is(err, domain.ErrProjectIDRequired),
+			errors.Is(err, domain.ErrInvalidTimeRange),
 			errors.Is(err, domain.ErrTimeRangeRequired):
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		default:
-			h.log.Error("aggregate failed", zap.String("tenant_id", tenantID), zap.Error(err))
+			h.log.Error("aggregate failed", zap.Error(err))
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "aggregate failed"})
 		}
 		return

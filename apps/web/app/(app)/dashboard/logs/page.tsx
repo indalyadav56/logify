@@ -33,9 +33,7 @@ export default function LogsPage() {
     <div className="mx-auto flex min-h-0 w-full max-w-[1440px] flex-1 flex-col overflow-hidden px-4 py-4 sm:px-8 sm:py-6 lg:px-12">
       <div className="mb-4 flex shrink-0 flex-wrap items-start justify-between gap-4 sm:mb-6">
         <div>
-          <p className="mb-2 text-xs font-medium text-muted-foreground">Workspace / {project?.name ?? "Your projects"}</p>
           <h1 className="text-3xl font-semibold tracking-tight">Logs</h1>
-          <p className="mt-2 text-sm text-muted-foreground">A clear view of what’s happening in your application.</p>
         </div>
         <Button variant="outline" className="mt-1 gap-2 bg-white shadow-none" onClick={() => project ? setConnectOpen(true) : setCreateOpen(true)}>
           {project ? <Terminal className="size-4" /> : <FolderPlus className="size-4" />}{project ? "Connect a source" : "Create project"}
@@ -84,7 +82,6 @@ export default function LogsPage() {
           </div>
         </Card>
       )}
-      <p className="mt-3 shrink-0 text-xs text-muted-foreground">{project ? "Logs are shown for the selected project and time range." : "One project. All your application logs."}</p>
       <LogIngestionSetupDialog open={connectOpen} onOpenChange={setConnectOpen} />
       <Sheet open={Boolean(selected)} onOpenChange={open => { if (!open) setSelected(null) }}>
         <SheetContent className="w-full overflow-y-auto sm:max-w-lg">

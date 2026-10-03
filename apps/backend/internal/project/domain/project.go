@@ -17,6 +17,7 @@ type Project struct {
 	CreatedBy   uuid.UUID `json:"created_by"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
+	Role        Role      `json:"role"`
 }
 
 func NewProject(tenantID uuid.UUID, name, description string) *Project {

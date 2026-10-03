@@ -8,6 +8,9 @@ import (
 	apiKeyApp "github.com/indalyadav56/logify/apps/backend/internal/apikey/application"
 	apiKeyPG "github.com/indalyadav56/logify/apps/backend/internal/apikey/infrastructure/postgres"
 	apiKeyHTTP "github.com/indalyadav56/logify/apps/backend/internal/apikey/transport/http"
+	teamApp "github.com/indalyadav56/logify/apps/backend/internal/team/application"
+	teamPG "github.com/indalyadav56/logify/apps/backend/internal/team/infrastructure/postgres"
+	teamHTTP "github.com/indalyadav56/logify/apps/backend/internal/team/transport/http"
 
 	ch "github.com/ClickHouse/clickhouse-go/v2"
 	"github.com/gin-gonic/gin"
@@ -100,6 +103,7 @@ type ServerContainer struct {
 	ProjectHandler *projectHTTP.ProjectHandler
 	APIKeyService  *apiKeyApp.Service
 	APIKeyHandler  *apiKeyHTTP.Handler
+	TeamHandler    *teamHTTP.Handler
 }
 
 func NewServerContainer(ctx context.Context, cfg *config.Config, log *zap.Logger) (*ServerContainer, error) {
@@ -151,6 +155,7 @@ func NewServerContainer(ctx context.Context, cfg *config.Config, log *zap.Logger
 	c.initProject()
 	c.APIKeyService = apiKeyApp.NewService(apiKeyPG.NewRepository(c.postgresDB), projectPG.NewProjectRepository(c.postgresDB))
 	c.APIKeyHandler = apiKeyHTTP.NewHandler(c.APIKeyService)
+	c.TeamHandler = teamHTTP.NewHandler(teamApp.NewService(teamPG.NewRepository(c.postgresDB), projectPG.NewProjectRepository(c.postgresDB), postgres.NewTransactor(c.postgresDB)))
 
 	return c, nil
 }
@@ -181,7 +186,7 @@ func (c *ServerContainer) initIngest() {
 
 func (c *ServerContainer) initSearch() {
 	repo := searchCH.NewSearchRepository(c.ClickHouseDB, c.Logger)
-	c.SearchService = searchApp.NewSearchService(repo, c.Logger)
+	c.SearchService = searchApp.NewSearchService(repo, projectPG.NewProjectRepository(c.postgresDB), c.Logger)
 	c.SearchHandler = searchHTTP.NewHandler(c.SearchService, c.Logger)
 }
 
@@ -246,5 +251,6 @@ func (c *ServerContainer) RegisterAllRoutes(e *gin.Engine) {
 	secured := root.Group("", middleware.AuthMiddleware(c.JWT))
 	searchHTTP.RegisterRoutes(secured, c.SearchHandler)
 	projectHTTP.RegisterRoutes(secured, c.ProjectHandler)
+	teamHTTP.RegisterRoutes(secured, c.TeamHandler)
 	apiKeyHTTP.RegisterRoutes(secured, c.APIKeyHandler)
 }

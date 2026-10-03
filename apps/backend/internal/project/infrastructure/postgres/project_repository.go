@@ -156,3 +156,42 @@ func mapUniqueViolation(err error) error {
 	}
 	return err
 }
+
+const accessibleProjects = `
+ SELECT p.id, p.tenant_id, p.name, COALESCE(p.description, ''), p.created_by, p.created_at, p.updated_at,
+ CASE WHEN p.created_by = $1 THEN 'owner' ELSE m.role END
+ FROM projects p
+ JOIN auth.users actor ON actor.id = $1 AND actor.is_active AND actor.deleted_at IS NULL
+ JOIN auth.users owner ON owner.id = p.created_by AND owner.is_active AND owner.deleted_at IS NULL
+ LEFT JOIN project_team_members m ON m.project_id = p.id AND m.user_id = $1
+ WHERE p.status = 'active' AND p.deleted_at IS NULL AND (p.created_by = $1 OR m.user_id IS NOT NULL)`
+
+func (r *projectRepository) GetForUser(ctx context.Context, id, userID uuid.UUID) (*domain.Project, error) {
+	var p domain.Project
+	err := pg.ExecutorFromContext(ctx, r.db).QueryRow(ctx, accessibleProjects+" AND p.id = $2", userID, id).
+		Scan(&p.ID, &p.TenantID, &p.Name, &p.Description, &p.CreatedBy, &p.CreatedAt, &p.UpdatedAt, &p.Role)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, domain.ErrProjectNotFound
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &p, nil
+}
+
+func (r *projectRepository) ListForUser(ctx context.Context, userID uuid.UUID) ([]*domain.Project, error) {
+	rows, err := pg.ExecutorFromContext(ctx, r.db).Query(ctx, accessibleProjects+" ORDER BY p.created_at DESC, p.id DESC", userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	result := make([]*domain.Project, 0)
+	for rows.Next() {
+		var p domain.Project
+		if err := rows.Scan(&p.ID, &p.TenantID, &p.Name, &p.Description, &p.CreatedBy, &p.CreatedAt, &p.UpdatedAt, &p.Role); err != nil {
+			return nil, err
+		}
+		result = append(result, &p)
+	}
+	return result, rows.Err()
+}

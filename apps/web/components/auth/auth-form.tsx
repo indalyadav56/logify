@@ -2,8 +2,8 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
 import { Eye, EyeOff, Loader2 } from "lucide-react"
+import { useInvitationToken } from "@/lib/invitation-link"
 import { useAuth } from "@/lib/auth-store"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -11,9 +11,10 @@ import { Label } from "@/components/ui/label"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card"
 
 export function AuthForm({ mode }: { mode: "login" | "signup" }) {
+  const invitationToken = useInvitationToken("invite")
+  const invitationHash = invitationToken ? `#invite=${encodeURIComponent(invitationToken)}` : ""
   const signup = mode === "signup"
   const { login, register } = useAuth()
-  const router = useRouter()
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -25,7 +26,6 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
     try {
       if (signup) await register(name.trim(), email.trim(), password)
       else await login(email.trim(), password)
-      router.replace("/dashboard/logs")
     } catch (e) { setError(e instanceof Error ? e.message : "Please try again."); setBusy(false) }
   }
   return <Card className="gap-6 rounded-xl border bg-white py-7 shadow-none ring-0">
@@ -39,6 +39,6 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
         <Button type="submit" disabled={busy} className="h-10 w-full shadow-none">{busy && <Loader2 className="size-4 animate-spin" />}{busy ? "Please wait…" : signup ? "Create account" : "Sign in"}</Button>
       </form>
     </CardContent>
-    <CardFooter className="justify-center border-t px-7 pt-5 text-sm text-muted-foreground">{signup ? "Already have an account?" : "New to Logify?"}<Link href={signup ? "/login" : "/signup"} className="ml-1.5 font-medium text-foreground underline-offset-4 hover:underline">{signup ? "Sign in" : "Create an account"}</Link></CardFooter>
+    <CardFooter className="justify-center border-t px-7 pt-5 text-sm text-muted-foreground">{signup ? "Already have an account?" : "New to Logify?"}<Link href={`${signup ? "/login" : "/signup"}${invitationHash}`} className="ml-1.5 font-medium text-foreground underline-offset-4 hover:underline">{signup ? "Sign in" : "Create an account"}</Link></CardFooter>
   </Card>
 }

@@ -67,11 +67,11 @@ type LogResponse struct {
 }
 
 type AggregateRequest struct {
-	TenantID string    `json:"tenant_id,omitempty"`
-	GroupBy  string    `json:"group_by,omitempty"`
-	Interval string    `json:"interval,omitempty"` // "1m", "5m", "1h", "1d"
-	From     time.Time `json:"from" binding:"required"`
-	To       time.Time `json:"to"   binding:"required"`
+	ProjectID string    `json:"project_id" binding:"required"`
+	GroupBy   string    `json:"group_by,omitempty"`
+	Interval  string    `json:"interval,omitempty"` // "1m", "5m", "1h", "1d"
+	From      time.Time `json:"from" binding:"required"`
+	To        time.Time `json:"to"   binding:"required"`
 }
 
 type AggregateResponse struct {

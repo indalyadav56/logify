@@ -52,6 +52,7 @@ func (s *projectService) CreateProject(ctx context.Context, input CreateProjectI
 		Name:        input.Name,
 		Description: input.Description,
 		CreatedBy:   userID,
+		Role:        domain.RoleOwner,
 	}
 
 	if err := s.repo.Create(ctx, &project); err != nil {
@@ -79,14 +80,12 @@ func (s *projectService) GetProject(ctx context.Context, id uuid.UUID) (*Project
 }
 
 func (s *projectService) ListProjects(ctx context.Context) ([]*ProjectOutput, error) {
-	tenantIDStr, ok := middleware.TenantIDFromContext(ctx)
+	userID, ok := middleware.UserUUIDFromContext(ctx)
 	if !ok {
 		return nil, errors.New("error getting tenant id")
 	}
 
-	tenantID := uuid.MustParse(tenantIDStr)
-
-	items, err := s.repo.List(ctx, &tenantID)
+	items, err := s.repo.ListForUser(ctx, userID)
 	if err != nil {
 		s.logger.Error("failed to list projects", zap.Error(err))
 		return nil, err
@@ -99,7 +98,7 @@ func (s *projectService) ListProjects(ctx context.Context) ([]*ProjectOutput, er
 }
 
 func (s *projectService) UpdateProject(ctx context.Context, id uuid.UUID, input UpdateProjectInput) (*ProjectOutput, error) {
-	ws, err := s.ownedProject(ctx, id)
+	ws, err := RequireAccess(ctx, s.repo, id, domain.RoleOwner, domain.RoleAdmin)
 	if err != nil {
 		return nil, err
 	}
@@ -122,7 +121,7 @@ func (s *projectService) UpdateProject(ctx context.Context, id uuid.UUID, input 
 }
 
 func (s *projectService) DeleteProject(ctx context.Context, id uuid.UUID) error {
-	if _, err := s.ownedProject(ctx, id); err != nil {
+	if _, err := RequireAccess(ctx, s.repo, id, domain.RoleOwner); err != nil {
 		return err
 	}
 	if err := s.repo.Delete(ctx, id); err != nil {
@@ -139,18 +138,7 @@ func (s *projectService) DeleteProject(ctx context.Context, id uuid.UUID) error 
 }
 
 func (s *projectService) ownedProject(ctx context.Context, id uuid.UUID) (*domain.Project, error) {
-	tenant, ok := middleware.GetTenantUUIDFromContext(ctx)
-	if !ok {
-		return nil, domain.ErrProjectNotFound
-	}
-	project, err := s.repo.GetByID(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-	if project.TenantID != tenant {
-		return nil, domain.ErrProjectNotFound
-	}
-	return project, nil
+	return RequireAccess(ctx, s.repo, id)
 }
 
 func toProjectOutput(w *domain.Project) *ProjectOutput {
@@ -161,5 +149,6 @@ func toProjectOutput(w *domain.Project) *ProjectOutput {
 		Description: w.Description,
 		CreatedAt:   w.CreatedAt,
 		UpdatedAt:   w.UpdatedAt,
+		Role:        string(w.Role),
 	}
 }

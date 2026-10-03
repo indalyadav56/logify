@@ -365,6 +365,82 @@ const docTemplate = `{
                 }
             }
         },
+        "/v1/invitations/accept": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "teams"
+                ],
+                "summary": "Accept a team invitation",
+                "parameters": [
+                    {
+                        "description": "Invitation token",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/http.TokenRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/invitations/preview": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "teams"
+                ],
+                "summary": "Preview a team invitation",
+                "parameters": [
+                    {
+                        "description": "Invitation token",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/http.TokenRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/logs": {
             "post": {
                 "security": [
@@ -558,7 +634,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Run a structured log search query for a tenant.",
+                "description": "Search logs in a project visible to the authenticated user.",
                 "consumes": [
                     "application/json"
                 ],
@@ -570,12 +646,6 @@ const docTemplate = `{
                 ],
                 "summary": "Search logs",
                 "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Tenant ID override (also resolved from JWT or body)",
-                        "name": "X-Tenant-ID",
-                        "in": "header"
-                    },
                     {
                         "description": "Search query",
                         "name": "request",
@@ -594,7 +664,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Invalid request or missing tenant_id",
+                        "description": "Invalid request or missing project_id",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -621,7 +691,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Retrieve a single log entry by its ID for a tenant.",
+                "description": "Retrieve a log from an accessible project. Supply project_id for shared projects.",
                 "produces": [
                     "application/json"
                 ],
@@ -639,15 +709,9 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Tenant ID (also resolved from JWT/header)",
-                        "name": "tenant_id",
+                        "description": "Project UUID (required for shared projects)",
+                        "name": "project_id",
                         "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Tenant ID override",
-                        "name": "X-Tenant-ID",
-                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -658,7 +722,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Missing tenant_id",
+                        "description": "Invalid project_id",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -694,7 +758,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Return projects visible to the caller. Optionally filter by tenant_id.",
+                "description": "Return owned and shared projects, including the caller’s persisted project role.",
                 "produces": [
                     "application/json"
                 ],
@@ -702,23 +766,9 @@ const docTemplate = `{
                     "projects"
                 ],
                 "summary": "List projects",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Filter by tenant UUID",
-                        "name": "tenant_id",
-                        "in": "query"
-                    }
-                ],
                 "responses": {
                     "200": {
                         "description": "Projects retrieved successfully",
-                        "schema": {
-                            "$ref": "#/definitions/response.APIResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid tenant_id format",
                         "schema": {
                             "$ref": "#/definitions/response.APIResponse"
                         }
@@ -1106,6 +1156,196 @@ const docTemplate = `{
                 }
             }
         },
+        "/v1/projects/{id}/invitations": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "teams"
+                ],
+                "summary": "Invite a project team member",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Project UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Email and project role",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/http.InvitationRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/projects/{id}/invitations/{invitationId}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "teams"
+                ],
+                "summary": "Cancel a project invitation",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Project UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Invitation UUID",
+                        "name": "invitationId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No content"
+                    }
+                }
+            }
+        },
+        "/v1/projects/{id}/members/{userId}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "teams"
+                ],
+                "summary": "Remove or leave a project team",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Project UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "User UUID",
+                        "name": "userId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No content"
+                    }
+                }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "teams"
+                ],
+                "summary": "Change project member role",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Project UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "User UUID",
+                        "name": "userId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Admin, Member, or Viewer",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/http.RoleRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No content"
+                    }
+                }
+            }
+        },
+        "/v1/projects/{id}/team": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "teams"
+                ],
+                "summary": "Get project team",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Project UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/users/me": {
             "get": {
                 "security": [
@@ -1203,6 +1443,7 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "from",
+                "project_id",
                 "to"
             ],
             "properties": {
@@ -1216,7 +1457,7 @@ const docTemplate = `{
                     "description": "\"1m\", \"5m\", \"1h\", \"1d\"",
                     "type": "string"
                 },
-                "tenant_id": {
+                "project_id": {
                     "type": "string"
                 },
                 "to": {
@@ -1378,6 +1619,26 @@ const docTemplate = `{
                 }
             }
         },
+        "http.InvitationRequest": {
+            "type": "object",
+            "required": [
+                "email",
+                "role"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "role": {
+                    "type": "string",
+                    "enum": [
+                        "admin",
+                        "member",
+                        "viewer"
+                    ]
+                }
+            }
+        },
         "http.LogResponse": {
             "type": "object",
             "properties": {
@@ -1503,6 +1764,22 @@ const docTemplate = `{
                 }
             }
         },
+        "http.RoleRequest": {
+            "type": "object",
+            "required": [
+                "role"
+            ],
+            "properties": {
+                "role": {
+                    "type": "string",
+                    "enum": [
+                        "admin",
+                        "member",
+                        "viewer"
+                    ]
+                }
+            }
+        },
         "http.SearchRequest": {
             "type": "object",
             "required": [
@@ -1572,6 +1849,18 @@ const docTemplate = `{
                 }
             }
         },
+        "http.TokenRequest": {
+            "type": "object",
+            "required": [
+                "token"
+            ],
+            "properties": {
+                "token": {
+                    "type": "string",
+                    "maxLength": 128
+                }
+            }
+        },
         "http.TokenResponse": {
             "type": "object",
             "properties": {
@@ -1582,6 +1871,26 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "token_type": {
+                    "type": "string"
+                },
+                "user": {
+                    "$ref": "#/definitions/http.UserResponse"
+                }
+            }
+        },
+        "http.UserResponse": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "full_name": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "role": {
                     "type": "string"
                 }
             }

@@ -68,8 +68,8 @@ function nameFromEmail(email: string): string {
 }
 
 /**
- * Build a session from the API token response. The backend returns only tokens,
- * so the user is derived from the JWT `sub` plus the values typed at sign-in.
+ * Build a session from the API profile and tokens. Older servers fall back to
+ * the JWT subject and the values entered at sign-in.
  */
 function toSession(data: TokenData, fallback?: Partial<AuthUser>): AuthSession {
   const claims = decodeJwt(data.access_token)

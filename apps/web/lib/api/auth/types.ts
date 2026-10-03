@@ -6,8 +6,8 @@ export type AuthUser = {
 }
 
 /**
- * Mirrors the backend `TokenResponse` (snake_case JSON). The API returns only
- * tokens — the `user` is derived client-side from the JWT + sign-in inputs.
+ * Mirrors the backend `TokenResponse` (snake_case JSON). Includes the
+ * authenticated profile; optional for compatibility with older servers.
  */
 export type TokenData = {
   access_token: string

@@ -69,9 +69,12 @@ func (r *Repository) Resolve(ctx context.Context, hash string) (*domain.Identity
 		SELECT k.created_by, p.tenant_id, p.id FROM project_api_keys k
 		JOIN projects p ON p.id = k.project_id
 		JOIN auth.users u ON u.id = k.created_by
+ JOIN auth.users owner ON owner.id = p.created_by AND owner.is_active AND owner.deleted_at IS NULL
 		WHERE k.key_hash = $1 AND k.revoked_at IS NULL
 		AND p.status = 'active' AND p.deleted_at IS NULL
-		AND u.is_active AND u.deleted_at IS NULL`, hash).
+		AND u.is_active AND u.deleted_at IS NULL
+ AND (p.created_by = k.created_by OR EXISTS (SELECT 1 FROM project_team_members m
+ WHERE m.project_id = p.id AND m.user_id = k.created_by AND m.role = 'admin'))`, hash).
 		Scan(&identity.UserID, &identity.TenantID, &identity.ProjectID)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, domain.ErrInvalidKey

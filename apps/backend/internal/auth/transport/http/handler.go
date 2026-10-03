@@ -144,9 +144,13 @@ func toTokenResponse(t *application.TokenOutput) TokenResponse {
 	if t == nil {
 		return TokenResponse{}
 	}
-	return TokenResponse{
+	result := TokenResponse{
 		AccessToken:  t.AccessToken,
 		RefreshToken: t.RefreshToken,
 		TokenType:    t.TokenType,
 	}
+	if t.User != nil {
+		result.User = &UserResponse{ID: t.User.ID.String(), Email: t.User.Email, FullName: t.User.FullName, Role: t.User.Role}
+	}
+	return result
 }

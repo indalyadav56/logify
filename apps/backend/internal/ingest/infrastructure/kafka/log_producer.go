@@ -6,30 +6,35 @@ import (
 	"fmt"
 
 	"github.com/indalyadav56/logify/apps/backend/internal/ingest/domain"
-	"github.com/indalyadav56/logify/apps/backend/internal/server/http/middleware"
 	"github.com/segmentio/kafka-go"
 	"go.uber.org/zap"
 )
 
+type messageWriter interface {
+	WriteMessages(context.Context, ...kafka.Message) error
+	Close() error
+}
+
 type logProducer struct {
-	writer *kafka.Writer
+	writer messageWriter
+	topic  string
 	logger *zap.Logger
 }
 
 func NewLogProducer(writer *kafka.Writer, logger *zap.Logger) *logProducer {
 	return &logProducer{
 		writer: writer,
+		topic:  writer.Topic,
 		logger: logger,
 	}
 }
 
 func (lp *logProducer) Produce(ctx context.Context, log domain.Log) error {
-	tenantID, ok := middleware.TenantIDFromContext(ctx)
-	if !ok {
-		return errors.New("tenant id not found")
+	// IngestService has already authorized and resolved the project scope.
+	// A shared project may belong to a different tenant than the caller.
+	if log.TenantID == "" || log.ProjectID == "" {
+		return errors.New("authorized project scope is required")
 	}
-
-	log.TenantID = tenantID
 	value, err := log.ToJSON()
 	if err != nil {
 		return fmt.Errorf("failed to serialize log: %w", err)
@@ -49,7 +54,7 @@ func (lp *logProducer) Produce(ctx context.Context, log domain.Log) error {
 	}
 
 	lp.logger.Debug("message delivered",
-		zap.String("topic", lp.writer.Topic),
+		zap.String("topic", lp.topic),
 		zap.String("project_id", log.ProjectID),
 	)
 

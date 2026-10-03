@@ -1,7 +1,9 @@
 "use client"
 
 import Link from "next/link"
-import { Check, ChevronsUpDown, Folder, LogOut, Plus, ScrollText } from "lucide-react"
+import { usePathname } from "next/navigation"
+import { Check, ChevronsUpDown, Folder, LogOut, Plus, ScrollText, Settings, Users } from "lucide-react"
+import { roleLabel } from "@/lib/project"
 import { useAuth } from "@/lib/auth-store"
 import { useProjectStore } from "@/lib/project-store"
 import { LogifyLogo } from "@/components/marketing/logo"
@@ -30,6 +32,7 @@ import {
 } from "@/components/ui/sidebar"
 
 export function AppBar() {
+  const pathname = usePathname()
   const { user, logout } = useAuth()
   const { projects, project, status, setProject, createOpen, setCreateOpen } = useProjectStore()
   const { setOpenMobile } = useSidebar()
@@ -60,7 +63,7 @@ export function AppBar() {
               {projects.map(item => (
                 <DropdownMenuItem key={item.id} onClick={() => setProject(item)} className="gap-2 rounded-md">
                   <Folder className="size-4 text-muted-foreground" />
-                  <span className="flex-1 truncate">{item.name}</span>
+                  <span className="min-w-0 flex-1"><span className="block truncate">{item.name}</span><span className="block text-xs text-muted-foreground">{roleLabel(item.role)}</span></span>
                   {item.id === project?.id && <Check className="size-4" />}
                 </DropdownMenuItem>
               ))}
@@ -78,10 +81,26 @@ export function AppBar() {
             <nav aria-label="Main navigation">
               <SidebarMenu>
                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild isActive className="h-10 gap-3 rounded-md px-3 font-medium">
-                    <Link href="/dashboard/logs" onClick={() => setOpenMobile(false)}>
+                  <SidebarMenuButton asChild isActive={pathname.startsWith("/dashboard/logs")} className="h-10 gap-3 rounded-md px-3 font-medium">
+                    <Link href="/dashboard/logs" aria-current={pathname.startsWith("/dashboard/logs") ? "page" : undefined} onClick={() => setOpenMobile(false)}>
                       <ScrollText className="size-4" />
                       <span>Logs</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={pathname.startsWith("/dashboard/teams")} className="h-10 gap-3 rounded-md px-3 font-medium">
+                    <Link href="/dashboard/teams" aria-current={pathname.startsWith("/dashboard/teams") ? "page" : undefined} onClick={() => setOpenMobile(false)}>
+                      <Users className="size-4" />
+                      <span>Teams</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={pathname.startsWith("/dashboard/settings")} className="h-10 gap-3 rounded-md px-3 font-medium">
+                    <Link href="/dashboard/settings" aria-current={pathname.startsWith("/dashboard/settings") ? "page" : undefined} onClick={() => setOpenMobile(false)}>
+                      <Settings className="size-4" />
+                      <span>Settings</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -107,6 +126,7 @@ export function AppBar() {
             <DropdownMenuContent side="top" align="start" className="w-56 rounded-lg">
               <DropdownMenuLabel className="font-normal text-muted-foreground">Your account</DropdownMenuLabel>
               <DropdownMenuSeparator />
+              <DropdownMenuItem asChild><Link href="/dashboard/settings" onClick={() => setOpenMobile(false)}><Settings className="size-4" />Settings</Link></DropdownMenuItem>
               <DropdownMenuItem onClick={logout}><LogOut className="size-4" />Sign out</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

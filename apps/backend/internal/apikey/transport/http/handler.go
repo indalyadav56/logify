@@ -113,6 +113,8 @@ func parseID(c *gin.Context, name string) (uuid.UUID, bool) {
 
 func writeError(c *gin.Context, err error) {
 	switch {
+	case errors.Is(err, projectDomain.ErrForbidden):
+		response.Forbidden(c, err.Error())
 	case errors.Is(err, projectDomain.ErrProjectNotFound):
 		response.NotFound(c, "Project not found")
 	case errors.Is(err, domain.ErrKeyNotFound):

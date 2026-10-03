@@ -1,11 +1,14 @@
 "use client"
 
 import { ChevronRight } from "lucide-react"
+import { usePathname } from "next/navigation"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { useProjectStore } from "@/lib/project-store"
 
 export function AppHeader() {
   const { project } = useProjectStore()
+  const pathname = usePathname()
+  const title = pathname.startsWith("/dashboard/settings") ? "Settings" : pathname.startsWith("/dashboard/teams") ? "Teams" : "Logs"
 
   return (
     <header className="flex h-14 shrink-0 items-center gap-3 border-b bg-white px-4 sm:px-8">
@@ -14,7 +17,7 @@ export function AppHeader() {
       <nav aria-label="Breadcrumb" className="flex min-w-0 items-center gap-2 text-sm">
         <span className="truncate text-muted-foreground">{project?.name ?? "Workspace"}</span>
         <ChevronRight className="size-3.5 shrink-0 text-muted-foreground" />
-        <span className="font-medium">Logs</span>
+        <span aria-current="page" className="font-medium">{title}</span>
       </nav>
     </header>
   )

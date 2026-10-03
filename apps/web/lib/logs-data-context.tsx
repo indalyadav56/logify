@@ -54,8 +54,8 @@ export function LogsDataProvider({
   const { appliedQuery, appliedRange } = useLogsStore()
   const { project } = useProjectStore()
   const { user } = useAuth()
-  // The backend scopes logs by tenant, which for this API equals the user id
-  // (the JWT `tenant_id` claim). Fall back to the env override when present.
+  // This legacy tenant hint is ignored for access decisions. The backend
+  // authorizes project_id and resolves the project’s storage tenant itself.
   const tenantId =
     process.env.NEXT_PUBLIC_LOGIFY_TENANT_ID ?? user?.id ?? ""
 

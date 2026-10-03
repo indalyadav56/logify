@@ -5,8 +5,10 @@ import * as React from "react"
 import { useAuth } from "@/lib/auth-store"
 import {
   createProject as apiCreateProject,
+  updateProject as apiUpdateProject,
   listProjects,
   type CreateProjectInput,
+  type UpdateProjectInput,
 } from "@/lib/api/projects"
 import { projectFromApi, type ProjectSummary } from "@/lib/project"
 
@@ -16,12 +18,13 @@ type ProjectStatus = "loading" | "ready" | "error"
 
 type ProjectStoreValue = {
   projects: ProjectSummary[]
-  /** The active project, or `null` when the tenant has none yet. */
+  /** The active project, or `null` when no projects are accessible. */
   project: ProjectSummary | null
   status: ProjectStatus
   error: string | null
   setProject: (project: ProjectSummary) => void
   createProject: (input: CreateProjectInput) => Promise<ProjectSummary>
+  updateProject: (id: string, input: UpdateProjectInput) => Promise<ProjectSummary>
   refresh: () => Promise<void>
   /** Shared create-project dialog visibility (openable from anywhere). */
   createOpen: boolean
@@ -48,24 +51,17 @@ function saveProjectId(id: string | null) {
   }
 }
 
-function roleLabel(role?: string): string {
-  if (!role) return "Member"
-  return role.charAt(0).toUpperCase() + role.slice(1)
-}
-
 export function ProjectStoreProvider({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const { status: authStatus, user } = useAuth()
+  const { status: authStatus } = useAuth()
   const [projects, setProjects] = React.useState<ProjectSummary[]>([])
   const [project, setProjectState] = React.useState<ProjectSummary | null>(null)
   const [status, setStatus] = React.useState<ProjectStatus>("loading")
   const [error, setError] = React.useState<string | null>(null)
   const [createOpen, setCreateOpen] = React.useState(false)
-
-  const role = roleLabel(user?.role)
 
   /** Pick the active project: saved id if present, else the first. */
   const selectInitial = React.useCallback((list: ProjectSummary[]) => {
@@ -74,28 +70,40 @@ export function ProjectStoreProvider({
     setProjectState(match ?? list[0] ?? null)
   }, [])
 
-  const refresh = React.useCallback(async () => {
-    setStatus("loading")
-    setError(null)
-    try {
-      const items = await listProjects()
-      const mapped = items.map((p) => projectFromApi(p, role))
+  const loadProjects = React.useCallback(() => {
+    return listProjects().then(items => {
+      const mapped = items.map((p) => projectFromApi(p))
       setProjects(mapped)
       selectInitial(mapped)
+      setError(null)
       setStatus("ready")
-    } catch (err) {
+    }).catch(err => {
       // No fake data — surface the empty/error state and let the UI handle it.
       setProjects([])
       setProjectState(null)
       setError(err instanceof Error ? err.message : "Failed to load projects.")
       setStatus("error")
-    }
-  }, [role, selectInitial])
+    })
+  }, [selectInitial])
+
+  const refresh = React.useCallback(async () => {
+    setStatus("loading")
+    setError(null)
+    await loadProjects()
+  }, [loadProjects])
 
   React.useEffect(() => {
     if (authStatus !== "authenticated") return
-    void refresh()
-  }, [authStatus, refresh])
+    void loadProjects()
+  }, [authStatus, loadProjects])
+
+  // Recheck shared access when returning to the app after a team change.
+  React.useEffect(() => {
+    if (authStatus !== "authenticated") return
+    const onFocus = () => { void loadProjects() }
+    window.addEventListener("focus", onFocus)
+    return () => window.removeEventListener("focus", onFocus)
+  }, [authStatus, loadProjects])
 
   const setProject = React.useCallback((next: ProjectSummary) => {
     setProjectState(next)
@@ -105,13 +113,24 @@ export function ProjectStoreProvider({
   const createProject = React.useCallback(
     async (input: CreateProjectInput) => {
       const created = await apiCreateProject(input)
-      const summary = projectFromApi(created, role)
+      const summary = projectFromApi(created)
       setProjects((prev) => [...prev, summary])
       setProjectState(summary)
       saveProjectId(summary.id)
       return summary
     },
-    [role]
+    []
+  )
+
+  const updateProject = React.useCallback(
+    async (id: string, input: UpdateProjectInput) => {
+      const updated = await apiUpdateProject(id, input)
+      const summary = projectFromApi(updated)
+      setProjects(items => items.map(item => item.id === id ? summary : item))
+      setProjectState(current => current?.id === id ? summary : current)
+      return summary
+    },
+    []
   )
 
   const value = React.useMemo<ProjectStoreValue>(
@@ -122,6 +141,7 @@ export function ProjectStoreProvider({
       error,
       setProject,
       createProject,
+      updateProject,
       refresh,
       createOpen,
       setCreateOpen,
@@ -133,6 +153,7 @@ export function ProjectStoreProvider({
       error,
       setProject,
       createProject,
+      updateProject,
       refresh,
       createOpen,
     ]
