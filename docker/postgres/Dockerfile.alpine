@@ -1,0 +1,16 @@
+# syntax=docker/dockerfile:1
+FROM postgres:18-alpine AS builder
+
+ARG PGVECTOR_VERSION=0.8.6
+
+RUN apk add --no-cache build-base git \
+    && git clone --depth 1 --branch "v${PGVECTOR_VERSION}" \
+        https://github.com/pgvector/pgvector.git /tmp/pgvector \
+    && cd /tmp/pgvector \
+    && make OPTFLAGS="" with_llvm=no \
+    && make install with_llvm=no DESTDIR=/pgvector
+
+FROM postgres:18-alpine
+
+COPY --from=builder /pgvector/usr/local/ /usr/local/
+COPY --from=builder /tmp/pgvector/LICENSE /usr/local/share/doc/pgvector/LICENSE

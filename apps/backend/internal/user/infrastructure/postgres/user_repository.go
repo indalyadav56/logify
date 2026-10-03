@@ -9,6 +9,8 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	pg "github.com/indalyadav56/logify/apps/backend/pkg/postgres"
+
 	"github.com/indalyadav56/logify/apps/backend/internal/user/domain"
 )
 
@@ -28,7 +30,7 @@ func (r *userRepository) Create(ctx context.Context, user *domain.User) error {
 		VALUES ($1, $2, $3, $4, $5)
 		RETURNING id, created_at, updated_at
 	`
-	err := r.db.QueryRow(ctx, query,
+	err := pg.ExecutorFromContext(ctx, r.db).QueryRow(ctx, query,
 		user.ID,
 		user.Email,
 		user.FullName,
@@ -48,7 +50,7 @@ func (r *userRepository) GetByEmail(ctx context.Context, email string) (*domain.
 		WHERE email = $1 AND deleted_at IS NULL
 	`
 	var u domain.User
-	err := r.db.QueryRow(ctx, query, email).Scan(
+	err := pg.ExecutorFromContext(ctx, r.db).QueryRow(ctx, query, email).Scan(
 		&u.ID,
 		&u.Email,
 		&u.FullName,
@@ -73,7 +75,7 @@ func (r *userRepository) GetByID(ctx context.Context, id uuid.UUID) (*domain.Use
 		WHERE id = $1 AND deleted_at IS NULL
 	`
 	var u domain.User
-	err := r.db.QueryRow(ctx, query, id).Scan(
+	err := pg.ExecutorFromContext(ctx, r.db).QueryRow(ctx, query, id).Scan(
 		&u.ID,
 		&u.Email,
 		&u.FullName,

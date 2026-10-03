@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"time"
 
 	"github.com/segmentio/kafka-go"
 )
@@ -13,12 +14,18 @@ func ensureKafkaTopics(ctx context.Context, brokers []string, topics ...string) 
 	if len(brokers) == 0 {
 		return fmt.Errorf("no kafka brokers configured")
 	}
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+	deadline, _ := ctx.Deadline()
 
 	conn, err := kafka.DialContext(ctx, "tcp", brokers[0])
 	if err != nil {
 		return fmt.Errorf("kafka dial: %w", err)
 	}
 	defer conn.Close()
+	if err := conn.SetDeadline(deadline); err != nil {
+		return fmt.Errorf("kafka deadline: %w", err)
+	}
 
 	controller, err := conn.Controller()
 	if err != nil {
@@ -30,6 +37,9 @@ func ensureKafkaTopics(ctx context.Context, brokers []string, topics ...string) 
 		return fmt.Errorf("kafka dial controller: %w", err)
 	}
 	defer ctrlConn.Close()
+	if err := ctrlConn.SetDeadline(deadline); err != nil {
+		return fmt.Errorf("kafka controller deadline: %w", err)
+	}
 
 	specs := make([]kafka.TopicConfig, len(topics))
 	for i, t := range topics {

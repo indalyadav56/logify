@@ -5,6 +5,8 @@ import (
 
 	"github.com/indalyadav56/logify/apps/backend/internal/auth/domain"
 	"github.com/jackc/pgx/v5/pgxpool"
+
+	pg "github.com/indalyadav56/logify/apps/backend/pkg/postgres"
 )
 
 type RefreshTokenRepository struct {
@@ -20,7 +22,7 @@ func (r *RefreshTokenRepository) Create(ctx context.Context, refreshToken *domai
 		INSERT INTO auth.refresh_tokens (id, user_id, token, session_id)
 		VALUES ($1, $2, $3, $4)
 	`
-	_, err := r.db.Exec(ctx, query, refreshToken.ID, refreshToken.UserID, refreshToken.TokenHash, refreshToken.SessionID)
+	_, err := pg.ExecutorFromContext(ctx, r.db).Exec(ctx, query, refreshToken.ID, refreshToken.UserID, refreshToken.TokenHash, refreshToken.SessionID)
 	if err != nil {
 		return err
 	}
@@ -34,7 +36,7 @@ func (r *RefreshTokenRepository) GetByToken(ctx context.Context, token string) (
 	// 	WHERE token = $1 AND expires_at > $2
 	// `
 	// var row domain.RefreshToken
-	// err := r.db.QueryRow(ctx, query, token, time.Now().UTC()).Scan(&row.ID, &row.UserID, &row.TokenHash, &row.ExpiresAt, &row.CreatedAt)
+	// err := pg.ExecutorFromContext(ctx, r.db).QueryRow(ctx, query, token, time.Now().UTC()).Scan(&row.ID, &row.UserID, &row.TokenHash, &row.ExpiresAt, &row.CreatedAt)
 	// if err != nil {
 	// 	return nil, err
 	// }

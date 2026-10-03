@@ -6,6 +6,8 @@ import (
 
 	"github.com/indalyadav56/logify/apps/backend/internal/auth/domain"
 	"github.com/jackc/pgx/v5/pgxpool"
+
+	pg "github.com/indalyadav56/logify/apps/backend/pkg/postgres"
 )
 
 type SessionRepository struct {
@@ -22,7 +24,7 @@ func (s *SessionRepository) Create(ctx context.Context, session *domain.Session)
 		VALUES ($1, $2, $3)
 		RETURNING id, created_at, updated_at
 	`
-	err := s.db.QueryRow(ctx, query, session.UserID, session.IPAddress, session.UserAgent).
+	err := pg.ExecutorFromContext(ctx, s.db).QueryRow(ctx, query, session.UserID, session.IPAddress, session.UserAgent).
 		Scan(&session.ID, &session.CreatedAt, &session.UpdatedAt)
 	if err != nil {
 		return err
@@ -37,7 +39,7 @@ func (s *SessionRepository) GetByToken(ctx context.Context, token string) (*doma
 		WHERE token = $1 AND refresh_at > $2
 	`
 	var row domain.Session
-	err := s.db.QueryRow(ctx, query, token, time.Now().UTC()).Scan(&row.ID, &row.UserID, &row.IPAddress, &row.UserAgent, &row.RefreshAt, &row.CreatedAt)
+	err := pg.ExecutorFromContext(ctx, s.db).QueryRow(ctx, query, token, time.Now().UTC()).Scan(&row.ID, &row.UserID, &row.IPAddress, &row.UserAgent, &row.RefreshAt, &row.CreatedAt)
 	if err != nil {
 		return nil, err
 	}

@@ -7,6 +7,8 @@ import (
 	"github.com/google/uuid"
 )
 
+const DefaultProjectName = "default-project"
+
 type Project struct {
 	ID          uuid.UUID `json:"id"`
 	TenantID    uuid.UUID `json:"tenant_id"`

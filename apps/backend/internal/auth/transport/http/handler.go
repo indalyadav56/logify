@@ -21,7 +21,7 @@ func NewAuthHandler(service application.AuthService) *AuthHandler {
 
 // Register handles user registration.
 // @Summary      Register a new user
-// @Description  Create a new user account and return JWT access and refresh tokens.
+// @Description  Create a user account and its default-project atomically, then return JWT access and refresh tokens.
 // @Tags         auth
 // @Accept       json
 // @Produce      json

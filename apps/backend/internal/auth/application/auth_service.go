@@ -7,11 +7,11 @@ import (
 	"errors"
 	"fmt"
 	"net"
-	"time"
 
 	"go.uber.org/zap"
 
 	"github.com/indalyadav56/logify/apps/backend/internal/auth/domain"
+	projectDomain "github.com/indalyadav56/logify/apps/backend/internal/project/domain"
 	userApp "github.com/indalyadav56/logify/apps/backend/internal/user/application"
 	userDomain "github.com/indalyadav56/logify/apps/backend/internal/user/domain"
 	"github.com/indalyadav56/logify/apps/backend/pkg/jwt"
@@ -22,13 +22,22 @@ type AuthService interface {
 	Login(ctx context.Context, input LoginInput) (*TokenOutput, error)
 }
 
+type ProjectCreator interface {
+	Create(context.Context, *projectDomain.Project) error
+}
+
+type TransactionRunner interface {
+	WithinTransaction(context.Context, func(context.Context) error) error
+}
+
 type authService struct {
 	logger      *zap.Logger
 	tokens      *jwt.JWT
 	tokenRepo   domain.RefreshTokenRepository
 	sessionRepo domain.SessionRepository
 	userSrv     userApp.UserService
-	now         func() time.Time
+	projects    ProjectCreator
+	transaction TransactionRunner
 }
 
 func NewAuthService(
@@ -37,6 +46,8 @@ func NewAuthService(
 	tokenRepo domain.RefreshTokenRepository,
 	sessionRepo domain.SessionRepository,
 	userSrv userApp.UserService,
+	projects ProjectCreator,
+	transaction TransactionRunner,
 ) AuthService {
 	return &authService{
 		logger:      logger.Named("auth_service"),
@@ -44,11 +55,28 @@ func NewAuthService(
 		tokenRepo:   tokenRepo,
 		sessionRepo: sessionRepo,
 		userSrv:     userSrv,
-		now:         time.Now,
+		projects:    projects,
+		transaction: transaction,
 	}
 }
 
 func (s *authService) Register(ctx context.Context, input RegisterInput) (*TokenOutput, error) {
+	var output *TokenOutput
+	err := s.transaction.WithinTransaction(ctx, func(txCtx context.Context) error {
+		var err error
+		output, err = s.register(txCtx, input)
+		return err
+	})
+	if err != nil {
+		return nil, err
+	}
+	s.logger.Info("user registered with default project")
+	return output, nil
+}
+
+// register runs inside a transaction, including the user, project, session and
+// refresh token. No account survives a failed registration and retry is safe.
+func (s *authService) register(ctx context.Context, input RegisterInput) (*TokenOutput, error) {
 	user, err := s.userSrv.CreateUser(ctx, userApp.CreateUserInput{
 		FullName: input.FullName,
 		Email:    input.Email,
@@ -60,6 +88,13 @@ func (s *authService) Register(ctx context.Context, input RegisterInput) (*Token
 		}
 		s.logger.Error("register: create user failed", zap.String("email", input.Email), zap.Error(err))
 		return nil, err
+	}
+
+	project := projectDomain.NewProject(user.ID, projectDomain.DefaultProjectName, "")
+	project.CreatedBy = user.ID
+	if err := s.projects.Create(ctx, project); err != nil {
+		s.logger.Error("register: create default project failed", zap.String("user_id", user.ID.String()), zap.Error(err))
+		return nil, fmt.Errorf("create default project: %w", err)
 	}
 
 	// session
@@ -80,6 +115,9 @@ func (s *authService) Register(ctx context.Context, input RegisterInput) (*Token
 		"sub":       user.ID.String(),
 		"tenant_id": user.ID.String(), // placeholder until a real tenant model exists
 	})
+	if err != nil {
+		return nil, fmt.Errorf("generate access token: %w", err)
+	}
 	output.AccessToken = accessToken
 
 	plainRefreshToken, err := s.generateRandomToken()
@@ -94,7 +132,6 @@ func (s *authService) Register(ctx context.Context, input RegisterInput) (*Token
 		return nil, err
 	}
 
-	s.logger.Info("user registered", zap.String("user_id", user.ID.String()))
 	return output, nil
 }
 

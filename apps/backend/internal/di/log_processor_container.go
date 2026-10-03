@@ -3,6 +3,7 @@ package di
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	ch "github.com/ClickHouse/clickhouse-go/v2"
 	"github.com/segmentio/kafka-go"
@@ -30,16 +31,10 @@ func NewLogProcessorContainer(ctx context.Context, cfg *config.Config, log *zap.
 	c := &LogProcessorContainer{Config: cfg, Logger: log}
 
 	topic := "logs"
-	if topic == "" {
-		topic = "logs"
-	}
-	groupID := "log-embedder-group"
-	if groupID == "" {
-		groupID = "log-clickhouse-group"
-	}
+	groupID := "log-clickhouse-group"
 
 	if err := ensureKafkaTopics(ctx, c.Config.Kafka.Brokers, topic); err != nil {
-		log.Warn("failed to pre-create kafka topics (may already exist)", zap.Error(err))
+		return nil, fmt.Errorf("initialize ingest topic: %w", err)
 	}
 
 	c.KafkaReader = kafka.NewReader(kafka.ReaderConfig{

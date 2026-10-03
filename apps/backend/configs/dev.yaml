@@ -14,6 +14,7 @@ logger:
     compress: true
 
 server:
+  port: ":8080"
   http:
     host: "0.0.0.0"
     port: 8080
@@ -34,15 +35,15 @@ server:
       timeout: 10s
 
 jwt:
-  secret: ""
+  secret: "logify-local-development-secret-change-me"
   issuer: "logify"
   access_token_ttl: 60m
   refresh_token_ttl: 720h   # 30 days
 
 postgres:
   host: "localhost"
-  user: ""
-  password: ""
+  user: "postgres"
+  password: "postgres"
   database: "logify"
   port: 5432
   ssl_mode: "disable"
@@ -71,8 +72,8 @@ clickhouse:
   host: "localhost"
   port: 9000
   database: "logify"
-  user: ""
-  password: ""
+  user: "default"
+  password: "mypassword"
   secure: false
   max_open_conns: 25
   max_idle_conns: 10

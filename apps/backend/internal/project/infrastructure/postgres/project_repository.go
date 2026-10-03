@@ -10,6 +10,8 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	pg "github.com/indalyadav56/logify/apps/backend/pkg/postgres"
+
 	"github.com/indalyadav56/logify/apps/backend/internal/project/domain"
 )
 
@@ -29,7 +31,7 @@ func (r *projectRepository) Create(ctx context.Context, project *domain.Project)
 		VALUES ($1, $2, $3, $4)
 		RETURNING id, COALESCE(description, ''), created_at, updated_at
 	`
-	err := r.db.QueryRow(ctx, query,
+	err := pg.ExecutorFromContext(ctx, r.db).QueryRow(ctx, query,
 		project.TenantID,
 		project.Name,
 		nullableText(project.Description),
@@ -53,7 +55,7 @@ func (r *projectRepository) GetByID(ctx context.Context, id uuid.UUID) (*domain.
 		WHERE id = $1
 	`
 	var ws domain.Project
-	err := r.db.QueryRow(ctx, query, id).Scan(
+	err := pg.ExecutorFromContext(ctx, r.db).QueryRow(ctx, query, id).Scan(
 		&ws.ID,
 		&ws.TenantID,
 		&ws.Name,
@@ -82,7 +84,7 @@ func (r *projectRepository) List(ctx context.Context, tenantID *uuid.UUID) ([]*d
 		args = append(args, *tenantID)
 	}
 
-	rows, err := r.db.Query(ctx, query, args...)
+	rows, err := pg.ExecutorFromContext(ctx, r.db).Query(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -114,7 +116,7 @@ func (r *projectRepository) Update(ctx context.Context, ws *domain.Project) erro
 		    updated_at = (now() AT TIME ZONE 'utc')
 		WHERE id = $1
 	`
-	tag, err := r.db.Exec(ctx, query, ws.ID, ws.Name, nullableText(ws.Description))
+	tag, err := pg.ExecutorFromContext(ctx, r.db).Exec(ctx, query, ws.ID, ws.Name, nullableText(ws.Description))
 	if err != nil {
 		return mapUniqueViolation(err)
 	}
@@ -126,7 +128,7 @@ func (r *projectRepository) Update(ctx context.Context, ws *domain.Project) erro
 
 func (r *projectRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	const query = `DELETE FROM projects WHERE id = $1`
-	tag, err := r.db.Exec(ctx, query, id)
+	tag, err := pg.ExecutorFromContext(ctx, r.db).Exec(ctx, query, id)
 	if err != nil {
 		return err
 	}

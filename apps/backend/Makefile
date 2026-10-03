@@ -3,14 +3,30 @@
         migrate-reset migrate-status migrate-version migrate-create \
         migrate-ch migrate-up-ch migrate-up-by-one-ch migrate-down-ch \
         migrate-redo-ch migrate-reset-ch migrate-status-ch migrate-version-ch \
-        migrate-create-ch swagger
+        migrate-create-ch swagger dev-up dev-logs dev-down
 
 APP_NAME     := logify-backend
+.DEFAULT_GOAL := run
 BUILD_DIR    := ./bin
 MAIN_FILE    := ./cmd/server/main.go
 
 DOCKER_IMAGE := logify-backend
 DOCKER_TAG   := latest
+
+DEV_COMPOSE := docker compose -f ../../docker-compose.alpine.yaml -f ../../docker-compose.dev.yaml
+
+## dev-up: Start local infrastructure and apply Postgres/ClickHouse migrations
+dev-up:
+	$(DEV_COMPOSE) up -d --wait postgres redis kafka clickhouse
+	$(DEV_COMPOSE) run --rm --no-deps --build migrator
+
+## dev-logs: Start infrastructure, migrate, and run the Kafka-to-ClickHouse processor
+dev-logs: dev-up
+	$(DEV_COMPOSE) up -d --no-deps --build log-processor
+
+## dev-down: Stop local infrastructure, preserving database volumes
+dev-down:
+	$(DEV_COMPOSE) down
 
 MIGRATOR_PKG    := ./cmd/migrator
 MIGRATE_ENV     ?= dev
@@ -24,17 +40,17 @@ MIGRATE_ARGS     = -driver $(MIGRATE_DRIVER) -env $(MIGRATE_ENV) \
                    $(if $(MIGRATE_DSN),-dsn $(MIGRATE_DSN),)
 
 ## run: Run the API locally (APP_ENV=dev loads configs/dev.yaml)
-run:
+run: dev-logs
 	@echo "▶ Running $(APP_NAME)..."
 	APP_ENV=dev go run $(MAIN_FILE)
 
 ## run-log-processor: Consume logs from Kafka and write to ClickHouse
-run-log-processor:
+run-log-processor: dev-up
 	@echo "▶ Running log processor (Kafka → ClickHouse)..."
 	APP_ENV=dev go run ./cmd/log-processor
 
 ## run-embedding-worker: Consume logs from Kafka, embed via Ollama, store in Postgres
-run-embedding-worker:
+run-embedding-worker: dev-up
 	@echo "▶ Running embedding worker (Ollama → Postgres pgvector)..."
 	APP_ENV=dev go run ./cmd/embedding-worker
 

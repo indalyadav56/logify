@@ -194,25 +194,6 @@ services:
         max-size: "10m"
         max-file: "3"
 
-  admin:
-    build:
-      context: ./apps/admin
-      dockerfile: Dockerfile
-    container_name: logify_admin
-    restart: unless-stopped
-    ports:
-      - "3001:8080"
-    depends_on:
-      backend:
-        condition: service_started
-    networks:
-      - logify-net
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
-
   debezium:
     image: debezium/connect:2.5
     container_name: logify_debezium

@@ -1,0 +1,98 @@
+[
+  {
+    "level": "info",
+    "service": "api-gateway",
+    "message": "GET /api/orders completed with status 200",
+    "tags": {"method": "GET", "route": "/api/orders", "status": "200"}
+  },
+  {
+    "level": "debug",
+    "service": "api-gateway",
+    "message": "Request routed to orders-api",
+    "tags": {"upstream": "orders-api", "region": "local"}
+  },
+  {
+    "level": "info",
+    "service": "auth-api",
+    "message": "User session validated successfully",
+    "tags": {"auth_method": "jwt"}
+  },
+  {
+    "level": "warn",
+    "service": "auth-api",
+    "message": "Login rate limit reached for demo client",
+    "tags": {"status": "429", "client": "demo-client"}
+  },
+  {
+    "level": "info",
+    "service": "orders-api",
+    "message": "Order DEMO-1042 created successfully",
+    "tags": {"order_id": "DEMO-1042", "status": "created"}
+  },
+  {
+    "level": "debug",
+    "service": "orders-api",
+    "message": "Inventory cache hit for demo product",
+    "tags": {"cache": "redis", "product_id": "DEMO-001"}
+  },
+  {
+    "level": "warn",
+    "service": "orders-api",
+    "message": "Database query exceeded the 500ms latency threshold",
+    "tags": {"database": "postgres", "duration_ms": "742"}
+  },
+  {
+    "level": "info",
+    "service": "payments-api",
+    "message": "Payment authorization succeeded for order DEMO-1042",
+    "tags": {"order_id": "DEMO-1042", "provider": "demo-provider"}
+  },
+  {
+    "level": "error",
+    "service": "payments-api",
+    "message": "Payment provider timed out while authorizing order DEMO-1043",
+    "tags": {"order_id": "DEMO-1043", "timeout_ms": "3000"}
+  },
+  {
+    "level": "warn",
+    "service": "payments-api",
+    "message": "Payment retry scheduled after a temporary provider error",
+    "tags": {"attempt": "2", "retry_delay_ms": "1000"}
+  },
+  {
+    "level": "info",
+    "service": "notification-worker",
+    "message": "Demo order confirmation notification delivered",
+    "tags": {"channel": "email", "order_id": "DEMO-1042"}
+  },
+  {
+    "level": "error",
+    "service": "notification-worker",
+    "message": "Demo notification delivery failed: upstream service unavailable",
+    "tags": {"channel": "email", "status": "503"}
+  },
+  {
+    "level": "info",
+    "service": "background-worker",
+    "message": "Scheduled inventory synchronization completed",
+    "tags": {"job": "inventory-sync", "records": "128"}
+  },
+  {
+    "level": "debug",
+    "service": "background-worker",
+    "message": "Worker heartbeat received",
+    "tags": {"worker": "demo-worker-01"}
+  },
+  {
+    "level": "warn",
+    "service": "background-worker",
+    "message": "Job queue depth exceeded the configured threshold",
+    "tags": {"queue": "demo-jobs", "depth": "250"}
+  },
+  {
+    "level": "error",
+    "service": "api-gateway",
+    "message": "GET /api/reports failed: upstream connection refused",
+    "tags": {"method": "GET", "route": "/api/reports", "status": "502"}
+  }
+]

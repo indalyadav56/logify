@@ -1,36 +1,73 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Logify Web
 
-## Getting Started
+The Logify web app uses Next.js 16, React 19, TypeScript, Tailwind CSS 4, and
+shadcn/ui. It provides a white-theme workspace with a project sidebar, message
+search, time ranges, paginated logs, event details, and source connection
+instructions.
 
-First, run the development server:
+![Logify log explorer](../../docs/screenshots/log-explorer.jpg)
+
+## Run locally
+
+Requires Node.js 20.9+ and npm. Start the backend using the
+[root quick start](../../README.md#quick-start), then run from this directory:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm ci
+NEXT_PUBLIC_LOGIFY_API_BASE_URL=http://localhost:8081 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+For a persistent configuration, add `apps/web/.env.local`:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```dotenv
+NEXT_PUBLIC_LOGIFY_API_BASE_URL=http://localhost:8081
+```
 
-## Learn More
+Match this URL to the backend's `APP_SERVER_PORT`. Restart the dev server after
+changing it; a compiled frontend requires a rebuild because `NEXT_PUBLIC_*`
+values are embedded in the client bundle.
 
-To learn more about Next.js, take a look at the following resources:
+## Main screens
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+| Route | Purpose |
+| --- | --- |
+| `/` | Product introduction and sample-log preview |
+| `/signup` | Create an account; the backend provisions its default project |
+| `/login` | Sign in to an existing account |
+| `/dashboard/logs` | Search logs, switch projects, inspect events, and connect a source |
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+The project list and log results come from the real API. The browser selects
+an existing project; default-project creation belongs to backend registration.
+The result table scrolls within the workspace while its controls and pagination
+remain visible.
 
-## Deploy on Vercel
+To populate the explorer, run `make mock-data` from the repository root. See
+the [sample-data guide](../../mock-data/README.md).
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Checks
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+npx tsc --noEmit
+npm run lint
+```
+
+## Code map
+
+| Location | Purpose |
+| --- | --- |
+| `app/(landing)/` | Landing screen |
+| `app/(auth)/` | Sign-in and registration routes |
+| `app/(app)/dashboard/logs/` | Log explorer |
+| `components/ui/` | shadcn/ui primitives |
+| `components/observability/` | Search, event details, and ingest instructions |
+| `components/app-shell.tsx` | Viewport layout and shared providers |
+| `components/app-bar.tsx` | Project sidebar and account menu |
+| `lib/api/` | HTTP clients for authentication, projects, and logs |
+| `lib/auth-store.tsx` | Authentication state |
+| `lib/project-store.tsx` | Project selection and creation |
+| `lib/logs-data-context.tsx` | Search results and pagination |
+
+The [root README](../../README.md#screenshots) contains the complete screenshot
+gallery and backend setup instructions.

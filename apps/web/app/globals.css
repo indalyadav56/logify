@@ -5,8 +5,7 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Logify design system — cool slate surfaces, single blue brand accent,
- * hairline borders, consistent radius. Light + dark.
+ * Logify — white surfaces, neutral shadcn controls, and restrained borders.
  */
 @theme inline {
   --color-background: var(--background);
@@ -55,80 +54,43 @@
 }
 
 :root {
-  --background: oklch(0.977 0.005 255);
-  --foreground: oklch(0.21 0.025 252);
-  --card: oklch(1 0.001 250);
-  --card-foreground: oklch(0.21 0.025 252);
-  --popover: oklch(1 0.001 250);
-  --popover-foreground: oklch(0.21 0.025 252);
-  --primary: oklch(0.52 0.16 248);
-  --primary-foreground: oklch(0.99 0.005 250);
-  --brand: oklch(0.52 0.16 248);
-  --brand-foreground: oklch(0.99 0.005 250);
-  --secondary: oklch(0.965 0.006 255);
-  --secondary-foreground: oklch(0.29 0.025 252);
-  --muted: oklch(0.965 0.006 255);
-  --muted-foreground: oklch(0.5 0.022 252);
-  --accent: oklch(0.95 0.014 248);
-  --accent-foreground: oklch(0.3 0.04 248);
-  --destructive: oklch(0.55 0.21 27);
-  --border: oklch(0.915 0.007 255);
-  --input: oklch(0.968 0.005 255);
-  --ring: oklch(0.52 0.16 248);
-  --chart-1: oklch(0.55 0.16 248);
-  --chart-2: oklch(0.62 0.16 305);
-  --chart-3: oklch(0.68 0.14 82);
-  --chart-4: oklch(0.58 0.18 25);
-  --chart-5: oklch(0.52 0.1 165);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.989 0.003 255);
-  --sidebar-foreground: oklch(0.23 0.028 252);
-  --sidebar-primary: oklch(0.52 0.16 248);
-  --sidebar-primary-foreground: oklch(0.99 0.005 250);
-  --sidebar-accent: oklch(0.95 0.012 250);
-  --sidebar-accent-foreground: oklch(0.23 0.028 252);
-  --sidebar-border: oklch(0.915 0.007 255);
-  --sidebar-ring: oklch(0.52 0.16 248);
-  --surface-elevated: oklch(1 0.001 250);
-  --auth-panel: oklch(0.14 0.03 252);
-}
-
-.dark {
-  --background: oklch(0.16 0.018 256);
-  --foreground: oklch(0.94 0.008 250);
-  --card: oklch(0.196 0.02 256);
-  --card-foreground: oklch(0.94 0.008 250);
-  --popover: oklch(0.205 0.022 256);
-  --popover-foreground: oklch(0.94 0.008 250);
-  --primary: oklch(0.64 0.16 252);
-  --primary-foreground: oklch(0.99 0.005 250);
-  --brand: oklch(0.64 0.16 252);
-  --brand-foreground: oklch(0.99 0.005 250);
-  --secondary: oklch(0.24 0.022 256);
-  --secondary-foreground: oklch(0.92 0.008 250);
-  --muted: oklch(0.24 0.02 256);
-  --muted-foreground: oklch(0.64 0.022 252);
-  --accent: oklch(0.27 0.03 252);
-  --accent-foreground: oklch(0.94 0.008 250);
-  --destructive: oklch(0.64 0.2 25);
-  --border: oklch(0.285 0.022 256);
-  --input: oklch(0.27 0.022 256);
-  --ring: oklch(0.64 0.16 252);
-  --chart-1: oklch(0.64 0.16 252);
-  --chart-2: oklch(0.65 0.16 305);
-  --chart-3: oklch(0.72 0.14 82);
-  --chart-4: oklch(0.62 0.18 25);
-  --chart-5: oklch(0.58 0.1 165);
-  --sidebar: oklch(0.178 0.019 256);
-  --sidebar-foreground: oklch(0.92 0.01 250);
-  --sidebar-primary: oklch(0.64 0.16 252);
-  --sidebar-primary-foreground: oklch(0.99 0.005 250);
-  --sidebar-accent: oklch(0.25 0.025 252);
-  --sidebar-accent-foreground: oklch(0.94 0.008 250);
-  --sidebar-border: oklch(0.275 0.022 256);
-  --sidebar-ring: oklch(0.64 0.16 252);
-  --surface-elevated: oklch(0.205 0.022 256);
-  --auth-panel: oklch(0.13 0.02 256);
+  color-scheme: light;
+  --background: #ffffff;
+  --foreground: #18181b;
+  --card: #ffffff;
+  --card-foreground: #18181b;
+  --popover: #ffffff;
+  --popover-foreground: #18181b;
+  --primary: #18181b;
+  --primary-foreground: #ffffff;
+  --brand: #18181b;
+  --brand-foreground: #ffffff;
+  --secondary: #f4f4f5;
+  --secondary-foreground: #27272a;
+  --muted: #f4f4f5;
+  --muted-foreground: #71717a;
+  --accent: #f4f4f5;
+  --accent-foreground: #18181b;
+  --destructive: #dc2626;
+  --border: #e4e4e7;
+  --input: #e4e4e7;
+  --ring: #a1a1aa;
+  --chart-1: #71717a;
+  --chart-2: #2563eb;
+  --chart-3: #d97706;
+  --chart-4: #dc2626;
+  --chart-5: #059669;
+  --radius: 0.5rem;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #18181b;
+  --sidebar-primary: #18181b;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f4f4f5;
+  --sidebar-accent-foreground: #18181b;
+  --sidebar-border: #e4e4e7;
+  --sidebar-ring: #a1a1aa;
+  --surface-elevated: #ffffff;
+  --auth-panel: #ffffff;
 }
 
 @layer base {

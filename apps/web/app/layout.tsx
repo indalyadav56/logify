@@ -1,5 +1,4 @@
 import type { Metadata } from "next"
-import Script from "next/script"
 import { IBM_Plex_Sans, JetBrains_Mono } from "next/font/google"
 import "./globals.css"
 
@@ -22,9 +21,9 @@ const jetbrainsMono = JetBrains_Mono({
 })
 
 export const metadata: Metadata = {
-  title: "Logify — Observability platform for logs, metrics & traces",
+  title: "Logify — Simple log management",
   description:
-    "Logify is the modern, AI-native observability platform. Ingest, explore and alert on logs, metrics and traces from every service in seconds.",
+    "Collect, search, and read your application logs in one place.",
 }
 
 export default function RootLayout({
@@ -37,23 +36,14 @@ export default function RootLayout({
       lang="en"
       suppressHydrationWarning
       className={cn(
-        "h-full antialiased",
+        "light h-full antialiased",
         ibmPlexSans.variable,
         jetbrainsMono.variable,
         "font-sans"
       )}
     >
       <body className="min-h-full bg-background text-foreground">
-        <Script
-          id="theme-init"
-          strategy="beforeInteractive"
-        >{`(function(){try{var t=localStorage.getItem("theme")||"dark";if(t==="system"){t=window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"}document.documentElement.classList.remove("light","dark");document.documentElement.classList.add(t)}catch(e){}})();`}</Script>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="dark"
-          enableSystem
-          disableTransitionOnChange
-        >
+        <ThemeProvider>
           <AuthProvider>{children}</AuthProvider>
           <Toaster richColors position="top-right" />
         </ThemeProvider>

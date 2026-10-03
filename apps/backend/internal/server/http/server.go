@@ -33,14 +33,17 @@ func NewServer(ctx context.Context, cfg *config.Config, log *zap.Logger, contain
 	if err := httpRouter.Setup(router); err != nil {
 		return nil, fmt.Errorf("failed to setup routes: %w", err)
 	}
+	addr := cfg.Server.Port
+	if addr == "" {
+		addr = ":8080"
+	}
 
 	return &Server{
 		cfg:    cfg,
 		log:    log,
 		Router: router,
 		srv: &http.Server{
-			Addr: ":8080",
-			// Addr:         cfg.Server.Port,
+			Addr:         addr,
 			Handler:      router,
 			ReadTimeout:  30 * time.Second,
 			WriteTimeout: 60 * time.Second,

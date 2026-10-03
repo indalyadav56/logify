@@ -1,0 +1,18 @@
+# Host-run Go services connect through loopback; container services still use DNS.
+# Used together with docker-compose.alpine.yaml by apps/backend/Makefile.
+name: logify-dev
+
+services:
+  postgres:
+    ports:
+      - "127.0.0.1:5432:5432"
+  redis:
+    ports:
+      - "127.0.0.1:6379:6379"
+  kafka:
+    ports:
+      - "127.0.0.1:${KAFKA_EXTERNAL_PORT:-29092}:29092"
+  clickhouse:
+    ports:
+      - "127.0.0.1:8123:8123"
+      - "127.0.0.1:9000:9000"

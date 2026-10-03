@@ -116,10 +116,16 @@ func NewServerContainer(ctx context.Context, cfg *config.Config, log *zap.Logger
 	}
 	c.postgresDB = pool
 
+	if err := ensureKafkaTopics(ctx, c.Config.Kafka.Brokers, "logs"); err != nil {
+		pool.Close()
+		return nil, fmt.Errorf("initialize ingest topic: %w", err)
+	}
+
 	c.KafkaWriter = &kafka.Writer{
-		Addr:     kafka.TCP(c.Config.Kafka.Brokers...),
-		Topic:    "logs",
-		Balancer: &kafka.LeastBytes{},
+		Addr:         kafka.TCP(c.Config.Kafka.Brokers...),
+		Topic:        "logs",
+		Balancer:     &kafka.LeastBytes{},
+		RequiredAcks: kafka.RequireAll,
 	}
 
 	c.ClickHouseDB, err = pkgClickhouse.NewClickHouseDB(c.Config.ClickHouse.DSN())
@@ -186,7 +192,10 @@ func (c *ServerContainer) initAuth() error {
 	c.SessionRepo = authRepo.NewSessionRepository(c.postgresDB)
 	c.AuthRepo = authRepo.NewRefreshTokenRepository(c.postgresDB)
 
-	c.AuthService = authService.NewAuthService(c.Logger, c.JWT, c.AuthRepo, c.SessionRepo, c.UserService)
+	c.AuthService = authService.NewAuthService(
+		c.Logger, c.JWT, c.AuthRepo, c.SessionRepo, c.UserService,
+		projectPG.NewProjectRepository(c.postgresDB), postgres.NewTransactor(c.postgresDB),
+	)
 	c.AuthHandler = authHTTP.NewAuthHandler(c.AuthService)
 	return nil
 }

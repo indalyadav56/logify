@@ -7,22 +7,21 @@ import { LoaderIcon } from "lucide-react"
 import { useProjectStore } from "@/lib/project-store"
 
 /**
- * Resolves the `[project]` URL slug to a project and makes it the active one.
- * Renders inside the AppShell, so the sidebar/header reflect the selection.
- * An unknown slug (once projects have loaded) bounces back to the picker.
+ * Resolves the `[project]` URL ID to a project and makes it the active one.
+ * An unknown project ID returns to the logs workspace.
  */
 export default function ProjectLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const { project: slug } = useParams<{ project: string }>()
+  const { project: projectId } = useParams<{ project: string }>()
   const router = useRouter()
   const { projects, project, status, setProject } = useProjectStore()
 
   const match = React.useMemo(
-    () => projects.find((p) => p.slug === slug),
-    [projects, slug]
+    () => projects.find((p) => p.id === projectId),
+    [projects, projectId]
   )
 
   const resolved = status === "ready" || status === "error"
@@ -31,7 +30,7 @@ export default function ProjectLayout({
     if (match) {
       if (project?.id !== match.id) setProject(match)
     } else if (resolved && projects.length > 0) {
-      router.replace("/projects")
+      router.replace("/dashboard/logs")
     }
   }, [match, project?.id, projects.length, resolved, router, setProject])
 
