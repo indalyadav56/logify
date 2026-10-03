@@ -20,13 +20,16 @@ class SeedError(Exception):
 
 
 class API:
-    def __init__(self, base_url, token=""):
+    def __init__(self, base_url, token="", api_key=""):
         self.base_url = base_url.rstrip("/")
         self.token = token
+        self.api_key = api_key
 
     def request(self, method, path, body=None, expected=200):
         headers = {"Content-Type": "application/json"}
-        if self.token:
+        if self.api_key:
+            headers["X-API-Key"] = self.api_key
+        elif self.token:
             headers["Authorization"] = "Bearer " + self.token
         payload = json.dumps(body).encode() if body is not None else None
         request = Request(self.base_url + path, data=payload, headers=headers, method=method)
@@ -40,7 +43,7 @@ class API:
                 return data
         except HTTPError as error:
             if error.code == 401:
-                detail = "Authentication failed. Use a fresh access token or sign in again."
+                detail = "Authentication failed. Use a fresh access token, a valid API key, or sign in again."
             else:
                 try:
                     data = json.loads(error.read(4096))
@@ -98,11 +101,13 @@ def build_events(templates, count, minutes, project_id):
             request_id=str(uuid4()),
             tags={**event.get("tags", {}), "mock": "true", "dataset": "logify-demo"},
         )
+        if project_id is None:
+            event.pop("project_id", None)  # API keys select their project on the server.
         yield event
 
 
 def authenticate(api, args):
-    if api.token:
+    if api.token or api.api_key:
         return
     email = args.email
     if not email and sys.stdin.isatty():
@@ -111,7 +116,7 @@ def authenticate(api, args):
     if not password and email and sys.stdin.isatty():
         password = getpass.getpass("Logify password: ")
     if not email or not password:
-        raise SeedError("Provide --token / LOGIFY_ACCESS_TOKEN, or --email / LOGIFY_EMAIL and LOGIFY_PASSWORD. In an interactive terminal, email and password are prompted.")
+        raise SeedError("Provide --api-key / LOGIFY_API_KEY, --token / LOGIFY_ACCESS_TOKEN, or --email / LOGIFY_EMAIL and LOGIFY_PASSWORD. In an interactive terminal, email and password are prompted.")
     result = api.request("POST", "/v1/auth/login", {"email": email, "password": password})
     data = result.get("data")
     token = data.get("access_token") if isinstance(data, dict) else None
@@ -140,6 +145,7 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--base-url", default=os.getenv("LOGIFY_API_BASE_URL", "http://localhost:8081"), help="API URL (default: LOGIFY_API_BASE_URL or http://localhost:8081)")
     parser.add_argument("--token", default=os.getenv("LOGIFY_ACCESS_TOKEN", ""), help="Access token (prefer LOGIFY_ACCESS_TOKEN)")
+    parser.add_argument("--api-key", default=os.getenv("LOGIFY_API_KEY", ""), help="Project API key (prefer LOGIFY_API_KEY); selects its project automatically")
     parser.add_argument("--email", default=os.getenv("LOGIFY_EMAIL"), help="Existing account email; password is prompted or read from LOGIFY_PASSWORD")
     parser.add_argument("--project-id", default=os.getenv("LOGIFY_PROJECT_ID"), help="Project UUID; defaults to this account's default-project or first project")
     parser.add_argument("--count", type=positive_int, default=100, help="Number of logs (default: 100)")
@@ -161,14 +167,19 @@ def main(argv=None):
                 raise SeedError("--project-id must be a valid UUID.") from error
         templates = load_templates(args.file)
         if args.dry_run:
-            for event in build_events(templates, args.count, args.minutes, args.project_id or "PROJECT_ID"):
+            preview_project = args.project_id or (None if args.api_key else "PROJECT_ID")
+            for event in build_events(templates, args.count, args.minutes, preview_project):
                 print(json.dumps(event))
             return 0
 
-        api = API(args.base_url, args.token)
+        if args.api_key and args.token:
+            raise SeedError("Use either an API key or an access token, not both.")
+        api = API(args.base_url, args.token, args.api_key)
         authenticate(api, args)
-        project = select_project(api, args.project_id)
-        print(f"Sending {args.count} demo logs to {project['name']} ({project['id']}) at {api.base_url}…", flush=True)
+        project = ({"id": args.project_id, "name": "API key's project"}
+                   if api.api_key else select_project(api, args.project_id))
+        project_label = project["name"] + (f" ({project['id']})" if project["id"] else "")
+        print(f"Sending {args.count} demo logs to {project_label} at {api.base_url}…", flush=True)
         accepted = 0
         errors = []
         executor = ThreadPoolExecutor(max_workers=4)

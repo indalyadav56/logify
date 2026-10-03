@@ -267,7 +267,7 @@ const docTemplate = `{
         },
         "/v1/auth/register": {
             "post": {
-                "description": "Create a new user account and return JWT access and refresh tokens.",
+                "description": "Create a user account and its default-project atomically, then return JWT access and refresh tokens.",
                 "consumes": [
                     "application/json"
                 ],
@@ -367,7 +367,15 @@ const docTemplate = `{
         },
         "/v1/logs": {
             "post": {
-                "description": "Accept a log entry and publish it to the ingest pipeline.",
+                "security": [
+                    {
+                        "APIKeyAuth": []
+                    },
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Send with X-API-Key or a Bearer token. A project API key supplies project_id automatically and is restricted to that project.",
                 "consumes": [
                     "application/json"
                 ],
@@ -379,6 +387,12 @@ const docTemplate = `{
                 ],
                 "summary": "Ingest a log entry",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Project API key",
+                        "name": "X-API-Key",
+                        "in": "header"
+                    },
                     {
                         "description": "Log payload",
                         "name": "request",
@@ -406,6 +420,18 @@ const docTemplate = `{
                             "additionalProperties": {
                                 "type": "string"
                             }
+                        }
+                    },
+                    "401": {
+                        "description": "invalid authentication",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "key cannot access this project",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
                         }
                     },
                     "500": {
@@ -928,6 +954,158 @@ const docTemplate = `{
                 }
             }
         },
+        "/v1/projects/{id}/api-keys": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "API keys"
+                ],
+                "summary": "List project API keys",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Project UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "API keys"
+                ],
+                "summary": "Create a project API key",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Project UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Key name",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/http.CreateKeyRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/projects/{id}/api-keys/{keyId}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "API keys"
+                ],
+                "summary": "Revoke a project API key",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Project UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "API key UUID",
+                        "name": "keyId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No content"
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/users/me": {
             "get": {
                 "security": [
@@ -1032,7 +1210,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "group_by": {
-                    "description": "\"level\", \"service\", \"environment\", \"host\"",
                     "type": "string"
                 },
                 "interval": {
@@ -1055,6 +1232,18 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/http.AggBucketResponse"
                     }
+                }
+            }
+        },
+        "http.CreateKeyRequest": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "maxLength": 64
                 }
             }
         },
@@ -1317,60 +1506,26 @@ const docTemplate = `{
         "http.SearchRequest": {
             "type": "object",
             "required": [
-                "from",
-                "to"
+                "project_id"
             ],
             "properties": {
-                "attributes": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "string"
-                    }
-                },
-                "body_contains": {
-                    "type": "string"
-                },
                 "cursor": {
                     "type": "string"
-                },
-                "from": {
-                    "type": "string"
-                },
-                "hosts": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
                 },
                 "limit": {
                     "type": "integer"
                 },
-                "request_id": {
+                "project_id": {
                     "type": "string"
                 },
-                "services": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "severities": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "sort_desc": {
-                    "type": "boolean"
-                },
-                "tenant_id": {
+                "query": {
                     "type": "string"
                 },
-                "to": {
-                    "type": "string"
+                "sort": {
+                    "$ref": "#/definitions/http.Sort"
                 },
-                "trace_id": {
-                    "type": "string"
+                "time_range": {
+                    "$ref": "#/definitions/http.TimeRange"
                 }
             }
         },
@@ -1391,6 +1546,29 @@ const docTemplate = `{
                 },
                 "total": {
                     "type": "integer"
+                }
+            }
+        },
+        "http.Sort": {
+            "type": "object",
+            "properties": {
+                "field": {
+                    "type": "string"
+                },
+                "order": {
+                    "description": "\"asc\" or \"desc\"",
+                    "type": "string"
+                }
+            }
+        },
+        "http.TimeRange": {
+            "type": "object",
+            "properties": {
+                "from": {
+                    "type": "string"
+                },
+                "to": {
+                    "type": "string"
                 }
             }
         },
@@ -1459,6 +1637,20 @@ const docTemplate = `{
                     "type": "integer"
                 }
             }
+        }
+    },
+    "securityDefinitions": {
+        "APIKeyAuth": {
+            "description": "Project API key, restricted to sending logs.",
+            "type": "apiKey",
+            "name": "X-API-Key",
+            "in": "header"
+        },
+        "BearerAuth": {
+            "description": "Enter Bearer followed by your access token.",
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
         }
     }
 }`

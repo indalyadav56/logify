@@ -5,6 +5,10 @@ import (
 	"errors"
 	"fmt"
 
+	apiKeyApp "github.com/indalyadav56/logify/apps/backend/internal/apikey/application"
+	apiKeyPG "github.com/indalyadav56/logify/apps/backend/internal/apikey/infrastructure/postgres"
+	apiKeyHTTP "github.com/indalyadav56/logify/apps/backend/internal/apikey/transport/http"
+
 	ch "github.com/ClickHouse/clickhouse-go/v2"
 	"github.com/gin-gonic/gin"
 	gojwt "github.com/golang-jwt/jwt/v5"
@@ -94,6 +98,8 @@ type ServerContainer struct {
 	// Project bounded context
 	ProjectService projectApp.ProjectService
 	ProjectHandler *projectHTTP.ProjectHandler
+	APIKeyService  *apiKeyApp.Service
+	APIKeyHandler  *apiKeyHTTP.Handler
 }
 
 func NewServerContainer(ctx context.Context, cfg *config.Config, log *zap.Logger) (*ServerContainer, error) {
@@ -143,6 +149,8 @@ func NewServerContainer(ctx context.Context, cfg *config.Config, log *zap.Logger
 	c.initRole()
 	c.initNotification()
 	c.initProject()
+	c.APIKeyService = apiKeyApp.NewService(apiKeyPG.NewRepository(c.postgresDB), projectPG.NewProjectRepository(c.postgresDB))
+	c.APIKeyHandler = apiKeyHTTP.NewHandler(c.APIKeyService)
 
 	return c, nil
 }
@@ -167,7 +175,7 @@ func (c *ServerContainer) Close() error {
 
 func (c *ServerContainer) initIngest() {
 	producer := ingestKafka.NewLogProducer(c.KafkaWriter, c.Logger)
-	c.IngestService = ingestApp.NewIngestService(producer)
+	c.IngestService = ingestApp.NewIngestService(producer, projectPG.NewProjectRepository(c.postgresDB))
 	c.IngestHandler = ingestHTTP.NewIngestHandler(c.IngestService)
 }
 
@@ -228,11 +236,15 @@ func (c *ServerContainer) RegisterAllRoutes(e *gin.Engine) {
 	// Public routes — reachable without a token.
 	authHTTP.RegisterRoutes(root, c.AuthHandler)
 
+	// Application keys authenticate only ingestion, never account management.
+	ingest := root.Group("", middleware.IngestAuthMiddleware(c.JWT, c.APIKeyService))
+	ingestHTTP.RegisterRoutes(ingest, c.IngestHandler)
+
 	// Protected routes — authentication is applied once here, so every context
 	// mounted on `secured` is authenticated by default. New contexts added here
 	// inherit auth automatically; do not re-add AuthMiddleware inside them.
 	secured := root.Group("", middleware.AuthMiddleware(c.JWT))
-	ingestHTTP.RegisterRoutes(secured, c.IngestHandler)
 	searchHTTP.RegisterRoutes(secured, c.SearchHandler)
 	projectHTTP.RegisterRoutes(secured, c.ProjectHandler)
+	apiKeyHTTP.RegisterRoutes(secured, c.APIKeyHandler)
 }

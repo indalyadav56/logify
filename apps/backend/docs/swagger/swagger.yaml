@@ -38,7 +38,6 @@ definitions:
       from:
         type: string
       group_by:
-        description: '"level", "service", "environment", "host"'
         type: string
       interval:
         description: '"1m", "5m", "1h", "1d"'
@@ -57,6 +56,14 @@ definitions:
         items:
           $ref: '#/definitions/http.AggBucketResponse'
         type: array
+    type: object
+  http.CreateKeyRequest:
+    properties:
+      name:
+        maxLength: 64
+        type: string
+    required:
+    - name
     type: object
   http.CreateLogRequest:
     properties:
@@ -231,43 +238,20 @@ definitions:
     type: object
   http.SearchRequest:
     properties:
-      attributes:
-        additionalProperties:
-          type: string
-        type: object
-      body_contains:
-        type: string
       cursor:
         type: string
-      from:
-        type: string
-      hosts:
-        items:
-          type: string
-        type: array
       limit:
         type: integer
-      request_id:
+      project_id:
         type: string
-      services:
-        items:
-          type: string
-        type: array
-      severities:
-        items:
-          type: string
-        type: array
-      sort_desc:
-        type: boolean
-      tenant_id:
+      query:
         type: string
-      to:
-        type: string
-      trace_id:
-        type: string
+      sort:
+        $ref: '#/definitions/http.Sort'
+      time_range:
+        $ref: '#/definitions/http.TimeRange'
     required:
-    - from
-    - to
+    - project_id
     type: object
   http.SearchResponse:
     properties:
@@ -281,6 +265,21 @@ definitions:
         type: integer
       total:
         type: integer
+    type: object
+  http.Sort:
+    properties:
+      field:
+        type: string
+      order:
+        description: '"asc" or "desc"'
+        type: string
+    type: object
+  http.TimeRange:
+    properties:
+      from:
+        type: string
+      to:
+        type: string
     type: object
   http.TokenResponse:
     properties:
@@ -478,7 +477,8 @@ paths:
     post:
       consumes:
       - application/json
-      description: Create a new user account and return JWT access and refresh tokens.
+      description: Create a user account and its default-project atomically, then
+        return JWT access and refresh tokens.
       parameters:
       - description: Registration request details
         in: body
@@ -532,8 +532,13 @@ paths:
     post:
       consumes:
       - application/json
-      description: Accept a log entry and publish it to the ingest pipeline.
+      description: Send with X-API-Key or a Bearer token. A project API key supplies
+        project_id automatically and is restricted to that project.
       parameters:
+      - description: Project API key
+        in: header
+        name: X-API-Key
+        type: string
       - description: Log payload
         in: body
         name: request
@@ -555,12 +560,23 @@ paths:
             additionalProperties:
               type: string
             type: object
+        "401":
+          description: invalid authentication
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "403":
+          description: key cannot access this project
+          schema:
+            $ref: '#/definitions/response.APIResponse'
         "500":
           description: failed to publish log
           schema:
             additionalProperties:
               type: string
             type: object
+      security:
+      - APIKeyAuth: []
+      - BearerAuth: []
       summary: Ingest a log entry
       tags:
       - ingest
@@ -887,6 +903,102 @@ paths:
       summary: Update project
       tags:
       - projects
+  /v1/projects/{id}/api-keys:
+    get:
+      parameters:
+      - description: Project UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: List project API keys
+      tags:
+      - API keys
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Project UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Key name
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/http.CreateKeyRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Create a project API key
+      tags:
+      - API keys
+  /v1/projects/{id}/api-keys/{keyId}:
+    delete:
+      parameters:
+      - description: Project UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: API key UUID
+        in: path
+        name: keyId
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No content
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Revoke a project API key
+      tags:
+      - API keys
   /v1/users/me:
     get:
       description: Return the authenticated user's profile from JWT claims.
@@ -914,4 +1026,15 @@ paths:
       summary: Get current user
       tags:
       - users
+securityDefinitions:
+  APIKeyAuth:
+    description: Project API key, restricted to sending logs.
+    in: header
+    name: X-API-Key
+    type: apiKey
+  BearerAuth:
+    description: Enter Bearer followed by your access token.
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"

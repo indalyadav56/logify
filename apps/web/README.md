@@ -5,6 +5,10 @@ shadcn/ui. It provides a white-theme workspace with a project sidebar, message
 search, time ranges, paginated logs, event details, and source connection
 instructions.
 
+**Connect a source** creates named project API keys, shows each secret once,
+copies a curl command, and lists or revokes existing keys. Keys send logs only;
+the web app uses your login session for account management and log searches.
+
 ![Logify log explorer](../../docs/screenshots/log-explorer.jpg)
 
 ## Run locally

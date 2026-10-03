@@ -75,22 +75,21 @@ func AuthMiddleware(j *jwtpkg.JWT) gin.HandlerFunc {
 			TenantID: stringClaim(mapClaims, "tenant_id"),
 		}
 
-		// Mirror data onto Gin's context for handlers that use c.Get(...).
-		c.Set(CtxKeyClaims, claims)
-		c.Set(CtxKeyUserID, claims.UserID)
-		c.Set(CtxKeyRole, claims.Role)
-		c.Set(CtxKeyTenantID, claims.TenantID)
-
-		// Also propagate onto request.Context() so service/repo layers
-		// (which only see context.Context) can pick the same values up.
-		ctx := c.Request.Context()
-		ctx = context.WithValue(ctx, stdCtxKeyClaims, claims)
-		ctx = context.WithValue(ctx, stdCtxKeyUserID, claims.UserID)
-		ctx = context.WithValue(ctx, stdCtxKeyTenantID, claims.TenantID)
-		c.Request = c.Request.WithContext(ctx)
-
+		setClaims(c, claims)
 		c.Next()
 	}
+}
+
+func setClaims(c *gin.Context, claims *Claims) {
+	c.Set(CtxKeyClaims, claims)
+	c.Set(CtxKeyUserID, claims.UserID)
+	c.Set(CtxKeyRole, claims.Role)
+	c.Set(CtxKeyTenantID, claims.TenantID)
+	ctx := c.Request.Context()
+	ctx = context.WithValue(ctx, stdCtxKeyClaims, claims)
+	ctx = context.WithValue(ctx, stdCtxKeyUserID, claims.UserID)
+	ctx = context.WithValue(ctx, stdCtxKeyTenantID, claims.TenantID)
+	c.Request = c.Request.WithContext(ctx)
 }
 
 // bearerToken extracts and returns the token from a "Bearer <token>"

@@ -16,9 +16,13 @@ import logify "github.com/indalyadav56/logify/sdks/go"
 
 ## Quick start
 
+Create a project key in the web app's **Connect a source** dialog and set
+`LOGIFY_API_KEY` in your environment. The key selects the project automatically.
+
 ```go
 client, err := logify.New(
     logify.WithBaseURL("http://localhost:8080"),
+    logify.WithAPIKey(os.Getenv("LOGIFY_API_KEY")),
     logify.WithService("payment-api"),
     logify.WithEnvironment("production"),
 )
@@ -43,6 +47,7 @@ flush the buffer.
 ```go
 client, _ := logify.New(
     logify.WithBaseURL("http://localhost:8080"),
+    logify.WithAPIKey(os.Getenv("LOGIFY_API_KEY")),
     logify.WithAsync(true),
     logify.WithWorkers(4),
     logify.WithBufferSize(2048),

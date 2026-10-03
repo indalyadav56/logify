@@ -16,6 +16,14 @@ import (
 // @description     This is the Logify backend API server.
 // @host            localhost:8080
 // @BasePath        /
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Enter Bearer followed by your access token.
+// @securityDefinitions.apikey APIKeyAuth
+// @in header
+// @name X-API-Key
+// @description Project API key, restricted to sending logs.
 
 func main() {
 	if err := run(); err != nil {

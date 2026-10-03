@@ -153,18 +153,18 @@ from [`mock-data/logs.json`](mock-data/logs.json).
 
 ## Sending logs
 
-In the web app, select a project and choose **Connect a source**. **Copy command**
-adds your current access token to the example. Run the command, then refresh
-the explorer.
+In the web app, select a project and choose **Connect a source**. Name your key
+and click **Create key**. Save it immediately: the full key is shown only once.
+**Copy command** includes the new key. Run the command, then refresh the explorer.
 
-To construct a request yourself, replace both placeholders below:
+To construct a request yourself, replace `YOUR_API_KEY` below. For the full
+Docker stack, use port `8080`; the host-development guide uses `8081`.
 
 ```bash
 curl -X POST 'http://localhost:8081/v1/logs' \
   -H 'Content-Type: application/json' \
-  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'X-API-Key: YOUR_API_KEY' \
   -d '{
-    "project_id": "YOUR_PROJECT_UUID",
     "level": "info",
     "service": "checkout-api",
     "environment": "development",
@@ -181,11 +181,26 @@ The API responds with `202 Accepted` after Kafka acknowledges the event:
 
 Additional fields include `timestamp` (RFC 3339), `hostname`, `source`,
 `trace_id`, `span_id`, `request_id`, and JSON `metadata`. `tags` values are
-strings. Use a project returned by your authenticated `GET /v1/projects` request.
+strings. An API key selects its project automatically. If you include
+`project_id`, it must match the key's project. Keys can only send logs; searching
+logs and managing projects or keys requires your signed-in account.
+
+**Connect a source** lists key names and prefixes and lets you revoke a key.
+Revocation immediately rejects new requests with that key. PostgreSQL stores
+only the key's SHA-256 hash, never its secret. Existing Bearer access tokens
+remain supported for ingestion and require an owned `project_id` in the body.
+
+To manage keys directly, send `Authorization: Bearer YOUR_ACCESS_TOKEN` to:
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| `POST` | `/v1/projects/:id/api-keys` | Create a key with `{"name":"my-app"}`; the response includes `data.key` once |
+| `GET` | `/v1/projects/:id/api-keys` | List metadata, including revocation status |
+| `DELETE` | `/v1/projects/:id/api-keys/:keyId` | Revoke the key |
 
 Client packages are available in [the Go SDK](sdks/go/README.md) and
-[the Python SDK](sdks/python/README.md). The current backend uses Bearer-token
-authentication; an `X-API-Key` header alone does not authenticate requests.
+[the Python SDK](sdks/python/README.md). Both support `X-API-Key`; their project
+ID option is optional when using a project API key.
 
 ## Architecture
 

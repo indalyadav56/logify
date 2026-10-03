@@ -21,6 +21,7 @@ class SeedScriptTests(unittest.TestCase):
         self.requests = []
         self.ingest_status = 202
         self.project_status = 200
+        self.api_key_headers = []
         owner = self
 
         class Handler(BaseHTTPRequestHandler):
@@ -51,6 +52,7 @@ class SeedScriptTests(unittest.TestCase):
             def do_POST(self):
                 body = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
                 owner.requests.append(("POST", self.path, self.headers.get("Authorization"), body))
+                owner.api_key_headers.append(self.headers.get("X-API-Key"))
                 if self.path == "/v1/auth/login":
                     self.respond(200, {"success": True, "data": {"access_token": "fixture-token"}})
                 elif self.path == "/v1/logs":
@@ -119,6 +121,36 @@ class SeedScriptTests(unittest.TestCase):
         self.assertEqual(1, result.returncode)
         self.assertIn("not found in this account", result.stderr)
         self.assertEqual([], self.events())
+
+    def test_api_key_skips_login_and_project_lookup(self):
+        result = self.run_script("--count", "4", extra_env={"LOGIFY_API_KEY": "fixture-api-key"})
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertEqual(4, len(self.events()))
+        self.assertEqual({"/v1/logs"}, {request[1] for request in self.requests})
+        self.assertEqual(["fixture-api-key"] * 4, self.api_key_headers)
+        self.assertTrue(all(request[2] is None for request in self.requests))
+        self.assertTrue(all("project_id" not in event for event in self.events()))
+        self.assertNotIn("fixture-api-key", result.stdout + result.stderr)
+        self.assertNotIn("(None)", result.stdout)
+
+    def test_api_key_can_supply_matching_project_for_backend_validation(self):
+        result = self.run_script("--api-key", "fixture-api-key", "--project-id", DEFAULT_ID, "--count", "2")
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertTrue(all(event["project_id"] == DEFAULT_ID for event in self.events()))
+        self.assertEqual({"/v1/logs"}, {request[1] for request in self.requests})
+
+    def test_api_key_preview_omits_project_without_network(self):
+        result = self.run_script("--api-key", "fixture-api-key", "--dry-run", "--count", "2")
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertEqual([], self.requests)
+        self.assertTrue(all("project_id" not in json.loads(line) for line in result.stdout.splitlines()))
+        self.assertNotIn("fixture-api-key", result.stdout + result.stderr)
+
+    def test_ambiguous_credentials_fail_before_writes(self):
+        result = self.run_script("--api-key", "fixture-api-key", "--token", "fixture-token")
+        self.assertEqual(1, result.returncode)
+        self.assertIn("not both", result.stderr)
+        self.assertEqual([], self.requests)
 
     def test_rejected_writes_report_failure_without_retries(self):
         self.ingest_status = 503

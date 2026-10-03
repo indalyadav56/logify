@@ -27,6 +27,20 @@ The default URL is `http://localhost:8081`. If your API uses port `8080`:
 python3 mock-data/seed.py --base-url http://localhost:8080
 ```
 
+## Use an API key
+
+Create a key in **Connect a source**, then run:
+
+```bash
+export LOGIFY_API_KEY='YOUR_API_KEY'
+python3 mock-data/seed.py --base-url http://localhost:8080 --count 100
+```
+
+The key selects its project automatically. This mode never signs in or requests
+the project list. A supplied `--project-id` must match the key's project; the
+backend rejects a mismatch. Keys are never printed or saved by the script.
+Use either `LOGIFY_API_KEY` or `LOGIFY_ACCESS_TOKEN`, not both.
+
 ## Use an access token
 
 ```bash
@@ -80,5 +94,5 @@ python3 -m unittest discover -s mock-data/tests -v
 ```
 
 These tests use a temporary local HTTP server and send no events to your Logify
-databases. They cover login, token authentication, default and explicit project
+databases. They cover login, token and API-key authentication, default and explicit project
 selection, request payloads, preview mode, and rejected requests.

@@ -47,6 +47,8 @@ require `Authorization: Bearer YOUR_ACCESS_TOKEN`.
 | `GET` | `/v1/projects` | List the authenticated account's projects |
 | `POST` | `/v1/projects` | Create a project |
 | `GET`, `PUT`, `DELETE` | `/v1/projects/:id` | Read, update, or delete a project |
+| `POST`, `GET` | `/v1/projects/:id/api-keys` | Create a project API key or list its metadata |
+| `DELETE` | `/v1/projects/:id/api-keys/:keyId` | Revoke a project API key |
 | `POST` | `/v1/logs` | Accept a log event into Kafka |
 | `POST` | `/v1/logs/search` | Search events by project, message, time range, and cursor |
 | `GET` | `/v1/logs/:id` | Read an event |
@@ -67,6 +69,19 @@ Duplicate registration returns `409`; signing in does not create another
 project. The web app selects the project returned by `GET /v1/projects`.
 
 ### Ingestion
+
+Applications authenticate with `X-API-Key: lgfy_...` (or
+`Authorization: Bearer lgfy_...`). Create and revoke keys in **Connect a source**
+or through the JWT-protected project key routes. Creation accepts
+`{"name":"my-app"}` and returns the secret in `data.key` once; listing returns
+only names, prefixes, and status. Keys are random, stored as SHA-256 hashes, and
+checked against PostgreSQL on every request so revocation takes effect immediately.
+
+A key can only call `POST /v1/logs` for its own project. `project_id` can be
+omitted; a mismatched project returns `403`. Invalid or revoked keys return
+`401`. Deleted or suspended projects and disabled key owners invalidate keys.
+JWT ingestion remains supported with an owned project ID. Requests containing
+both `X-API-Key` and `Authorization` return `400`.
 
 `POST /v1/logs` returns `202` after Kafka acknowledges the event. The log
 processor stores it in ClickHouse asynchronously, using a consumer group
@@ -126,6 +141,18 @@ PostgreSQL 18 with pgvector and a database user with `CREATE DATABASE`
 permission. It covers project ownership and visibility, duplicate and
 concurrent signup, repeated login, invalid requests, and rollback/retry after
 project, session, or refresh-token persistence failures.
+
+### Project API keys
+
+```bash
+LOGIFY_TEST_DATABASE_URL='postgres://postgres:postgres@localhost:5432/logify?sslmode=disable' \
+  go test -tags=integration -race ./internal/apikey/application -run TestProjectAPIKeysIntegration -v
+```
+
+This also creates and removes an isolated database. It covers one-time secret
+responses, hashed storage, project and account isolation, JWT compatibility,
+revocation, invalid credentials, and project/user lifecycle changes. A capturing
+producer verifies authorized payloads without writing to Kafka.
 
 ### Kafka topic creation and delivery
 

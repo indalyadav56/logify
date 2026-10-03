@@ -21,12 +21,16 @@ Requires Python 3.8+.
 
 ## Quick start
 
+Create a project key in the web app's **Connect a source** dialog and set
+`LOGIFY_API_KEY` in your environment. The key selects the project automatically.
+
 ```python
 import logify
+import os
 
 with logify.Client(
     base_url="http://localhost:8080",
-    api_key="your-api-key",          # sent as the X-API-Key header
+    api_key=os.environ["LOGIFY_API_KEY"],  # sent as the X-API-Key header
     service="checkout",
     environment="production",
     tags={"team": "payments"},        # merged into every entry

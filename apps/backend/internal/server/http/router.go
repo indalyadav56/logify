@@ -26,7 +26,7 @@ func (r *Router) Setup(engine *gin.Engine) error {
 	engine.Use(cors.New(cors.Config{
 		AllowAllOrigins: true,
 		AllowMethods:    []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
-		AllowHeaders:    []string{"Origin", "Content-Type", "Accept", "Authorization", "X-Request-ID"},
+		AllowHeaders:    []string{"Origin", "Content-Type", "Accept", "Authorization", "X-API-Key", "X-Request-ID"},
 		ExposeHeaders:   []string{"Content-Length", "X-Request-ID"},
 		MaxAge:          12 * time.Hour,
 	}))
